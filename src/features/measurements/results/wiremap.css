@@ -1,0 +1,26 @@
+.wiremap-awaiting {
+  min-height: 340px;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #777;
+  background: #fff;
+  font-size: 1rem;
+}
+
+.unknown-label {
+  fill: #e01818;
+  font:
+    700 38px Arial,
+    sans-serif;
+  text-anchor: middle;
+}
+
+.short-circuit line {
+  stroke: #e01818;
+  stroke-width: 6;
+}
+
+.short-circuit circle {
+  fill: #e01818;
+}

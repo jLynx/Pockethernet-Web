@@ -1,0 +1,70 @@
+.test-help-button {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #738195;
+  cursor: pointer;
+}
+
+.test-help-button:hover,
+.test-help-button[aria-expanded='true'] {
+  color: #0878ca;
+  background: #eaf5fd;
+}
+
+.test-help-button span {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  font-family: Georgia, serif;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 18px;
+}
+
+.test-help {
+  padding: 14px 18px;
+  display: grid;
+  gap: 6px;
+  border-bottom: 1px solid #d8e8f4;
+  background: #f4f9fd;
+  color: #34465c;
+  font-size: 0.86rem;
+}
+
+.test-help p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.test-help-note {
+  color: #a24b13;
+  font-weight: 650;
+}
+
+.test-panel.expanded .test-panel-header {
+  grid-template-columns: minmax(140px, 0.8fr) minmax(0, 1.2fr) 40px;
+}
+
+.test-panel.expanded .test-summary {
+  padding-right: 8px;
+}
+
+.test-panel.expanded .test-summary span {
+  max-width: none;
+}
+
+.test-panel.expanded .test-help-button {
+  align-self: center;
+  justify-self: center;
+}

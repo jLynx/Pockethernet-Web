@@ -1,0 +1,52 @@
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.github-link {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid #d8e0e9;
+  border-radius: 14px;
+  color: #304056;
+  background: #fff;
+  box-shadow: 0 3px 10px #1721330c;
+}
+.github-link svg {
+  width: 23px;
+  height: 23px;
+}
+.github-link:hover {
+  border-color: #8abce3;
+  color: #0878ca;
+  background: #f5faff;
+}
+.github-link:focus-visible {
+  outline: 3px solid #7cc4ff;
+  outline-offset: 2px;
+}
+.app-footer {
+  padding: 18px clamp(18px, 4vw, 34px);
+  border-top: 1px solid #e5eaf0;
+  color: #718096;
+  background: #f8fafc;
+  font-size: 0.72rem;
+  line-height: 1.55;
+  text-align: center;
+}
+.app-footer a {
+  color: inherit;
+  font-weight: 700;
+  text-underline-offset: 2px;
+}
+.app-footer a:hover {
+  color: #0878ca;
+}
+.app-footer a:focus-visible {
+  border-radius: 2px;
+  outline: 2px solid #7cc4ff;
+  outline-offset: 2px;
+}

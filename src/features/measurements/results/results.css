@@ -1,0 +1,344 @@
+.ber-results {
+  min-height: 300px;
+  padding: 22px;
+  background: #fff;
+}
+.ber-settings {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.ber-settings label {
+  display: grid;
+  gap: 6px;
+  color: #5f6e80;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.ber-settings select {
+  min-width: 0;
+  height: 38px;
+  padding: 0 8px;
+  border: 1px solid #cfd9e4;
+  border-radius: 6px;
+  color: #192a40;
+  background: #fff;
+  font: inherit;
+}
+.ber-table {
+  margin-top: 24px;
+  border-top: 1px solid #dfe6ed;
+}
+.ber-table div {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #dfe6ed;
+  color: #5f6e80;
+}
+.ber-table strong {
+  color: #192a40;
+  font-size: 1.05rem;
+}
+.ber-progress {
+  margin: 16px 0 0;
+  color: #0878ca;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: right;
+}
+
+.poe-results,
+.link-results,
+.cdplldp-results,
+.vlan-results,
+.ping-results,
+.ipv4-results,
+.ipv6-results {
+  min-height: 300px;
+  padding: 20px 24px;
+  background: #fff;
+}
+.poe-awaiting,
+.link-awaiting,
+.link-no-link,
+.cdplldp-awaiting,
+.cdplldp-no-result,
+.vlan-awaiting,
+.vlan-no-result,
+.extip-awaiting,
+.extip-no-result,
+.traffic-awaiting,
+.traffic-no-result,
+.ipv4-awaiting,
+.ipv4-no-result,
+.ipv6-awaiting,
+.ipv6-no-result {
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: #718096;
+  text-align: center;
+}
+.link-no-link,
+.cdplldp-no-result,
+.vlan-no-result,
+.extip-no-result,
+.traffic-no-result,
+.ipv4-no-result,
+.ipv6-no-result {
+  color: #c73740;
+  font-weight: 800;
+}
+.poe-row,
+.link-row,
+.cdplldp-row,
+.extip-row,
+.ping-row,
+.ipv4-row,
+.ipv6-row {
+  min-height: 43px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid #dfe6ed;
+  color: #5f6e80;
+}
+.poe-row strong,
+.link-row strong,
+.cdplldp-row strong,
+.extip-row strong,
+.ping-row strong,
+.ipv4-row strong,
+.ipv6-row strong {
+  color: #192a40;
+  text-align: right;
+}
+.poe-pairs-title,
+.link-section-title,
+.ipv4-section-title,
+.ipv6-section-title {
+  padding: 4px 0 6px;
+  color: #0878ca;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.poe-pairs-title {
+  padding-top: 18px;
+}
+.poe-pair {
+  min-height: 36px;
+  padding-left: 16px;
+}
+.link-section-title:not(:first-child) {
+  margin-top: 18px;
+}
+.link-row small {
+  display: inline-block;
+  min-width: 66px;
+  margin-left: 16px;
+  color: #718096;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+.cdplldp-section-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 4px 0 8px;
+  color: #0878ca;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.cdplldp-section-title span {
+  color: #718096;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.cdplldp-row strong,
+.extip-row strong,
+.ipv4-row strong,
+.ipv6-row strong {
+  max-width: 68%;
+  overflow-wrap: anywhere;
+}
+
+.vlan-settings {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px 18px;
+  align-items: center;
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #dfe6ed;
+  color: #5f6e80;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+.vlan-id-label {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 140px;
+  align-items: center;
+  gap: 18px;
+}
+.vlan-id-label input {
+  width: 100%;
+  height: 38px;
+  padding: 0 10px;
+  border: 1px solid #cfd9e4;
+  border-radius: 6px;
+  color: #192a40;
+  background: #fff;
+  font: inherit;
+  text-align: right;
+}
+.vlan-id-label input:disabled {
+  color: #96a1ae;
+  background: #f4f6f8;
+}
+.vlan-header,
+.vlan-row {
+  min-height: 43px;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid #dfe6ed;
+}
+.vlan-header {
+  color: #0878ca;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.vlan-row strong {
+  color: #192a40;
+}
+
+.extip-results {
+  min-height: 300px;
+  padding: 20px 24px;
+  background: #fff;
+}
+.traffic-results {
+  min-height: 180px;
+  padding: 20px 24px;
+  background: #fff;
+  overflow-x: auto;
+}
+.traffic-header,
+.traffic-row {
+  min-width: 560px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 100px;
+  gap: 18px;
+  align-items: center;
+}
+.traffic-header {
+  padding-bottom: 8px;
+  color: #0878ca;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.traffic-row {
+  min-height: 42px;
+  border-top: 1px solid #dfe6ed;
+  color: #5f6e80;
+  font-family: 'IBM Plex Mono', 'Cascadia Mono', monospace;
+  font-size: 0.82rem;
+}
+.traffic-row strong {
+  color: #192a40;
+}
+.ping-server + .ping-server {
+  margin-top: 22px;
+}
+.ping-server > label {
+  display: grid;
+  grid-template-columns: 1fr 220px;
+  align-items: center;
+  gap: 18px;
+  color: #5f6e80;
+  font-weight: 700;
+}
+.ping-server input,
+.ipv4-settings select,
+.ipv4-settings input,
+.ipv6-mode-label select,
+.ipv6-awaiting select {
+  min-width: 0;
+  height: 38px;
+  padding: 0 8px;
+  border: 1px solid #cfd9e4;
+  border-radius: 6px;
+  color: #192a40;
+  background: #fff;
+  font: inherit;
+}
+.ipv4-settings {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #dfe6ed;
+}
+.ipv4-settings label {
+  display: grid;
+  gap: 6px;
+  color: #5f6e80;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.ipv6-mode-label,
+.ipv6-awaiting label {
+  display: grid;
+  grid-template-columns: 1fr 180px;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 20px;
+  color: #5f6e80;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+.ipv6-group + .ipv6-group {
+  margin-top: 20px;
+}
+
+.wiremap-diagram {
+  min-height: 430px;
+  display: flex;
+  flex-direction: column;
+}
+.wiremap-diagram svg {
+  width: 100%;
+  min-height: 340px;
+  flex: 1;
+}
+.pin-label {
+  fill: #111;
+  font:
+    28px Arial,
+    sans-serif;
+}
+.wiremap-footer {
+  min-height: 54px;
+  padding: 8px 30px;
+  display: flex;
+  align-items: center;
+  color: #111;
+}
