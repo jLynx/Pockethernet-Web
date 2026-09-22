@@ -136,8 +136,7 @@ export function drawWiremap(doc: jsPDF, report: SavedReport, x: number, y: numbe
     if (seenShorts.has(key)) return;
     seenShorts.add(key);
     const lowIndex = pins.indexOf(low);
-    const shortX =
-      lowIndex < 4 ? x + 15.5 + lowIndex * 1.6 : x + 36.5 + (lowIndex - 4) * 1.6;
+    const shortX = lowIndex < 4 ? x + 15.5 + lowIndex * 1.6 : x + 36.5 + (lowIndex - 4) * 1.6;
     doc.setDrawColor(255, 0, 0);
     doc.setFillColor(255, 0, 0);
     doc.setLineWidth(0.4);
