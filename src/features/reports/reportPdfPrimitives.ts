@@ -87,26 +87,69 @@ export function drawWiremap(doc: jsPDF, report: SavedReport, x: number, y: numbe
     colors[3],
     '#222222',
   ];
-  pins.forEach((pin, index) => {
-    const lineY = y + 5 + index * 2.15;
+  const striped = new Set([1, 3, 5, 7]);
+  const lineY = (pin: number): number => y + 5 + pins.indexOf(pin) * 2.15;
+  const drawWire = (
+    pin: number,
+    startX: number,
+    startY: number,
+    endX: number,
+    endY: number,
+  ): void => {
+    doc.setDrawColor(pinColors[pins.indexOf(pin)]);
+    doc.setLineWidth(0.55);
+    if (striped.has(pin)) doc.setLineDashPattern([1.2, 1.2], 0);
+    doc.line(startX, startY, endX, endY);
+    doc.setLineDashPattern([], 0);
+  };
+
+  pins.forEach((pin) => {
+    const pinY = lineY(pin);
     doc.setFontSize(4.5);
     doc.setTextColor(0, 0, 0);
-    doc.text(pin === 9 ? 'S' : pin.toString(), x + 2, lineY + 0.6);
-    doc.text(pin === 9 ? 'S' : pin.toString(), x + 31, lineY + 0.6);
-    doc.setDrawColor(pinColors[index]);
-    doc.setLineWidth(0.55);
+    doc.text(pin === 9 ? 'S' : pin.toString(), x + 2, pinY + 0.6, { align: 'center' });
+    doc.text(pin === 9 ? 'S' : pin.toString(), x + 55, pinY + 0.6, { align: 'center' });
+    drawWire(pin, x + 5, pinY, x + 14, pinY);
+    drawWire(pin, x + 43, pinY, x + 52, pinY);
+  });
+
+  pins.forEach((pin) => {
     const destination = result.connections[pin];
-    const targetIndex = pins.indexOf(destination);
-    const targetY = targetIndex >= 0 ? y + 5 + targetIndex * 2.15 : lineY;
-    doc.line(x + 6, lineY, x + 27, targetY);
-    if (pin === 1 || pin === 3 || pin === 5 || pin === 7) {
-      doc.setDrawColor(255, 255, 255);
-      doc.setLineWidth(0.22);
-      doc.setLineDashPattern([1.2, 1.2], 0);
-      doc.line(x + 6, lineY, x + 27, targetY);
-      doc.setLineDashPattern([], 0);
+    if (destination > 0 && destination < 10) {
+      drawWire(pin, x + 14, lineY(pin), x + 43, lineY(destination));
+    } else if (destination === 255) {
+      drawWire(pin, x + 14, lineY(pin), x + 27.5, lineY(pin));
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(5);
+      doc.setTextColor(255, 0, 0);
+      doc.text('?', x + 30, lineY(pin) + 0.7, { align: 'center' });
     }
   });
+
+  const seenShorts = new Set<string>();
+  pins.forEach((pin) => {
+    const other = result.shorts[pin];
+    if (!(other > 0 && other < 10)) return;
+    const low = Math.min(pin, other);
+    const high = Math.max(pin, other);
+    const key = `${low}-${high}`;
+    if (seenShorts.has(key)) return;
+    seenShorts.add(key);
+    const lowIndex = pins.indexOf(low);
+    const shortX =
+      lowIndex < 4 ? x + 15.5 + lowIndex * 1.6 : x + 36.5 + (lowIndex - 4) * 1.6;
+    doc.setDrawColor(255, 0, 0);
+    doc.setFillColor(255, 0, 0);
+    doc.setLineWidth(0.4);
+    doc.line(shortX, lineY(low), shortX, lineY(high));
+    doc.circle(shortX, lineY(low), 0.65, 'F');
+    doc.circle(shortX, lineY(high), 0.65, 'F');
+  });
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(4.5);
+  doc.setTextColor(0, 0, 0);
+  doc.text(`Wiremap ID: ${result.id}`, x + 2, y + 25.2);
 }
 
 export function formatDistance(value: number, units: Units): string {

@@ -9,6 +9,7 @@ import type {
 } from '@/app/types';
 import { Button, EmptyState, PageHeader, TextField } from '@/shared/ui/UiPrimitives';
 import { resizeReportImage } from './images';
+import { createLlmExport } from './llmExport';
 import { downloadReportsPdf, previewReportPdf, shareReportPdf } from './pdf';
 
 const FIELDS: readonly [keyof ReportDetails, string, string][] = [
@@ -41,6 +42,23 @@ function reportTitle(report: SavedReport): string {
 
 function measuredCount(results: ReportResults): number {
   return Object.values(results).filter(Boolean).length;
+}
+
+async function writeClipboard(text: string): Promise<void> {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  const copied = document.execCommand('copy');
+  textarea.remove();
+  if (!copied) throw new Error('Clipboard copy failed');
 }
 
 export function ReportsPage({
@@ -93,6 +111,20 @@ export function ReportsPage({
       next.delete(id);
       return next;
     });
+  };
+
+  const copyForLlm = async (selectedReports: SavedReport[]): Promise<void> => {
+    if (selectedReports.length === 0) return;
+    try {
+      await writeClipboard(createLlmExport(selectedReports));
+      onNotice(
+        selectedReports.length === 1
+          ? 'LLM-ready report copied to clipboard.'
+          : `${selectedReports.length} LLM-ready reports copied to clipboard.`,
+      );
+    } catch {
+      onNotice('Could not copy the report. Clipboard access may be blocked by this browser.');
+    }
   };
 
   return (
@@ -211,6 +243,7 @@ export function ReportsPage({
                   <Button onClick={() => downloadReportsPdf([report], preferences.logoDataUrl)}>
                     PDF
                   </Button>
+                  <Button onClick={() => void copyForLlm([report])}>Copy for LLM</Button>
                   <Button
                     onClick={() =>
                       void shareReportPdf(report, preferences.logoDataUrl)
