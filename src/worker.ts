@@ -6,10 +6,36 @@ interface Env {
   };
 }
 
+async function serveLegacyAsset(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url);
+  const icon = /^\/pockethernet-(192|512)\.png$/.exec(url.pathname);
+  const entry = /^\/assets\/index-[\w-]+\.(js|css)$/.exec(url.pathname);
+  if (!icon && !entry) return env.ASSETS.fetch(request);
+
+  const original = await env.ASSETS.fetch(request);
+  if (original.ok && !original.headers.get('Content-Type')?.includes('text/html')) return original;
+
+  let currentPath = icon ? `/logo-${icon[1]}.png` : '';
+  if (entry) {
+    const index = await env.ASSETS.fetch(new Request(new URL('/index.html', url)));
+    if (!index.ok) return new Response('Asset not found', { status: 404 });
+    currentPath =
+      (await index.text()).match(new RegExp(`/assets/index-[\\w-]+\\.${entry[1]}`))?.[0] ?? '';
+  }
+  if (!currentPath) return new Response('Asset not found', { status: 404 });
+
+  const current = await env.ASSETS.fetch(new Request(new URL(currentPath, url)));
+  if (!current.ok || current.headers.get('Content-Type')?.includes('text/html'))
+    return new Response('Asset not found', { status: 404 });
+  const headers = new Headers(current.headers);
+  headers.set('Cache-Control', 'no-store');
+  return new Response(current.body, { status: current.status, headers });
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
-    if (url.pathname !== '/api/latest-version') return env.ASSETS.fetch(request);
+    if (url.pathname !== '/api/latest-version') return serveLegacyAsset(request, env);
     if (request.method !== 'GET')
       return new Response('Method not allowed', { status: 405, headers: { Allow: 'GET' } });
 
