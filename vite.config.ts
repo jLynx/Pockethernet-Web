@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath, URL } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
@@ -8,6 +10,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: null,
       includeAssets: ['logo-192.png', 'logo-512.png'],
       manifest: {
         name: 'Pocketweb for Pockethernet',
@@ -34,6 +37,20 @@ export default defineConfig({
       workbox: {
         cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff,woff2}'],
+        manifestTransforms: [
+          async (manifestEntries) => ({
+            manifest: manifestEntries.map((entry) =>
+              entry.url === 'assets/logo.png'
+                ? {
+                    ...entry,
+                    revision: createHash('sha256')
+                      .update(readFileSync(new URL('./src/assets/logo.png', import.meta.url)))
+                      .digest('hex'),
+                  }
+                : entry,
+            ),
+          }),
+        ],
         navigateFallback: '/index.html',
       },
     }),
@@ -41,6 +58,14 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
+  },
+  build: {
+    rolldownOptions: {
+      output: {
+        assetFileNames: (asset) =>
+          asset.name === 'logo.png' ? 'assets/logo.png' : 'assets/[name]-[hash][extname]',
+      },
     },
   },
   server: {

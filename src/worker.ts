@@ -10,12 +10,13 @@ async function serveLegacyAsset(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
   const icon = /^\/pockethernet-(192|512)\.png$/.exec(url.pathname);
   const entry = /^\/assets\/index-[\w-]+\.(js|css)$/.exec(url.pathname);
-  if (!icon && !entry) return env.ASSETS.fetch(request);
+  const logo = /^\/assets\/logo-[\w-]+\.png$/.test(url.pathname);
+  if (!icon && !entry && !logo) return env.ASSETS.fetch(request);
 
   const original = await env.ASSETS.fetch(request);
   if (original.ok && !original.headers.get('Content-Type')?.includes('text/html')) return original;
 
-  let currentPath = icon ? `/logo-${icon[1]}.png` : '';
+  let currentPath = icon ? `/logo-${icon[1]}.png` : logo ? '/assets/logo.png' : '';
   if (entry) {
     const index = await env.ASSETS.fetch(new Request(new URL('/index.html', url)));
     if (!index.ok) return new Response('Asset not found', { status: 404 });

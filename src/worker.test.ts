@@ -14,6 +14,7 @@ const files = new Map([
   ['/assets/index-new123.css', { body: 'body { color: red; }', type: 'text/css' }],
   ['/logo-192.png', { body: 'current icon', type: 'image/png' }],
   ['/logo-512.png', { body: 'current large icon', type: 'image/png' }],
+  ['/assets/logo.png', { body: 'current wordmark', type: 'image/png' }],
 ]);
 
 const env = {
@@ -47,6 +48,11 @@ for (const size of [192, 512]) {
   assert.equal(oldIcon.headers.get('Content-Type'), 'image/png');
   assert.equal(oldIcon.headers.get('Cache-Control'), 'no-store');
 }
+
+const oldLogo = await get('/assets/logo-B82RYX1l.png');
+assert.equal(oldLogo.headers.get('Content-Type'), 'image/png');
+assert.equal(oldLogo.headers.get('Cache-Control'), 'no-store');
+assert.equal(await oldLogo.text(), 'current wordmark');
 
 const currentScript = await get('/assets/index-new123.js');
 assert.equal(currentScript.headers.get('Cache-Control'), null);
