@@ -1,10 +1,10 @@
-# 🔌 [Pockethernet Web](https://pockethernet.jlynx.net/)
+# 🔌 [Pocketweb for Pockethernet](https://pockethernet.jlynx.net/)
 
-[![Pockethernet Live](https://img.shields.io/badge/Live-pockethernet.jlynx.net-success?style=for-the-badge&logo=cloudflare)](https://pockethernet.jlynx.net/)
+[![Pocketweb Live](https://img.shields.io/badge/Live-pockethernet.jlynx.net-success?style=for-the-badge&logo=cloudflare)](https://pockethernet.jlynx.net/)
 [![React](https://img.shields.io/badge/React-Vite-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![Web Bluetooth](https://img.shields.io/badge/Web%20Bluetooth-Device%20Connection-0082FC?style=for-the-badge&logo=bluetooth&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/API/Web_Bluetooth_API)
 
-Pockethernet Web is a modern, installable browser application built specifically for Pockethernet 2 hardware. It connects directly over Web Bluetooth and provides cable diagnostics, network measurements, device tools, and shareable PDF reports without requiring a native mobile app. The original first-generation Pockethernet is not currently supported, but support may be considered if there is enough community interest.
+Pocketweb for Pockethernet is a modern, installable browser application built specifically for Pockethernet 2 hardware. It connects directly over Web Bluetooth and provides cable diagnostics, network measurements, device tools, and shareable PDF reports without requiring a native mobile app. The original first-generation Pockethernet is not currently supported, but support may be considered if there is enough community interest.
 
 > Pockethernet is a registered trademark of Pockethernet Ltd. This web application is an independent, open-source project and is not affiliated with, endorsed by, or sponsored by Pockethernet Ltd.
 
@@ -23,7 +23,7 @@ Pockethernet Web is a modern, installable browser application built specifically
 
 This is an original React/TypeScript application with its own interface, architecture, state management, reporting system, and browser-focused workflows. Pockethernet 2 compatibility was developed from device testing, observed behavior, public networking standards, and technical analysis of the original software where needed to understand the device protocol.
 
-Low-level packet research and implementation notes are kept separately in [Protocol research](docs/PROTOCOL_RESEARCH.md).
+Low-level packet research, app decompilation, and implementation notes are kept separately in [Protocol research](docs/PROTOCOL_RESEARCH.md).
 
 ## Quick start
 

@@ -8,10 +8,10 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['pockethernet-192.png', 'pockethernet-512.png'],
+      includeAssets: ['logo-192.png', 'logo-512.png'],
       manifest: {
-        name: 'Pockethernet Web',
-        short_name: 'Pockethernet',
+        name: 'Pocketweb for Pockethernet',
+        short_name: 'Pocketweb',
         description: 'Control and run tests with a Pockethernet network analyzer.',
         theme_color: '#246fc5',
         background_color: '#f4f6f8',
@@ -20,12 +20,12 @@ export default defineConfig({
         scope: '/',
         icons: [
           {
-            src: '/pockethernet-192.png',
+            src: '/logo-192.png',
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: '/pockethernet-512.png',
+            src: '/logo-512.png',
             sizes: '512x512',
             type: 'image/png',
           },
@@ -50,7 +50,7 @@ export default defineConfig({
         '**/dist/**',
         '**/storybook-static/**',
         '**/.wrangler/**',
-        '**/public/pockethernet-*.png',
+        '**/public/logo-*.png',
       ],
     },
     proxy: {

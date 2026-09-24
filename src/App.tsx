@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactElement } from 'react';
-import pockethernetWordmark from '@/assets/pockethernet-wordmark.png';
+import logo from '@/assets/logo.png';
 import {
   blinkerCommand,
   parseFirmwareVersionResponse,
@@ -350,7 +350,7 @@ export default function App(): ReactElement {
   return (
     <div className="original-app">
       <header className="original-header">
-        <img className="wordmark" src={pockethernetWordmark} alt="Pockethernet" />
+        <img className="wordmark" src={logo} alt="Pocketweb for Pockethernet" />
         <div className="header-actions">
           <GitHubLink />
           <ConnectionButton

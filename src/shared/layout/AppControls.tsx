@@ -13,7 +13,7 @@ export function GitHubLink(): ReactElement {
       href="https://github.com/jLynx/Pockethernet-Web"
       target="_blank"
       rel="noreferrer"
-      aria-label="View Pockethernet Web on GitHub"
+      aria-label="View Pocketweb for Pockethernet on GitHub"
       title="View on GitHub"
     >
       <FaGithub aria-hidden="true" />

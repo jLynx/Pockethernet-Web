@@ -1,7 +1,7 @@
 import type { jsPDF } from 'jspdf';
 import { distanceForUnits, distanceUnitLabel, pairColorsForTia } from '@/app/format';
 import type { SavedReport, TiaStandard, Units } from '@/app/types';
-import pockethernetWordmark from '@/assets/pockethernet-wordmark.png?inline';
+import logo from '@/assets/logo.png?inline';
 
 export const BLUE = '#246fc5';
 export const GREY = '#777777';
@@ -55,7 +55,7 @@ export function drawBrand(doc: jsPDF, logoDataUrl: string, footer = false): void
   const y = footer ? 288.2 : 7;
   const maxWidth = footer ? 28 : 50;
   const maxHeight = footer ? 6 : 10;
-  const source = logoDataUrl || pockethernetWordmark;
+  const source = logoDataUrl || logo;
   try {
     const image = doc.getImageProperties(source);
     const ratio = image.width / image.height;
@@ -65,8 +65,11 @@ export function drawBrand(doc: jsPDF, logoDataUrl: string, footer = false): void
   } catch {
     doc.setTextColor(12, 25, 43);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(footer ? 10 : 17);
-    doc.text('Pockethernet', x, y + (footer ? 4.7 : 7));
+    const brand = 'Pocketweb for Pockethernet';
+    const fontSize = footer ? 10 : 17;
+    doc.setFontSize(fontSize);
+    doc.setFontSize(Math.min(fontSize, (fontSize * maxWidth) / doc.getTextWidth(brand)));
+    doc.text(brand, x, y + (footer ? 4.7 : 7));
   }
 }
 

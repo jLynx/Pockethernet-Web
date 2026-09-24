@@ -1,5 +1,5 @@
 import type { ReactElement, ReactNode } from 'react';
-import pockethernetWordmark from '@/assets/pockethernet-wordmark.png';
+import logo from '@/assets/logo.png';
 
 type DeviceFamily = 'ios' | 'android' | 'desktop';
 
@@ -76,7 +76,7 @@ export function WebBluetoothGate({ children }: { children: ReactNode }): ReactEl
   return (
     <main className="support-page">
       <section className="support-panel" aria-labelledby="support-title">
-        <img className="support-wordmark" src={pockethernetWordmark} alt="Pockethernet" />
+        <img className="support-wordmark" src={logo} alt="Pocketweb for Pockethernet" />
         <div className="support-status" aria-hidden="true">
           <span />
         </div>

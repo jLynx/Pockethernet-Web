@@ -4,7 +4,10 @@ import { drawReportPage } from './reportPdfLayout';
 
 function filename(report: SavedReport): string {
   const label = report.details.tag || report.details.address || 'measurement';
-  return `Pockethernet ${label} ${report.createdAt.slice(0, 10)}`.replace(/[<>:"/\\|?*]+/g, '-');
+  return `Pocketweb for Pockethernet ${label} ${report.createdAt.slice(0, 10)}`.replace(
+    /[<>:"/\\|?*]+/g,
+    '-',
+  );
 }
 
 export function createReportsPdf(reports: SavedReport[], logoDataUrl: string): jsPDF {
@@ -21,7 +24,7 @@ export function downloadReportsPdf(reports: SavedReport[], logoDataUrl: string):
   const name =
     reports.length === 1
       ? filename(reports[0])
-      : `Pockethernet reports ${new Date().toISOString().slice(0, 10)}`;
+      : `Pocketweb for Pockethernet reports ${new Date().toISOString().slice(0, 10)}`;
   createReportsPdf(reports, logoDataUrl).save(`${name}.pdf`);
 }
 
@@ -34,7 +37,7 @@ export async function shareReportPdf(report: SavedReport, logoDataUrl: string): 
     },
   );
   if (!navigator.share || !navigator.canShare?.({ files: [file] })) return false;
-  await navigator.share({ title: 'Pockethernet measurement report', files: [file] });
+  await navigator.share({ title: 'Pocketweb for Pockethernet measurement report', files: [file] });
   return true;
 }
 

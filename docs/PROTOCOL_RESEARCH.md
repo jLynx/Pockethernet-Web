@@ -1,8 +1,8 @@
 # Protocol Research
 
-This document records the technical research used to make Pockethernet Web compatible with Pockethernet 2 hardware. The original first-generation Pockethernet is not currently supported, but support may be considered if there is enough community interest. This document is intended for maintainers working on the BLE transport, packet formats, parsers, and measurement behavior.
+This document records the technical research used to make Pocketweb for Pockethernet compatible with Pockethernet 2 hardware. The original first-generation Pockethernet is not currently supported, but support may be considered if there is enough community interest. This document is intended for maintainers working on the BLE transport, packet formats, parsers, and measurement behavior.
 
-Pockethernet Web is an independent implementation. Its React interface, application architecture, browser workflows, reporting system, and visual design were developed for this project. Existing software was consulted only where needed to understand the hardware protocol and expected measurement behavior, alongside physical device testing and public networking standards.
+Pocketweb for Pockethernet is an independent implementation. Its React interface, application architecture, browser workflows, reporting system, and visual design were developed for this project. Existing software was consulted only where needed to understand the hardware protocol and expected measurement behavior, alongside physical device testing and public networking standards.
 
 ## Reference material
 
