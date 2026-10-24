@@ -9,10 +9,10 @@
   flex: 0 0 auto;
   display: grid;
   place-items: center;
-  border: 1px solid #d8e0e9;
+  border: 1px solid var(--border-control, #d8e0e9);
   border-radius: 14px;
-  color: #304056;
-  background: #fff;
+  color: var(--text-secondary, #304056);
+  background: var(--surface, #fff);
   box-shadow: 0 3px 10px #1721330c;
 }
 .github-link svg {
@@ -20,9 +20,9 @@
   height: 23px;
 }
 .github-link:hover {
-  border-color: #8abce3;
-  color: #0878ca;
-  background: #f5faff;
+  border-color: var(--border-hover, #8abce3);
+  color: var(--accent, #0878ca);
+  background: var(--surface-hover, #f5faff);
 }
 .github-link:focus-visible {
   outline: 3px solid #7cc4ff;
@@ -30,9 +30,9 @@
 }
 .app-footer {
   padding: 18px clamp(18px, 4vw, 34px);
-  border-top: 1px solid #e5eaf0;
-  color: #718096;
-  background: #f8fafc;
+  border-top: 1px solid var(--border, #e5eaf0);
+  color: var(--text-muted, #718096);
+  background: var(--surface-page, #f8fafc);
   font-size: 0.72rem;
   line-height: 1.55;
   text-align: center;
@@ -43,7 +43,7 @@
   text-underline-offset: 2px;
 }
 .app-footer a:hover {
-  color: #0878ca;
+  color: var(--accent, #0878ca);
 }
 .app-footer a:focus-visible {
   border-radius: 2px;

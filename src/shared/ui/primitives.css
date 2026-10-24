@@ -20,13 +20,13 @@
   background: #066db8;
 }
 .ui-button.secondary {
-  border-color: #cfd9e4;
-  color: #0878ca;
-  background: #f4faff;
+  border-color: var(--border-control, #cfd9e4);
+  color: var(--accent, #0878ca);
+  background: var(--surface-hover, #f4faff);
 }
 .ui-button.secondary:hover:not(:disabled) {
-  border-color: #79b8df;
-  background: #e9f5fc;
+  border-color: var(--border-hover, #79b8df);
+  background: var(--surface-accent, #e9f5fc);
 }
 .ui-button.ghost {
   color: inherit;
@@ -39,9 +39,9 @@
 .ui-card {
   min-width: 0;
   overflow: hidden;
-  border: 1px solid #dfe6ed;
+  border: 1px solid var(--border, #dfe6ed);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface, #fff);
   box-shadow: 0 3px 10px #1f36520c;
 }
 .toggle-switch {
@@ -52,10 +52,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border: 1px solid #bdc6cf;
+  border: 1px solid var(--border-control, #bdc6cf);
   border-radius: 16px;
-  color: #68768a;
-  background: #f4f7fa;
+  color: var(--text-muted, #68768a);
+  background: var(--surface-muted, #f4f7fa);
   font-size: 0.74rem;
   font-weight: 800;
   cursor: pointer;
@@ -92,7 +92,7 @@
   height: 25px;
   flex: 0 0 auto;
   border-radius: 999px;
-  background: #bdc6cf;
+  background: var(--border-control, #bdc6cf);
   box-shadow: inset 0 0 0 1px #aeb8c2;
   transition: background 0.18s ease;
 }
@@ -144,23 +144,23 @@
 .segmented-control button {
   min-height: 36px;
   padding: 6px 8px;
-  border: 1px solid #cfd9e4;
+  border: 1px solid var(--border-control, #cfd9e4);
   border-radius: 6px;
-  color: #5f6e80;
-  background: #fff;
+  color: var(--text-secondary, #5f6e80);
+  background: var(--surface, #fff);
   font: inherit;
   font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
 }
 .segmented-control button.selected {
-  border-color: #0878ca;
+  border-color: var(--accent, #0878ca);
   color: #fff;
   background: #0878ca;
 }
 .text-field,
 .select-field {
-  color: #5f6e80;
+  color: var(--text-secondary, #5f6e80);
   font-size: 0.8rem;
   font-weight: 700;
 }
@@ -169,9 +169,9 @@
   min-width: 0;
   height: 38px;
   padding: 0 9px;
-  border: 1px solid #cfd9e4;
+  border: 1px solid var(--border-control, #cfd9e4);
   border-radius: 6px;
-  color: #192a40;
-  background: #fff;
+  color: var(--text, #192a40);
+  background: var(--surface, #fff);
   font: inherit;
 }

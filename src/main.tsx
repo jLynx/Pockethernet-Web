@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
 import App from './App';
 import { WebBluetoothGate } from './shared/layout/WebBluetoothGate';
+import './theme.css';
 import './shared/ui/primitives.css';
 import './styles.css';
 import './shared/layout/layout.css';

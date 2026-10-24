@@ -8,15 +8,15 @@
 }
 .reports-header h1 {
   margin: 2px 0 0;
-  color: #15243a;
+  color: var(--text, #15243a);
   font-size: clamp(1.45rem, 3vw, 2rem);
 }
 .report-composer,
 .report-library {
   margin-bottom: 18px;
-  border: 1px solid #dfe6ed;
+  border: 1px solid var(--border, #dfe6ed);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface, #fff);
   box-shadow: 0 3px 10px #1f36520c;
 }
 .report-composer > header,
@@ -26,18 +26,18 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  border-bottom: 1px solid #e5ebf1;
+  border-bottom: 1px solid var(--border, #e5ebf1);
 }
 .report-composer h2,
 .report-library h2 {
   margin: 0;
-  color: #18283e;
+  color: var(--text, #18283e);
   font-size: 1rem;
 }
 .report-composer header p,
 .report-library header p {
   margin: 4px 0 0;
-  color: #718096;
+  color: var(--text-muted, #718096);
   font-size: 0.8rem;
 }
 .report-fields {
@@ -57,8 +57,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  border-top: 1px solid #e5ebf1;
-  color: #5f6e80;
+  border-top: 1px solid var(--border, #e5ebf1);
+  color: var(--text-secondary, #5f6e80);
   font-size: 0.8rem;
   font-weight: 700;
 }
@@ -76,10 +76,10 @@
   padding: 7px 12px;
   display: inline-flex;
   align-items: center;
-  border: 1px solid #cfd9e4;
+  border: 1px solid var(--border-control, #cfd9e4);
   border-radius: 6px;
-  color: #0878ca;
-  background: #f4faff;
+  color: var(--accent, #0878ca);
+  background: var(--surface-hover, #f4faff);
   cursor: pointer;
 }
 .report-file-button input {
@@ -92,7 +92,7 @@
   margin: 18px;
   padding: 36px 20px;
   text-align: center;
-  color: #718096;
+  color: var(--text-muted, #718096);
 }
 .report-list {
   display: grid;
@@ -104,7 +104,7 @@
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 14px;
-  border-bottom: 1px solid #e5ebf1;
+  border-bottom: 1px solid var(--border, #e5ebf1);
 }
 .report-row:last-child {
   border-bottom: 0;
@@ -120,13 +120,13 @@
 }
 .report-row-copy strong {
   overflow: hidden;
-  color: #18283e;
+  color: var(--text, #18283e);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .report-row-copy span,
 .report-row-copy small {
-  color: #718096;
+  color: var(--text-muted, #718096);
   font-size: 0.78rem;
 }
 .report-actions {
@@ -134,7 +134,7 @@
   gap: 7px;
 }
 .report-actions .report-delete {
-  color: #b32932;
+  color: var(--text-danger, #b32932);
 }
 @media (max-width: 720px) {
   .report-fields {

@@ -3,13 +3,13 @@
   height: 100%;
   display: grid;
   place-items: center;
-  color: #777;
-  background: #fff;
+  color: var(--text-muted, #777);
+  background: var(--surface, #fff);
   font-size: 1rem;
 }
 
 .unknown-label {
-  fill: #e01818;
+  fill: var(--text-danger, #e01818);
   font:
     700 38px Arial,
     sans-serif;
@@ -17,10 +17,10 @@
 }
 
 .short-circuit line {
-  stroke: #e01818;
+  stroke: var(--text-danger, #e01818);
   stroke-width: 6;
 }
 
 .short-circuit circle {
-  fill: #e01818;
+  fill: var(--text-danger, #e01818);
 }

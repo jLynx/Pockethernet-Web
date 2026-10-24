@@ -19,6 +19,13 @@ const crosstalkSeries: ChartSeries[] = [
   { label: 'Pair 1-4', color: '#12a52b' },
 ];
 
+function chartColour(colour: string): string {
+  if (colour === '#000000') return 'var(--wire-shield, #000000)';
+  if (colour === '#1049cf' || colour === '#0000ff') return `var(--wire-blue, ${colour})`;
+  if (colour === '#a56a2c') return 'var(--wire-brown, #a56a2c)';
+  return colour;
+}
+
 interface TdrLineChartProps {
   title: string;
   traces: number[][];
@@ -138,7 +145,7 @@ function TdrLineChart({ title, traces, series, nvp, units }: TdrLineChartProps):
             key={series[index].label}
             d={path}
             fill="none"
-            stroke={series[index].color}
+            stroke={chartColour(series[index].color)}
             strokeWidth="2"
             vectorEffect="non-scaling-stroke"
           />
@@ -159,7 +166,12 @@ function TdrLineChart({ title, traces, series, nvp, units }: TdrLineChartProps):
               Distance = {distance(cursor).toFixed(1)} {distanceUnitLabel(units)}
             </text>
             {series.map((item, index) => (
-              <text key={item.label} x={width - 232} y={top + 53 + index * 22} fill={item.color}>
+              <text
+                key={item.label}
+                x={width - 232}
+                y={top + 53 + index * 22}
+                style={{ fill: chartColour(item.color) }}
+              >
                 {item.label} = {traces[index][cursor] ?? 0}
               </text>
             ))}

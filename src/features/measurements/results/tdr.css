@@ -3,7 +3,7 @@
   display: grid;
   place-items: center;
   padding: 24px;
-  color: #777;
+  color: var(--text-muted, #777);
   text-align: center;
 }
 
@@ -12,15 +12,15 @@
   display: grid;
   grid-template-rows: repeat(5, 1fr);
   padding: 12px 18px;
-  background: #fff;
+  background: var(--surface, #fff);
 }
 
 .tdr-row {
   display: grid;
   grid-template-columns: 0.7fr 1.4fr 1fr;
   align-items: center;
-  border-bottom: 1px solid #d7d7d7;
-  color: #333;
+  border-bottom: 1px solid var(--border, #d7d7d7);
+  color: var(--text, #333);
   font-size: 1.15rem;
   text-align: center;
 }
@@ -34,7 +34,7 @@
 }
 
 .tdr-header {
-  color: #555;
+  color: var(--text-secondary, #555);
   font-weight: 700;
 }
 
@@ -42,7 +42,7 @@
   height: 100%;
   padding: 8px 10px;
   overflow-y: auto;
-  background: #fff;
+  background: var(--surface, #fff);
 }
 
 .tdr-chart {
@@ -54,18 +54,18 @@
   width: 100%;
   touch-action: none;
   cursor: crosshair;
-  background: #fff;
+  background: var(--surface, #fff);
 }
 
 .tdr-chart-axis,
 .tdr-chart-zero {
-  stroke: #111;
+  stroke: var(--text, #111);
   stroke-width: 3;
   vector-effect: non-scaling-stroke;
 }
 
 .tdr-chart-grid {
-  stroke: #aaa;
+  stroke: var(--chart-grid, #aaa);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
 }
@@ -75,7 +75,7 @@
 .tdr-chart-tick,
 .tdr-chart-readout text {
   font-family: Arial, sans-serif;
-  fill: #111;
+  fill: var(--text, #111);
 }
 
 .tdr-chart-title,
@@ -88,13 +88,13 @@
 }
 
 .tdr-chart-cursor {
-  stroke: #f01818;
+  stroke: var(--text-danger, #f01818);
   stroke-width: 3;
   vector-effect: non-scaling-stroke;
 }
 
 .tdr-chart-readout rect {
-  fill: #fffffff0;
+  fill: var(--surface-floating, #fffffff0);
 }
 
 .tdr-chart-readout text {
@@ -103,7 +103,7 @@
 
 .tdr-chart figcaption {
   margin-top: -4px;
-  color: #777;
+  color: var(--text-muted, #777);
   font-size: 0.75rem;
   text-align: center;
 }

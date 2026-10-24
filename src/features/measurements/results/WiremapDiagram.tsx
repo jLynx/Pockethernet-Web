@@ -18,22 +18,22 @@ export function WiremapDiagram({
           2: '#17a12a',
           3: '#ff941e',
           6: '#ff941e',
-          4: '#1049cf',
-          5: '#1049cf',
-          7: '#a56a2c',
-          8: '#a56a2c',
-          9: '#000000',
+          4: 'var(--wire-blue, #1049cf)',
+          5: 'var(--wire-blue, #1049cf)',
+          7: 'var(--wire-brown, #a56a2c)',
+          8: 'var(--wire-brown, #a56a2c)',
+          9: 'var(--wire-shield, #000000)',
         }
       : {
           1: '#ff941e',
           2: '#ff941e',
           3: '#17a12a',
           6: '#17a12a',
-          4: '#1049cf',
-          5: '#1049cf',
-          7: '#a56a2c',
-          8: '#a56a2c',
-          9: '#000000',
+          4: 'var(--wire-blue, #1049cf)',
+          5: 'var(--wire-blue, #1049cf)',
+          7: 'var(--wire-brown, #a56a2c)',
+          8: 'var(--wire-brown, #a56a2c)',
+          9: 'var(--wire-shield, #000000)',
         };
   const striped = new Set([1, 3, 5, 7]);
   const yFor = (wire: number): number => 38 + pins.indexOf(wire) * 54;
@@ -75,7 +75,7 @@ export function WiremapDiagram({
   return (
     <div className="wiremap-diagram">
       <svg viewBox="0 0 960 520" role="img" aria-label={`Wiremap result: ${result.summary}`}>
-        <rect x="0" y="0" width="960" height="520" fill="white" />
+        <rect x="0" y="0" width="960" height="520" className="wiremap-background" />
         {pins.map((wire) => {
           const y = yFor(wire);
           const label = wire === 9 ? 'S' : wire;

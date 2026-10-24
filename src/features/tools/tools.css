@@ -8,14 +8,14 @@
   align-items: center;
   justify-content: flex-end;
   gap: 22px;
-  border-top: 1px solid #dfe6ed;
-  background: #ffffffed;
+  border-top: 1px solid var(--border, #dfe6ed);
+  background: var(--surface-floating, #ffffffed);
 }
 .action-status {
   display: flex;
   align-items: center;
   gap: 9px;
-  color: #68768a;
+  color: var(--text-muted, #68768a);
   font-size: 0.83rem;
 }
 .measure-button {
@@ -41,7 +41,7 @@
 }
 .measure-button:disabled {
   color: #f5f7f9;
-  background: #9eb3c3;
+  background: var(--surface-disabled, #9eb3c3);
   box-shadow: none;
   cursor: not-allowed;
 }
@@ -49,7 +49,7 @@
   width: 17px;
   height: 17px;
   border: 2px solid #ffffff70;
-  border-top-color: #fff;
+  border-top-color: var(--surface, #fff);
   border-radius: 50%;
   animation: spin 0.75s linear infinite;
 }
@@ -69,7 +69,7 @@
   border: 0;
   border-radius: 11px;
   color: #fff;
-  background: #182331ed;
+  background: var(--surface-toast, #182331ed);
   box-shadow: 0 8px 25px #0003;
   font-size: 0.88rem;
   cursor: pointer;
@@ -81,10 +81,10 @@
 }
 .simple-page h1 {
   margin-bottom: 8px;
-  color: #0878ca;
+  color: var(--accent, #0878ca);
 }
 .simple-page p {
-  color: #718096;
+  color: var(--text-muted, #718096);
 }
 .tools-page {
   min-height: 60vh;
@@ -99,7 +99,7 @@
 }
 .tools-header h1 {
   margin: 2px 0 0;
-  color: #15243a;
+  color: var(--text, #15243a);
   font-size: clamp(1.45rem, 3vw, 2rem);
   letter-spacing: -0.03em;
 }
@@ -111,17 +111,17 @@
 .tools-manual-link {
   flex: 0 0 auto;
   padding: 8px 10px;
-  border: 1px solid #cfd9e4;
+  border: 1px solid var(--border-control, #cfd9e4);
   border-radius: 6px;
-  color: #0878ca;
-  background: #f4faff;
+  color: var(--accent, #0878ca);
+  background: var(--surface-hover, #f4faff);
   font-size: 0.78rem;
   font-weight: 700;
   text-decoration: none;
 }
 .tools-manual-link:hover {
-  border-color: #79b8df;
-  background: #e9f5fc;
+  border-color: var(--border-hover, #79b8df);
+  background: var(--surface-accent, #e9f5fc);
 }
 .tools-board {
   display: grid;
@@ -136,9 +136,9 @@
 .tool-panel {
   min-width: 0;
   overflow: hidden;
-  border: 1px solid #dfe6ed;
+  border: 1px solid var(--border, #dfe6ed);
   border-radius: 8px;
-  background: #fff;
+  background: var(--surface, #fff);
   box-shadow: 0 3px 10px #1f36520c;
 }
 .tool-panel.active {
@@ -151,28 +151,28 @@
   align-items: center;
   justify-content: space-between;
   gap: 13px;
-  border-bottom: 1px solid #e5ebf1;
+  border-bottom: 1px solid var(--border, #e5ebf1);
 }
 .tool-panel-header h2 {
   margin: 0;
-  color: #18283e;
+  color: var(--text, #18283e);
   font-size: 0.95rem;
 }
 .tool-panel-header p {
   margin: 3px 0 0;
-  color: #718096;
+  color: var(--text-muted, #718096);
   font-size: 0.76rem;
 }
 .tool-status {
   margin-left: auto;
-  color: #718096;
+  color: var(--text-muted, #718096);
   font-size: 0.76rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 .tool-panel.active .tool-status {
-  color: #159153;
+  color: var(--text-success, #159153);
 }
 .tool-controls {
   padding: 14px 16px 16px;
@@ -184,7 +184,7 @@
   margin: 0;
   padding: 0 0 11px;
   border: 0;
-  border-bottom: 1px solid #e5ebf1;
+  border-bottom: 1px solid var(--border, #e5ebf1);
 }
 .tool-control:last-child {
   padding-bottom: 0;
@@ -193,7 +193,7 @@
 .tool-control legend {
   margin-bottom: 8px;
   padding: 0;
-  color: #5f6e80;
+  color: var(--text-secondary, #5f6e80);
   font-size: 0.8rem;
   font-weight: 800;
 }
@@ -202,7 +202,7 @@
   grid-template-columns: minmax(100px, 0.7fr) minmax(0, 1.3fr);
   align-items: center;
   gap: 14px;
-  color: #5f6e80;
+  color: var(--text-secondary, #5f6e80);
   font-size: 0.8rem;
   font-weight: 800;
 }
@@ -210,16 +210,16 @@
   min-width: 0;
   height: 36px;
   padding: 0 9px;
-  border: 1px solid #cfd9e4;
+  border: 1px solid var(--border-control, #cfd9e4);
   border-radius: 6px;
-  color: #192a40;
-  background: #fff;
+  color: var(--text, #192a40);
+  background: var(--surface, #fff);
   font: inherit;
   font-weight: 500;
 }
 .tool-field input:disabled {
   color: #9aa6b2;
-  background: #f3f6f8;
+  background: var(--surface-muted, #f3f6f8);
 }
 .tool-info-row,
 .tool-action {
@@ -228,12 +228,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  border-bottom: 1px solid #e5ebf1;
-  color: #5f6e80;
+  border-bottom: 1px solid var(--border, #e5ebf1);
+  color: var(--text-secondary, #5f6e80);
   font-size: 0.82rem;
 }
 .tool-info-row strong {
-  color: #192a40;
+  color: var(--text, #192a40);
   text-align: right;
   font-size: 0.8rem;
 }
@@ -244,17 +244,17 @@
 .tool-action-button {
   min-height: 32px;
   padding: 5px 10px;
-  border: 1px solid #cfd9e4;
+  border: 1px solid var(--border-control, #cfd9e4);
   border-radius: 6px;
-  color: #718096;
-  background: #f3f6f8;
+  color: var(--text-muted, #718096);
+  background: var(--surface-muted, #f3f6f8);
   font-size: 0.78rem;
   font-weight: 700;
 }
 .tool-action button:not(:disabled),
 .tool-action-button {
-  color: #0878ca;
-  background: #f4faff;
+  color: var(--accent, #0878ca);
+  background: var(--surface-hover, #f4faff);
   cursor: pointer;
   text-decoration: none;
 }
@@ -265,7 +265,7 @@
   width: 54px;
   height: 32px;
   object-fit: contain;
-  background: #eef2f6;
+  background: var(--surface-body, #eef2f6);
   border-radius: 4px;
 }
 .report-logo-action .tool-action-button {
@@ -283,34 +283,34 @@
 .report-logo-action .report-logo-remove {
   width: 32px;
   padding: 0;
-  color: #b32932;
-  background: #fff;
+  color: var(--text-danger, #b32932);
+  background: var(--surface, #fff);
   cursor: pointer;
 }
 .tool-firmware-result {
   padding: 9px 10px;
   border-radius: 6px;
-  color: #5f6e80;
-  background: #f3f6f8;
+  color: var(--text-secondary, #5f6e80);
+  background: var(--surface-muted, #f3f6f8);
   font-size: 0.8rem;
   font-weight: 700;
 }
 .tool-firmware-result.update {
-  color: #9a6500;
-  background: #fff7df;
+  color: var(--text-warning, #9a6500);
+  background: var(--surface-warning, #fff7df);
 }
 .tool-firmware-result.current {
-  color: #159153;
-  background: #eaf8f0;
+  color: var(--text-success, #159153);
+  background: var(--surface-success, #eaf8f0);
 }
 .tool-firmware-result.error {
-  color: #c73740;
-  background: #fff0f1;
+  color: var(--text-danger, #c73740);
+  background: var(--surface-danger, #fff0f1);
 }
 
 @media (max-width: 720px) {
   body {
-    background: #f8fafc;
+    background: var(--surface-page, #f8fafc);
   }
   .original-app {
     box-shadow: none;
@@ -473,7 +473,7 @@
     position: absolute;
     right: 5px;
     bottom: 5px;
-    border: 2px solid #fff;
+    border: 2px solid var(--surface, #fff);
   }
   .nav-tile {
     gap: 6px;

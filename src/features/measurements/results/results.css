@@ -1,7 +1,7 @@
 .ber-results {
   min-height: 300px;
   padding: 22px;
-  background: #fff;
+  background: var(--surface, #fff);
 }
 .ber-settings {
   display: grid;
@@ -11,7 +11,7 @@
 .ber-settings label {
   display: grid;
   gap: 6px;
-  color: #5f6e80;
+  color: var(--text-secondary, #5f6e80);
   font-size: 0.8rem;
   font-weight: 700;
 }
@@ -19,31 +19,31 @@
   min-width: 0;
   height: 38px;
   padding: 0 8px;
-  border: 1px solid #cfd9e4;
+  border: 1px solid var(--border-control, #cfd9e4);
   border-radius: 6px;
-  color: #192a40;
-  background: #fff;
+  color: var(--text, #192a40);
+  background: var(--surface, #fff);
   font: inherit;
 }
 .ber-table {
   margin-top: 24px;
-  border-top: 1px solid #dfe6ed;
+  border-top: 1px solid var(--border, #dfe6ed);
 }
 .ber-table div {
   min-height: 42px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #dfe6ed;
-  color: #5f6e80;
+  border-bottom: 1px solid var(--border, #dfe6ed);
+  color: var(--text-secondary, #5f6e80);
 }
 .ber-table strong {
-  color: #192a40;
+  color: var(--text, #192a40);
   font-size: 1.05rem;
 }
 .ber-progress {
   margin: 16px 0 0;
-  color: #0878ca;
+  color: var(--accent, #0878ca);
   font-size: 0.82rem;
   font-weight: 700;
   text-align: right;
@@ -58,7 +58,7 @@
 .ipv6-results {
   min-height: 300px;
   padding: 20px 24px;
-  background: #fff;
+  background: var(--surface, #fff);
 }
 .poe-awaiting,
 .link-awaiting,
@@ -79,7 +79,7 @@
   display: grid;
   place-items: center;
   padding: 24px;
-  color: #718096;
+  color: var(--text-muted, #718096);
   text-align: center;
 }
 .link-no-link,
@@ -89,7 +89,7 @@
 .traffic-no-result,
 .ipv4-no-result,
 .ipv6-no-result {
-  color: #c73740;
+  color: var(--text-danger, #c73740);
   font-weight: 800;
 }
 .poe-row,
@@ -104,8 +104,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  border-bottom: 1px solid #dfe6ed;
-  color: #5f6e80;
+  border-bottom: 1px solid var(--border, #dfe6ed);
+  color: var(--text-secondary, #5f6e80);
 }
 .poe-row strong,
 .link-row strong,
@@ -114,7 +114,7 @@
 .ping-row strong,
 .ipv4-row strong,
 .ipv6-row strong {
-  color: #192a40;
+  color: var(--text, #192a40);
   text-align: right;
 }
 .poe-pairs-title,
@@ -122,7 +122,7 @@
 .ipv4-section-title,
 .ipv6-section-title {
   padding: 4px 0 6px;
-  color: #0878ca;
+  color: var(--accent, #0878ca);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -142,7 +142,7 @@
   display: inline-block;
   min-width: 66px;
   margin-left: 16px;
-  color: #718096;
+  color: var(--text-muted, #718096);
   font-size: 0.78rem;
   font-weight: 500;
 }
@@ -152,14 +152,14 @@
   justify-content: space-between;
   gap: 18px;
   padding: 4px 0 8px;
-  color: #0878ca;
+  color: var(--accent, #0878ca);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 .cdplldp-section-title span {
-  color: #718096;
+  color: var(--text-muted, #718096);
   font-size: 0.72rem;
   font-weight: 500;
   letter-spacing: 0;
@@ -180,8 +180,8 @@
   align-items: center;
   margin-bottom: 22px;
   padding-bottom: 18px;
-  border-bottom: 1px solid #dfe6ed;
-  color: #5f6e80;
+  border-bottom: 1px solid var(--border, #dfe6ed);
+  color: var(--text-secondary, #5f6e80);
   font-size: 0.86rem;
   font-weight: 700;
 }
@@ -196,16 +196,16 @@
   width: 100%;
   height: 38px;
   padding: 0 10px;
-  border: 1px solid #cfd9e4;
+  border: 1px solid var(--border-control, #cfd9e4);
   border-radius: 6px;
-  color: #192a40;
-  background: #fff;
+  color: var(--text, #192a40);
+  background: var(--surface, #fff);
   font: inherit;
   text-align: right;
 }
 .vlan-id-label input:disabled {
-  color: #96a1ae;
-  background: #f4f6f8;
+  color: var(--text-disabled, #96a1ae);
+  background: var(--surface-muted, #f4f6f8);
 }
 .vlan-header,
 .vlan-row {
@@ -214,28 +214,28 @@
   grid-template-columns: 1fr 2fr;
   align-items: center;
   gap: 16px;
-  border-bottom: 1px solid #dfe6ed;
+  border-bottom: 1px solid var(--border, #dfe6ed);
 }
 .vlan-header {
-  color: #0878ca;
+  color: var(--accent, #0878ca);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 .vlan-row strong {
-  color: #192a40;
+  color: var(--text, #192a40);
 }
 
 .extip-results {
   min-height: 300px;
   padding: 20px 24px;
-  background: #fff;
+  background: var(--surface, #fff);
 }
 .traffic-results {
   min-height: 180px;
   padding: 20px 24px;
-  background: #fff;
+  background: var(--surface, #fff);
   overflow-x: auto;
 }
 .traffic-header,
@@ -248,7 +248,7 @@
 }
 .traffic-header {
   padding-bottom: 8px;
-  color: #0878ca;
+  color: var(--accent, #0878ca);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -256,13 +256,13 @@
 }
 .traffic-row {
   min-height: 42px;
-  border-top: 1px solid #dfe6ed;
-  color: #5f6e80;
+  border-top: 1px solid var(--border, #dfe6ed);
+  color: var(--text-secondary, #5f6e80);
   font-family: 'IBM Plex Mono', 'Cascadia Mono', monospace;
   font-size: 0.82rem;
 }
 .traffic-row strong {
-  color: #192a40;
+  color: var(--text, #192a40);
 }
 .ping-server + .ping-server {
   margin-top: 22px;
@@ -272,7 +272,7 @@
   grid-template-columns: 1fr 220px;
   align-items: center;
   gap: 18px;
-  color: #5f6e80;
+  color: var(--text-secondary, #5f6e80);
   font-weight: 700;
 }
 .ping-server input,
@@ -283,10 +283,10 @@
   min-width: 0;
   height: 38px;
   padding: 0 8px;
-  border: 1px solid #cfd9e4;
+  border: 1px solid var(--border-control, #cfd9e4);
   border-radius: 6px;
-  color: #192a40;
-  background: #fff;
+  color: var(--text, #192a40);
+  background: var(--surface, #fff);
   font: inherit;
 }
 .ipv4-settings {
@@ -295,12 +295,12 @@
   gap: 12px;
   margin-bottom: 22px;
   padding-bottom: 18px;
-  border-bottom: 1px solid #dfe6ed;
+  border-bottom: 1px solid var(--border, #dfe6ed);
 }
 .ipv4-settings label {
   display: grid;
   gap: 6px;
-  color: #5f6e80;
+  color: var(--text-secondary, #5f6e80);
   font-size: 0.8rem;
   font-weight: 700;
 }
@@ -311,7 +311,7 @@
   align-items: center;
   gap: 18px;
   margin-bottom: 20px;
-  color: #5f6e80;
+  color: var(--text-secondary, #5f6e80);
   font-size: 0.86rem;
   font-weight: 700;
 }
@@ -330,7 +330,7 @@
   flex: 1;
 }
 .pin-label {
-  fill: #111;
+  fill: var(--text, #111);
   font:
     28px Arial,
     sans-serif;
@@ -340,5 +340,5 @@
   padding: 8px 30px;
   display: flex;
   align-items: center;
-  color: #111;
+  color: var(--text, #111);
 }

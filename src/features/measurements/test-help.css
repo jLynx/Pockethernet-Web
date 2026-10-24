@@ -8,14 +8,14 @@
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: #738195;
+  color: var(--text-muted, #738195);
   cursor: pointer;
 }
 
 .test-help-button:hover,
 .test-help-button[aria-expanded='true'] {
-  color: #0878ca;
-  background: #eaf5fd;
+  color: var(--accent, #0878ca);
+  background: var(--surface-accent, #eaf5fd);
 }
 
 .test-help-button span {
@@ -36,9 +36,9 @@
   padding: 14px 18px;
   display: grid;
   gap: 6px;
-  border-bottom: 1px solid #d8e8f4;
-  background: #f4f9fd;
-  color: #34465c;
+  border-bottom: 1px solid var(--border-hover, #d8e8f4);
+  background: var(--surface-hover, #f4f9fd);
+  color: var(--text-secondary, #34465c);
   font-size: 0.86rem;
 }
 
@@ -48,7 +48,7 @@
 }
 
 .test-help-note {
-  color: #a24b13;
+  color: var(--text-warning, #a24b13);
   font-weight: 650;
 }
 

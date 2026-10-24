@@ -12,6 +12,7 @@ import type {
 import { ToolAction, ToolControl, ToolField, ToolInfoRow, ToolPanel } from './ToolControls';
 import { PageHeader } from '@/shared/ui/UiPrimitives';
 import { resizeReportImage } from '@/features/reports/images';
+import { ThemeSettings } from '@/shared/layout/ThemeSelector';
 
 interface ToolsPageProps {
   deviceInfo: DeviceInfo | null;
@@ -116,6 +117,7 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
           </a>
         }
       />
+      <ThemeSettings />
       <div className="tools-board">
         <ToolPanel
           className="tool-panel-toner"

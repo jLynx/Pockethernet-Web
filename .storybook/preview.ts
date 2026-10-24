@@ -1,4 +1,6 @@
 import type { Preview } from '@storybook/react-vite';
+import '../src/theme.css';
+import '../src/shared/layout/layout.css';
 import '../src/shared/ui/primitives.css';
 import '../src/styles.css';
 import '../src/features/measurements/results/results.css';

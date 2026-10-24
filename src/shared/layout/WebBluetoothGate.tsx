@@ -1,5 +1,7 @@
-import type { ReactElement, ReactNode } from 'react';
+import { useEffect, type ReactElement, type ReactNode } from 'react';
 import logo from '@/assets/logo.png';
+import { ThemeSettings } from './ThemeSelector';
+import { subscribeTheme } from '@/app/theme';
 
 type DeviceFamily = 'ios' | 'android' | 'desktop';
 
@@ -62,6 +64,8 @@ function SupportLink({ device }: { device: DeviceFamily }): ReactElement {
 }
 
 export function WebBluetoothGate({ children }: { children: ReactNode }): ReactElement {
+  // Follow device theme changes even when the Tools page is not mounted.
+  useEffect(() => subscribeTheme(() => undefined), []);
   const supported = window.isSecureContext && 'bluetooth' in navigator;
   if (supported) return <>{children}</>;
 
@@ -76,7 +80,10 @@ export function WebBluetoothGate({ children }: { children: ReactNode }): ReactEl
   return (
     <main className="support-page">
       <section className="support-panel" aria-labelledby="support-title">
-        <img className="support-wordmark" src={logo} alt="Pocketweb for Pockethernet" />
+        <div className="support-header">
+          <img className="support-wordmark" src={logo} alt="Pocketweb for Pockethernet" />
+        </div>
+        <ThemeSettings />
         <div className="support-status" aria-hidden="true">
           <span />
         </div>

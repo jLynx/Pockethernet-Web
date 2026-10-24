@@ -4,6 +4,26 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#246fc5" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      // Set the theme before the first paint, including when storage is blocked.
+      (() => {
+        let preference = 'system';
+        try {
+          preference = localStorage.getItem('pockethernet.theme') || 'system';
+        } catch {}
+        const theme =
+          preference === 'light' || preference === 'dark'
+            ? preference
+            : matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'dark'
+              : 'light';
+        document.documentElement.dataset.theme = theme;
+        if (theme === 'dark') {
+          document.querySelector('meta[name="theme-color"]').content = '#141e2c';
+        }
+      })();
+    </script>
     <meta
       name="description"
       content="Control and run tests with a Pockethernet network analyzer."
