@@ -186,16 +186,23 @@ function drawPhoto(doc: jsPDF, report: SavedReport, y: number): void {
   }
 }
 
-export function drawReportPage(doc: jsPDF, report: SavedReport, logoDataUrl: string): void {
+export function drawReportPage(
+  doc: jsPDF,
+  report: SavedReport,
+  logoDataUrl: string,
+  showFooterLogo = true,
+): void {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
   doc.setTextColor(0, 0, 0);
   doc.text('Measurement report', 12, 15);
   drawBrand(doc, logoDataUrl);
   line(doc, 292);
-  doc.setFillColor(255, 255, 255);
-  doc.rect(85, 287, 40, 9, 'F');
-  drawBrand(doc, '', true);
+  if (showFooterLogo) {
+    doc.setFillColor(255, 255, 255);
+    doc.rect(85, 287, 40, 9, 'F');
+    drawBrand(doc, '', true);
+  }
   drawMetadata(doc, report);
   drawWiremap(doc, report, 12, 36);
   drawPoe(doc, report, 75, 36);

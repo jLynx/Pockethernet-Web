@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import { useEffect, type ReactElement } from 'react';
 import { FaGithub } from 'react-icons/fa';
 import type { PockethernetState } from '@/device/usePockethernet';
 import { AppIcon } from './Layout';
@@ -114,6 +114,11 @@ export function Toast({
   message: string;
   onDismiss: () => void;
 }): ReactElement {
+  useEffect(() => {
+    const timer = window.setTimeout(onDismiss, 12_000);
+    return () => window.clearTimeout(timer);
+  }, [message, onDismiss]);
+
   return (
     <Button unstyled className="toast" onClick={onDismiss}>
       {message}

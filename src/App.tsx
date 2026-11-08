@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useState, type ReactElement } from 'react';
 import logo from '@/assets/logo.png';
 import {
   blinkerCommand,
@@ -120,6 +120,11 @@ export default function App(): ReactElement {
   const [notice, setNotice] = useState('');
   const [firmwareCheck, setFirmwareCheck] = useState<FirmwareCheck | null>(null);
   const [firmwareChecking, setFirmwareChecking] = useState(false);
+  const clearError = ble.clearError;
+  const dismissNotice = useCallback(() => {
+    setNotice('');
+    clearError();
+  }, [clearError]);
 
   useEffect(() => {
     if (ble.status !== 'disconnected') return;
@@ -440,14 +445,7 @@ export default function App(): ReactElement {
         />
       )}
       <AppFooter />
-      {(notice || ble.error) && (
-        <Toast
-          message={notice || ble.error}
-          onDismiss={() => {
-            setNotice('');
-          }}
-        />
-      )}
+      {(notice || ble.error) && <Toast message={notice || ble.error} onDismiss={dismissNotice} />}
     </div>
   );
 }

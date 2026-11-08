@@ -93,7 +93,7 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
     if (!file) return;
     try {
       const logoDataUrl = await resizeReportImage(file, 1200, 400, 'image/png');
-      onReportPreferencesChange({ logoDataUrl, logoName: file.name });
+      onReportPreferencesChange((current) => ({ ...current, logoDataUrl, logoName: file.name }));
     } catch (error) {
       onNotice(error instanceof Error ? error.message : 'Could not read this logo.');
     }
@@ -312,12 +312,33 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
                 className="report-logo-remove"
                 aria-label="Remove custom report logo"
                 title="Remove custom report logo"
-                onClick={() => onReportPreferencesChange({ logoDataUrl: '', logoName: '' })}
+                onClick={() =>
+                  onReportPreferencesChange((current) => ({
+                    ...current,
+                    logoDataUrl: '',
+                    logoName: '',
+                  }))
+                }
               >
                 ×
               </button>
             )}
           </div>
+          <ToolControl
+            label="Show bottom report logo"
+            name="showFooterLogo"
+            value={reportPreferences.showFooterLogo ? 'on' : 'off'}
+            options={[
+              ['off', 'Off'],
+              ['on', 'On'],
+            ]}
+            onChange={(_, value) =>
+              onReportPreferencesChange((current) => ({
+                ...current,
+                showFooterLogo: value === 'on',
+              }))
+            }
+          />
         </ToolPanel>
         <div className="tools-secondary">
           <ToolPanel

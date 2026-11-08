@@ -41,7 +41,11 @@ export const DEFAULT_REPORT_DETAILS: ReportDetails = {
   comment: '',
   portId: '',
 };
-export const DEFAULT_REPORT_PREFERENCES: ReportPreferences = { logoDataUrl: '', logoName: '' };
+export const DEFAULT_REPORT_PREFERENCES: ReportPreferences = {
+  logoDataUrl: '',
+  logoName: '',
+  showFooterLogo: true,
+};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -127,6 +131,7 @@ export function loadReportPreferences(): ReportPreferences {
   return {
     logoDataUrl: typeof saved.logoDataUrl === 'string' ? saved.logoDataUrl : '',
     logoName: typeof saved.logoName === 'string' ? saved.logoName : '',
+    showFooterLogo: saved.showFooterLogo !== false,
   };
 }
 

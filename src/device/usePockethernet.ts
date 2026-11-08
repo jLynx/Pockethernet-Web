@@ -19,6 +19,7 @@ export interface PockethernetState {
 }
 
 export interface PockethernetClient extends PockethernetState {
+  clearError: () => void;
   connect: () => Promise<void>;
   disconnect: () => void;
   request: (command: Packet, types: number | number[], timeout?: number) => Promise<Packet>;
@@ -84,6 +85,7 @@ export function usePockethernet(): PockethernetClient {
     (patch: Partial<PockethernetState>) => setState((current) => ({ ...current, ...patch })),
     [],
   );
+  const clearError = useCallback(() => update({ error: '' }), [update]);
 
   const onPacket = useCallback((packet: Packet) => {
     refs.current.collectors
@@ -224,7 +226,7 @@ export function usePockethernet(): PockethernetClient {
     },
     [],
   );
-  return { ...state, connect, disconnect, request, send, waitFor, collectFor };
+  return { ...state, clearError, connect, disconnect, request, send, waitFor, collectFor };
 }
 
 function crc16(data: Uint8Array): number {

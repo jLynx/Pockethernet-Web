@@ -197,6 +197,7 @@ export function ReportsPage({
               downloadReportsPdf(
                 reports.filter((report) => selected.has(report.id)),
                 preferences.logoDataUrl,
+                preferences.showFooterLogo,
               )
             }
           >
@@ -237,16 +238,32 @@ export function ReportsPage({
                   )}
                 </div>
                 <div className="report-actions">
-                  <Button onClick={() => previewReportPdf(report, preferences.logoDataUrl)}>
+                  <Button
+                    onClick={() =>
+                      previewReportPdf(report, preferences.logoDataUrl, preferences.showFooterLogo)
+                    }
+                  >
                     View
                   </Button>
-                  <Button onClick={() => downloadReportsPdf([report], preferences.logoDataUrl)}>
+                  <Button
+                    onClick={() =>
+                      downloadReportsPdf(
+                        [report],
+                        preferences.logoDataUrl,
+                        preferences.showFooterLogo,
+                      )
+                    }
+                  >
                     PDF
                   </Button>
                   <Button onClick={() => void copyForLlm([report])}>Copy for LLM</Button>
                   <Button
                     onClick={() =>
-                      void shareReportPdf(report, preferences.logoDataUrl)
+                      void shareReportPdf(
+                        report,
+                        preferences.logoDataUrl,
+                        preferences.showFooterLogo,
+                      )
                         .then((shared) => {
                           if (!shared)
                             onNotice(

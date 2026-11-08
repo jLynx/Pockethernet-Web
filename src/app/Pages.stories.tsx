@@ -91,7 +91,7 @@ export const Tools: Story = {
       wifiSettings={{ name: 'Pockethernet', password: '', enabled: 'off' }}
       onWifiSettingsChange={noop}
       onWifiChange={() => Promise.resolve(true)}
-      reportPreferences={{ logoDataUrl: '', logoName: '' }}
+      reportPreferences={{ logoDataUrl: '', logoName: '', showFooterLogo: true }}
       onReportPreferencesChange={noop}
       onNotice={noop}
     />

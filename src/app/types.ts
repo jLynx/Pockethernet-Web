@@ -69,6 +69,7 @@ export interface ReportDetails {
 export interface ReportPreferences {
   logoDataUrl: string;
   logoName: string;
+  showFooterLogo: boolean;
 }
 
 export interface ReportResults {
