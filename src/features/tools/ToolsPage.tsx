@@ -13,6 +13,7 @@ import { ToolAction, ToolControl, ToolField, ToolInfoRow, ToolPanel } from './To
 import { PageHeader } from '@/shared/ui/UiPrimitives';
 import { resizeReportImage } from '@/features/reports/images';
 import { ThemeSettings } from '@/shared/layout/ThemeSelector';
+import { NotificationSettings } from '@/features/notifications/NotificationSettings';
 
 interface ToolsPageProps {
   deviceInfo: DeviceInfo | null;
@@ -119,229 +120,175 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
       />
       <ThemeSettings />
       <div className="tools-board">
-        <ToolPanel
-          className="tool-panel-toner"
-          title="Cable toner"
-          active={tonerSettings.power === 'on'}
-          summary={
-            tonerSettings.power === 'on'
-              ? `Pair ${tonerSettings.pair === 'all' ? 'all' : tonerSettings.pair} · Tone ${tonerSettings.tone}`
-              : 'Tone generator is off'
-          }
-        >
-          <ToolControl
-            label="Pair"
-            name="pair"
-            value={tonerSettings.pair}
-            options={[
-              ['2', 'P2'],
-              ['3', 'P3'],
-              ['1', 'P1'],
-              ['4', 'P4'],
-              ['all', 'All'],
-            ]}
-            onChange={updateToner}
-          />
-          <ToolControl
-            label="Shield tone"
-            name="shield"
-            value={tonerSettings.shield}
-            options={[
-              ['off', 'Off'],
-              ['on', 'On'],
-            ]}
-            onChange={updateToner}
-          />
-          <ToolControl
-            label="Tone"
-            name="tone"
-            value={tonerSettings.tone}
-            options={[
-              ['1', '1'],
-              ['2', '2'],
-              ['3', '3'],
-              ['4', '4'],
-            ]}
-            onChange={updateToner}
-          />
-          <ToolControl
-            label="Volume"
-            name="volume"
-            value={tonerSettings.volume}
-            options={[
-              ['low', 'Low'],
-              ['high', 'High'],
-            ]}
-            onChange={updateToner}
-          />
-          <ToolControl
-            label="On/Off"
-            name="power"
-            value={tonerSettings.power}
-            options={[
-              ['off', 'Off'],
-              ['on', 'On'],
-            ]}
-            onChange={updateToner}
-          />
-        </ToolPanel>
-        <ToolPanel
-          title="Link blinker"
-          active={blinkerSettings.link !== 'off'}
-          summary={
-            blinkerSettings.link === 'off'
-              ? 'Link signaling is off'
-              : `${blinkerSettings.link} · ${blinkerSettings.speed}`
-          }
-        >
-          <ToolControl
-            label="Speed"
-            name="speed"
-            value={blinkerSettings.speed}
-            options={[
-              ['10', '10'],
-              ['100', '100'],
-              ['1000', '1000'],
-              ['auto', 'Auto'],
-            ]}
-            onChange={updateBlinker}
-          />
-          <ToolControl
-            label="Duplex"
-            name="duplex"
-            value={blinkerSettings.duplex}
-            options={[
-              ['half', 'Half'],
-              ['full', 'Full'],
-              ['auto', 'Auto'],
-            ]}
-            onChange={updateBlinker}
-          />
-          <ToolControl
-            label="MDI-X"
-            name="mdi"
-            value={blinkerSettings.mdi}
-            options={[
-              ['mdi', 'MDI'],
-              ['mdix', 'MDI-X'],
-              ['auto', 'Auto'],
-            ]}
-            onChange={updateBlinker}
-          />
-          <ToolControl
-            label="Link"
-            name="link"
-            value={blinkerSettings.link}
-            options={[
-              ['off', 'Off'],
-              ['on', 'On'],
-              ['blink', 'Blink'],
-            ]}
-            onChange={updateBlinker}
-          />
-        </ToolPanel>
-        <ToolPanel
-          className="tool-panel-settings"
-          title="Device preferences"
-          active={false}
-          summary="Cable and report defaults"
-        >
-          <ToolControl
-            label="TIA"
-            name="tia"
-            value={settings.tia}
-            options={[
-              ['568A', '568A'],
-              ['568B', '568B'],
-            ]}
-            onChange={updateSettings}
-          />
-          <ToolControl
-            label="Units"
-            name="units"
-            value={settings.units}
-            options={[
-              ['meters', 'Meters'],
-              ['feet', 'Feet'],
-            ]}
-            onChange={updateSettings}
-          />
-          <ToolField
-            label="NVP value"
-            value={settings.nvp}
-            onChange={(event) => {
-              updateSettings('nvp', event.target.value.replace(/\D/g, '').slice(0, 3));
-            }}
-            inputMode="numeric"
-          />
-          <ToolControl
-            label="Custom MAC"
-            name="customMac"
-            value={settings.customMac}
-            options={[
-              ['off', 'Off'],
-              ['on', 'On'],
-            ]}
-            onChange={updateSettings}
-          />
-          <ToolField
-            label="MAC"
-            value={settings.mac}
-            onChange={(event) => {
-              updateSettings('mac', event.target.value.slice(0, 17));
-            }}
-            placeholder="00:11:22:33:44:55"
-            disabled={settings.customMac !== 'on'}
-          />
-          <div className="tool-action report-logo-action">
-            <span>Report logo</span>
-            {reportPreferences.logoDataUrl && (
-              <img src={reportPreferences.logoDataUrl} alt="Current report logo" />
-            )}
-            <label className="tool-action-button">
-              {reportPreferences.logoName || 'Add custom logo'}
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                onChange={(event) => void chooseReportLogo(event)}
-              />
-            </label>
-            {reportPreferences.logoDataUrl && (
-              <button
-                type="button"
-                className="report-logo-remove"
-                aria-label="Remove custom report logo"
-                title="Remove custom report logo"
-                onClick={() =>
-                  onReportPreferencesChange((current) => ({
-                    ...current,
-                    logoDataUrl: '',
-                    logoName: '',
-                  }))
-                }
-              >
-                ×
-              </button>
-            )}
-          </div>
-          <ToolControl
-            label="Show bottom report logo"
-            name="showFooterLogo"
-            value={reportPreferences.showFooterLogo ? 'on' : 'off'}
-            options={[
-              ['off', 'Off'],
-              ['on', 'On'],
-            ]}
-            onChange={(_, value) =>
-              onReportPreferencesChange((current) => ({
-                ...current,
-                showFooterLogo: value === 'on',
-              }))
-            }
-          />
-        </ToolPanel>
-        <div className="tools-secondary">
+        <div className="tools-column">
           <ToolPanel
+            className="tool-panel-toner"
+            title="Cable toner"
+            active={tonerSettings.power === 'on'}
+            summary={
+              tonerSettings.power === 'on'
+                ? `Pair ${tonerSettings.pair === 'all' ? 'all' : tonerSettings.pair} · Tone ${tonerSettings.tone}`
+                : 'Tone generator is off'
+            }
+          >
+            <ToolControl
+              label="Pair"
+              name="pair"
+              value={tonerSettings.pair}
+              options={[
+                ['2', 'P2'],
+                ['3', 'P3'],
+                ['1', 'P1'],
+                ['4', 'P4'],
+                ['all', 'All'],
+              ]}
+              onChange={updateToner}
+            />
+            <ToolControl
+              label="Shield tone"
+              name="shield"
+              value={tonerSettings.shield}
+              options={[
+                ['off', 'Off'],
+                ['on', 'On'],
+              ]}
+              onChange={updateToner}
+            />
+            <ToolControl
+              label="Tone"
+              name="tone"
+              value={tonerSettings.tone}
+              options={[
+                ['1', '1'],
+                ['2', '2'],
+                ['3', '3'],
+                ['4', '4'],
+              ]}
+              onChange={updateToner}
+            />
+            <ToolControl
+              label="Volume"
+              name="volume"
+              value={tonerSettings.volume}
+              options={[
+                ['low', 'Low'],
+                ['high', 'High'],
+              ]}
+              onChange={updateToner}
+            />
+            <ToolControl
+              label="On/Off"
+              name="power"
+              value={tonerSettings.power}
+              options={[
+                ['off', 'Off'],
+                ['on', 'On'],
+              ]}
+              onChange={updateToner}
+            />
+          </ToolPanel>
+          <ToolPanel
+            className="tool-panel-settings"
+            title="Device preferences"
+            active={false}
+            summary="Cable and report defaults"
+          >
+            <ToolControl
+              label="TIA"
+              name="tia"
+              value={settings.tia}
+              options={[
+                ['568A', '568A'],
+                ['568B', '568B'],
+              ]}
+              onChange={updateSettings}
+            />
+            <ToolControl
+              label="Units"
+              name="units"
+              value={settings.units}
+              options={[
+                ['meters', 'Meters'],
+                ['feet', 'Feet'],
+              ]}
+              onChange={updateSettings}
+            />
+            <ToolField
+              label="NVP value"
+              value={settings.nvp}
+              onChange={(event) => {
+                updateSettings('nvp', event.target.value.replace(/\D/g, '').slice(0, 3));
+              }}
+              inputMode="numeric"
+            />
+            <ToolControl
+              label="Custom MAC"
+              name="customMac"
+              value={settings.customMac}
+              options={[
+                ['off', 'Off'],
+                ['on', 'On'],
+              ]}
+              onChange={updateSettings}
+            />
+            <ToolField
+              label="MAC"
+              value={settings.mac}
+              onChange={(event) => {
+                updateSettings('mac', event.target.value.slice(0, 17));
+              }}
+              placeholder="00:11:22:33:44:55"
+              disabled={settings.customMac !== 'on'}
+            />
+            <div className="tool-action report-logo-action">
+              <span>Report logo</span>
+              {reportPreferences.logoDataUrl && (
+                <img src={reportPreferences.logoDataUrl} alt="Current report logo" />
+              )}
+              <label className="tool-action-button">
+                {reportPreferences.logoName || 'Add custom logo'}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={(event) => void chooseReportLogo(event)}
+                />
+              </label>
+              {reportPreferences.logoDataUrl && (
+                <button
+                  type="button"
+                  className="report-logo-remove"
+                  aria-label="Remove custom report logo"
+                  title="Remove custom report logo"
+                  onClick={() =>
+                    onReportPreferencesChange((current) => ({
+                      ...current,
+                      logoDataUrl: '',
+                      logoName: '',
+                    }))
+                  }
+                >
+                  ×
+                </button>
+              )}
+            </div>
+            <ToolControl
+              label="Show bottom report logo"
+              name="showFooterLogo"
+              value={reportPreferences.showFooterLogo ? 'on' : 'off'}
+              options={[
+                ['off', 'Off'],
+                ['on', 'On'],
+              ]}
+              onChange={(_, value) =>
+                onReportPreferencesChange((current) => ({
+                  ...current,
+                  showFooterLogo: value === 'on',
+                }))
+              }
+            />
+          </ToolPanel>
+          <ToolPanel
+            className="tool-panel-wifi"
             title="WiFi bridge"
             active={wifiSettings.enabled === 'on'}
             summary={wifiSettings.enabled === 'on' ? 'Bridge enabled' : 'Bridge disabled'}
@@ -371,6 +318,65 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
               onChange={updateWifi}
             />
           </ToolPanel>
+        </div>
+        <div className="tools-column">
+          <ToolPanel
+            className="tool-panel-blinker"
+            title="Link blinker"
+            active={blinkerSettings.link !== 'off'}
+            summary={
+              blinkerSettings.link === 'off'
+                ? 'Link signaling is off'
+                : `${blinkerSettings.link} · ${blinkerSettings.speed}`
+            }
+          >
+            <ToolControl
+              label="Speed"
+              name="speed"
+              value={blinkerSettings.speed}
+              options={[
+                ['10', '10'],
+                ['100', '100'],
+                ['1000', '1000'],
+                ['auto', 'Auto'],
+              ]}
+              onChange={updateBlinker}
+            />
+            <ToolControl
+              label="Duplex"
+              name="duplex"
+              value={blinkerSettings.duplex}
+              options={[
+                ['half', 'Half'],
+                ['full', 'Full'],
+                ['auto', 'Auto'],
+              ]}
+              onChange={updateBlinker}
+            />
+            <ToolControl
+              label="MDI-X"
+              name="mdi"
+              value={blinkerSettings.mdi}
+              options={[
+                ['mdi', 'MDI'],
+                ['mdix', 'MDI-X'],
+                ['auto', 'Auto'],
+              ]}
+              onChange={updateBlinker}
+            />
+            <ToolControl
+              label="Link"
+              name="link"
+              value={blinkerSettings.link}
+              options={[
+                ['off', 'Off'],
+                ['on', 'On'],
+                ['blink', 'Blink'],
+              ]}
+              onChange={updateBlinker}
+            />
+          </ToolPanel>
+          <NotificationSettings />
           <ToolPanel
             className="tool-panel-info"
             title="Device info"

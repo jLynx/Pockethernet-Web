@@ -125,12 +125,14 @@
 }
 .tools-board {
   display: grid;
-  grid-template-columns: minmax(0, 1.12fr) minmax(300px, 0.88fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
   gap: 16px;
 }
-.tools-secondary {
-  display: grid;
+.tools-column {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
   gap: 16px;
 }
 .tool-panel {
@@ -387,7 +389,7 @@
     grid-template-columns: 1fr;
     gap: 12px;
   }
-  .tools-secondary {
+  .tools-column {
     gap: 12px;
   }
   .test-panel.expanded {

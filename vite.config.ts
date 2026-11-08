@@ -11,7 +11,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: null,
-      includeAssets: ['logo-192.png', 'logo-512.png'],
+      includeAssets: ['logo-192.png', 'logo-512.png', 'notification-events.js'],
       manifest: {
         name: 'Pocketweb for Pockethernet',
         short_name: 'Pocketweb',
@@ -35,6 +35,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        importScripts: ['/notification-events.js'],
         cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff,woff2}'],
         manifestTransforms: [

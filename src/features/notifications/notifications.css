@@ -1,0 +1,13 @@
+.notification-description,
+.notification-message {
+  margin: 0;
+  color: var(--text-secondary, #5f6e80);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.notification-message {
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: var(--surface-muted, #f3f6f8);
+}

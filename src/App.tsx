@@ -16,7 +16,7 @@ import {
   type WiremapResult,
 } from '@/pockethernetProtocol';
 import { errorMessage } from '@/app/format';
-import { runMeasurements } from '@/app/runMeasurements';
+import { runMeasurementsWithNotifications } from '@/features/notifications/measurementNotifications';
 import {
   loadBlinkerSettings,
   loadReportDetails,
@@ -76,6 +76,25 @@ const LINK_DEPENDENT_TESTS: readonly TestId[] = [
 export default function App(): ReactElement {
   const ble = usePockethernet();
   const [tab, setTab] = useState<Tab>('test');
+  useEffect(() => {
+    const openResults = (event: MessageEvent<unknown>): void => {
+      if (event.origin !== window.location.origin) return;
+      const data = event.data;
+      if (
+        typeof data === 'object' &&
+        data !== null &&
+        'type' in data &&
+        data.type === 'pocketweb-open-results'
+      )
+        setTab('test');
+    };
+    navigator.serviceWorker?.addEventListener('message', openResults);
+    window.addEventListener('message', openResults);
+    return () => {
+      navigator.serviceWorker?.removeEventListener('message', openResults);
+      window.removeEventListener('message', openResults);
+    };
+  }, []);
   const [selected, setSelected] = useState<Set<TestId>>(() => new Set());
   const [expanded, setExpanded] = useState<Set<TestId>>(() => new Set());
   const [wiremap, setWiremap] = useState<WiremapResult | null>(null);
@@ -323,7 +342,7 @@ export default function App(): ReactElement {
       setNotice('Select at least one supported test first.');
       return;
     }
-    await runMeasurements({
+    await runMeasurementsWithNotifications({
       ble,
       selected,
       setExpanded,

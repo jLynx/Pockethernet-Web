@@ -17,6 +17,7 @@ Pocketweb for Pockethernet is a modern, installable browser application built sp
 - PDF preview, download, multi-report export, and native sharing
 - Installable PWA support with an offline application shell
 - Persistent cable, network, and reporting preferences
+- Opt-in measurement result notifications with optional wiremap images and watch mirroring
 - Reusable typed protocol, device, UI, and feature modules
 
 ## Compatibility approach
@@ -53,6 +54,14 @@ Production check:
 ```powershell
 npm run build
 ```
+
+## Result notifications and watches
+
+In **Tools → Result notifications**, enable notifications, accept the browser permission prompt, and use **Send test notification** to check delivery. Each measurement run sends one summary, including any interruption and results collected before it. Wiremap notifications can include a locally generated PNG; the text also includes pin faults for watches that do not display images. Preferences are saved on this browser and notifications are off by default.
+
+For watch delivery, run Pocketweb in Chrome on the Android phone paired with the watch and enable Chrome/Pocketweb notification mirroring in the watch companion app. Pixel Watch can receive mirrored Android notifications; Pebble behavior depends on its companion app. Images, text truncation, vibration, and delivery are controlled by the phone/watch software. Desktop Chrome notifications generally do not route to a phone or watch. There is no standard browser API for directly targeting a watch or detecting whether it is worn.
+
+The production PWA uses service-worker notifications; tapping one focuses Pocketweb and opens the measurement page. Keep the app running and the Pockethernet Bluetooth connection active during measurements: notification support does not keep Web Bluetooth alive if the OS suspends the page. No push subscription, cloud relay, or remote upload of measurement results is used.
 
 ## Cloudflare Workers
 
