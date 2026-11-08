@@ -7,6 +7,7 @@ directory = "./dist"
 binding = "ASSETS"
 not_found_handling = "single-page-application"
 run_worker_first = [
+  "/api/latest-version",
   "/assets/index-*.js",
   "/assets/index-*.css",
   "/assets/logo-*.png",

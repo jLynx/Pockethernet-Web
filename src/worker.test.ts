@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import worker from './worker';
+import { parseFirmwareVersionResponse } from './protocol/basicParsers';
 
 const origin = 'https://example.test';
 const files = new Map([
@@ -63,3 +64,42 @@ const missingCurrentScript = await get('/assets/index-old456.js');
 assert.equal(missingCurrentScript.status, 404);
 
 console.log('Legacy PWA asset recovery tests passed');
+
+const originalFetch = globalThis.fetch;
+try {
+  globalThis.fetch = (input, init) => {
+    assert.equal(input, 'https://ota.pockethernet.com/latest_version');
+    assert.equal(new Headers(init?.headers).get('Accept'), 'text/plain');
+    return Promise.resolve(
+      new Response('17#https://ota.pockethernet.com/pen_e_crypt_17.bin', {
+        headers: { 'Cache-Control': 'public, max-age=3600' },
+      }),
+    );
+  };
+  const latestVersion = await get('/api/latest-version');
+  assert.equal(latestVersion.status, 200);
+  assert.equal(latestVersion.headers.get('Content-Type'), 'text/plain; charset=utf-8');
+  assert.equal(latestVersion.headers.get('Cache-Control'), 'no-store');
+  const firmware = parseFirmwareVersionResponse(await latestVersion.text(), 16);
+  assert.equal(firmware.latestVersion, 17);
+  assert.equal(firmware.updateAvailable, true);
+
+  const post = await worker.fetch(
+    new Request(new URL('/api/latest-version', origin), { method: 'POST' }),
+    env,
+  );
+  assert.equal(post.status, 405);
+  assert.equal(post.headers.get('Allow'), 'GET');
+
+  globalThis.fetch = () => Promise.resolve(new Response('Unavailable', { status: 503 }));
+  assert.equal((await get('/api/latest-version')).status, 503);
+
+  globalThis.fetch = () => Promise.reject(new Error('Network unavailable'));
+  const unavailable = await get('/api/latest-version');
+  assert.equal(unavailable.status, 502);
+  assert.equal(await unavailable.text(), 'Could not reach the update server');
+} finally {
+  globalThis.fetch = originalFetch;
+}
+
+console.log('Firmware update proxy tests passed');
