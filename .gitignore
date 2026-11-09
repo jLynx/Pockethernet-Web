@@ -9,6 +9,9 @@ storybook-static/
 # Local Android reverse-engineering reference
 android-reference/
 
+# Local firmware binaries, recovered keys, and decoding notes
+/firmware-local/
+
 # Local environment files
 .env
 .env.*
