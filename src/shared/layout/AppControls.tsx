@@ -42,20 +42,28 @@ export function AppFooter(): ReactElement {
 
 export function ConnectionButton({
   status,
+  batteryPercent = null,
   onClick,
 }: {
   status: ConnectionStatus;
+  batteryPercent?: number | null;
   onClick: () => void;
 }): ReactElement {
   const label =
     status === 'connecting' ? 'Connecting...' : status === 'connected' ? 'Connected' : 'Connect';
+  const hasBattery = status === 'connected' && batteryPercent !== null;
   return (
-    <Button unstyled className={`connection-button ${status}`} onClick={onClick}>
+    <Button
+      unstyled
+      className={`connection-button ${status}${hasBattery ? ' has-battery' : ''}`}
+      aria-label={hasBattery ? `Connected. Battery ${batteryPercent}%. Disconnect` : label}
+      onClick={onClick}
+    >
       <span className="connection-symbol">
         <AppIcon name="device" />
       </span>
       <span className="connection-copy">
-        <small>Device</small>
+        <small>{hasBattery ? `Battery ${batteryPercent}%` : 'Device'}</small>
         <strong>{label}</strong>
       </span>
       <span className="connection-dot" />

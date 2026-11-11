@@ -74,7 +74,6 @@ const LINK_DEPENDENT_TESTS: readonly TestId[] = [
 ];
 
 export default function App(): ReactElement {
-  const ble = usePockethernet();
   const [tab, setTab] = useState<Tab>('test');
   useEffect(() => {
     const openResults = (event: MessageEvent<unknown>): void => {
@@ -135,6 +134,7 @@ export default function App(): ReactElement {
     useState<ReportPreferences>(loadReportPreferences);
   const [reports, setReports] = useState<SavedReport[]>(loadReports);
   const [running, setRunning] = useState(false);
+  const ble = usePockethernet({ pollBattery: !running });
   const [activeTest, setActiveTest] = useState<TestId | null>(null);
   const [notice, setNotice] = useState('');
   const [firmwareCheck, setFirmwareCheck] = useState<FirmwareCheck | null>(null);
@@ -379,6 +379,7 @@ export default function App(): ReactElement {
           <GitHubLink />
           <ConnectionButton
             status={ble.status}
+            batteryPercent={ble.batteryPercent}
             onClick={() => {
               void connect();
             }}

@@ -2,9 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   BLE,
   PACKET,
+  batteryStatusCommand,
   deviceInfoCommand,
   encodePacket,
   parseDeviceInfo,
+  parseBatteryPercent,
   type DeviceInfo,
   type Packet,
 } from '@/pockethernetProtocol';
@@ -15,6 +17,7 @@ export interface PockethernetState {
   status: ConnectionStatus;
   device: string | null;
   info: DeviceInfo | null;
+  batteryPercent: number | null;
   error: string;
 }
 
@@ -66,11 +69,12 @@ function decodeCobs(input: Uint8Array): Uint8Array {
   return output.slice(0, w);
 }
 
-export function usePockethernet(): PockethernetClient {
+export function usePockethernet({ pollBattery = true } = {}): PockethernetClient {
   const [state, setState] = useState<PockethernetState>({
     status: 'disconnected',
     device: null,
     info: null,
+    batteryPercent: null,
     error: '',
   });
   const refs = useRef<BluetoothRefs>({
@@ -81,6 +85,7 @@ export function usePockethernet(): PockethernetClient {
     waiters: [],
     collectors: [],
   });
+  const writes = useRef<Promise<void>>(Promise.resolve());
   const update = useCallback(
     (patch: Partial<PockethernetState>) => setState((current) => ({ ...current, ...patch })),
     [],
@@ -131,14 +136,19 @@ export function usePockethernet(): PockethernetClient {
     }
   }, [onPacket, update]);
 
-  const send = useCallback(async (command: Packet): Promise<void> => {
+  const send = useCallback((command: Packet): Promise<void> => {
     const characteristic = refs.current.write;
-    if (!characteristic) throw new Error('Pockethernet is not connected');
-    const frame = encodePacket(command.type, command.payload);
-    for (let offset = 0; offset < frame.length; offset += 20) {
-      const chunk = frame.slice(offset, offset + 20);
-      await characteristic.writeValueWithResponse(new Uint8Array(chunk));
-    }
+    const write = writes.current.then(async () => {
+      if (!characteristic || characteristic !== refs.current.write)
+        throw new Error('Pockethernet is not connected');
+      const frame = encodePacket(command.type, command.payload);
+      for (let offset = 0; offset < frame.length; offset += 20) {
+        const chunk = frame.slice(offset, offset + 20);
+        await characteristic.writeValueWithResponse(new Uint8Array(chunk));
+      }
+    });
+    writes.current = write.catch(() => undefined);
+    return write;
   }, []);
 
   const waitFor = useCallback(
@@ -174,6 +184,8 @@ export function usePockethernet(): PockethernetClient {
   const request = useCallback(
     async (command: Packet, types: number | number[], timeout = 5000): Promise<Packet> => {
       const reply = waitFor(types, timeout);
+      // A failed write can leave the response promise pending until its timeout.
+      void reply.catch(() => undefined);
       await send(command);
       return reply;
     },
@@ -191,13 +203,13 @@ export function usePockethernet(): PockethernetClient {
       waiters: [],
       collectors: [],
     };
-    update({ status: 'disconnected', device: null, info: null });
+    update({ status: 'disconnected', device: null, info: null, batteryPercent: null });
   }, [update]);
 
   const connect = useCallback(async () => {
     if (!Reflect.has(navigator, 'bluetooth'))
       throw new Error('Web Bluetooth needs desktop Chrome or Edge and localhost/HTTPS.');
-    update({ status: 'connecting', error: '' });
+    update({ status: 'connecting', error: '', batteryPercent: null });
     try {
       const device = await navigator.bluetooth.requestDevice({
         filters: [{ services: [BLE.service] }],
@@ -219,6 +231,43 @@ export function usePockethernet(): PockethernetClient {
       throw error;
     }
   }, [disconnect, onNotification, request, update]);
+
+  useEffect(() => {
+    if (state.status !== 'connected' || !state.info || !pollBattery) return;
+    let cancelled = false;
+    let hasBatteryReading = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const device = refs.current.device;
+    const refresh = async (): Promise<void> => {
+      if (cancelled || refs.current.device !== device) return;
+      // Leave the transport available for measurements and packet collection.
+      if (refs.current.waiters.length || refs.current.collectors.length) {
+        timer = setTimeout(() => void refresh(), 5000);
+        return;
+      }
+      let percent: number | null = null;
+      let nextPollDelay = 30_000;
+      try {
+        const response = await request(batteryStatusCommand(), PACKET.BATTERY_STATUS, 3500);
+        percent = parseBatteryPercent(response.payload);
+        hasBatteryReading ||= percent !== null;
+        // F110 returns zeros until the firmware's first internal STM32 poll.
+        // Retry that startup cache promptly; keep failures on the normal interval.
+        if (!hasBatteryReading && response.payload.every((byte) => byte === 0))
+          nextPollDelay = 2000;
+      } catch {
+        // Older firmware or a missed status response must not break the connection.
+      }
+      if (cancelled || refs.current.device !== device) return;
+      update({ batteryPercent: percent });
+      timer = setTimeout(() => void refresh(), nextPollDelay);
+    };
+    void refresh();
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [state.status, state.info, pollBattery, request, update]);
 
   useEffect(
     () => () => {

@@ -212,6 +212,10 @@ button:focus-visible {
   color: var(--text-muted, #718096);
   font-size: 0.7rem;
 }
+.connection-button.has-battery .connection-copy small {
+  display: block;
+  white-space: nowrap;
+}
 .connection-copy strong {
   font-size: 0.9rem;
 }

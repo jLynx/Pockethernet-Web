@@ -56,6 +56,10 @@ export function deviceInfoCommand(): Packet {
   return { type: PACKET.DEVICE_INFO, payload: new Uint8Array() };
 }
 
+export function batteryStatusCommand(): Packet {
+  return { type: PACKET.BATTERY_STATUS, payload: new Uint8Array() };
+}
+
 export function wiremapCommand(): Packet {
   const payload = new Uint8Array(8);
   const view = new DataView(payload.buffer);

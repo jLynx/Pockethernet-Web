@@ -456,15 +456,17 @@
 }
 
 @media (max-width: 390px) {
-  .wordmark {
-    font-size: 1.25rem;
-  }
-  .wordmark i {
-    transform: scale(0.78);
-    transform-origin: left top;
-  }
   .connection-copy {
     display: none;
+  }
+  .connection-button.has-battery .connection-copy {
+    display: flex;
+  }
+  .connection-button.has-battery .connection-copy strong {
+    display: none;
+  }
+  .connection-button.has-battery {
+    width: auto;
   }
   .connection-button {
     position: relative;

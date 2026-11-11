@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import {
   PACKET,
+  batteryStatusCommand,
+  parseBatteryPercent,
   berCommand,
   berEthernetCommand,
   blinkerCommand,
@@ -38,6 +40,16 @@ import {
   vlanEthernetCommand,
   pingCommand,
 } from './pockethernetProtocol';
+
+// Original firmware F110 layout; percentage is the third byte, not the status byte.
+assert.deepEqual(batteryStatusCommand(), { type: 0xf110, payload: new Uint8Array() });
+assert.equal(parseBatteryPercent(Uint8Array.of(0xa0, 0x0f, 76, 0x24)), 76);
+assert.equal(parseBatteryPercent(Uint8Array.of(0xa0, 0x0f, 0, 0x24)), 0);
+assert.equal(parseBatteryPercent(Uint8Array.of(0xa0, 0x0f, 100, 0x24)), 100);
+assert.equal(parseBatteryPercent(new Uint8Array(4)), null);
+assert.equal(parseBatteryPercent(Uint8Array.of(0xa0, 0x0f, 255, 0x24)), null);
+assert.equal(parseBatteryPercent(Uint8Array.of(9, 0xa0, 0x0f, 76, 0x24, 9).subarray(1, 5)), 76);
+assert.throws(() => parseBatteryPercent(new Uint8Array(3)), /Invalid battery/);
 function encodeSamples(samples: number[]): Uint8Array {
   const payload = new Uint8Array(samples.length * 2);
   const view = new DataView(payload.buffer);

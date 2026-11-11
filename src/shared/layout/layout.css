@@ -3,6 +3,27 @@
   align-items: center;
   gap: 10px;
 }
+
+@media (max-width: 410px) {
+  .original-app .original-header {
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding-inline: 12px;
+  }
+  .original-header .wordmark {
+    width: min(155px, 36vw);
+    min-width: 0;
+    flex-shrink: 1;
+  }
+  .original-header .header-actions {
+    flex-shrink: 0;
+    gap: 6px;
+  }
+  .original-header .connection-button {
+    gap: 6px;
+    padding-inline: 8px;
+  }
+}
 .github-link {
   width: 48px;
   height: 48px;

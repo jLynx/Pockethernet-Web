@@ -26,6 +26,7 @@ const context: MeasurementContext = {
     status: 'disconnected',
     device: null,
     info: null,
+    batteryPercent: null,
     error: '',
     clearError: noop,
     connect: unavailable,

@@ -9,6 +9,15 @@ import type {
   VlanTag,
 } from './types';
 
+export function parseBatteryPercent(payload: Uint8Array): number | null {
+  if (payload.length !== 4) throw new Error('Invalid battery status response');
+  const view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
+  // F110: voltage (LE u16), AXP2101 percentage (register A4), status (register 01).
+  // The ESP32 cache is initially all zero until its first STM32 status poll.
+  if ((view.getUint16(0, true) & 0x1fff) === 0 || payload[2] > 100) return null;
+  return payload[2];
+}
+
 export function parseTrafficPacket(payload: Uint8Array): TrafficPacketResult {
   if (payload.length < 14) throw new Error('Invalid Traffic Ethernet frame');
   const source = formatMac(payload.slice(6, 12));

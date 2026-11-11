@@ -7,6 +7,7 @@ export const BLE = Object.freeze({
 
 export const PACKET = Object.freeze({
   DEVICE_INFO: 61700,
+  BATTERY_STATUS: 61712, // F110, recovered from the original v17 firmware.
   DHCPV4_ACK: 62000,
   DHCPV6_ACK: 62001,
   SLAAC_ACK: 62002,
