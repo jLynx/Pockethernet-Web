@@ -224,10 +224,20 @@ assert.equal(vlanCommandView.getUint16(0, true), 265);
 assert.equal(vlanCommandView.getUint32(4, true), 1901);
 const vlanTaggingCommand = vlanEthernetCommand(200);
 assert.equal(new DataView(vlanTaggingCommand.payload.buffer).getUint16(8, true), 200);
-assert.deepEqual(parseVlanPacket(new Uint8Array([0, 0, 0xb0, 100, 0x10, 100])), [
+// F244 words follow the APK's little-endian packet reader, including priority and DEI.
+assert.deepEqual(parseVlanPacket(new Uint8Array([0, 0, 100, 0xb0, 100, 0x10])), [
   { id: 100, priority: 0, dei: true },
   { id: 100, priority: 5, dei: true },
 ]);
+assert.deepEqual(parseVlanPacket(new Uint8Array([3, 0, 3, 0, 0xfe, 0x0f])), [
+  { id: 3, priority: 0, dei: false },
+  { id: 4094, priority: 0, dei: false },
+]);
+const slicedVlanPayload = new Uint8Array([0xff, 42, 0xa0, 0xff]);
+assert.deepEqual(parseVlanPacket(slicedVlanPayload.subarray(1, 3)), [
+  { id: 42, priority: 5, dei: false },
+]);
+assert.throws(() => parseVlanPacket(new Uint8Array([3])), /16-bit tags/);
 const trafficConfig = trafficEthernetCommand();
 const trafficConfigView = new DataView(trafficConfig.payload.buffer);
 assert.equal(trafficConfig.type, PACKET.ETH_CONFIG);

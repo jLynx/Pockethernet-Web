@@ -116,7 +116,8 @@ export function parseVlanPacket(payload: Uint8Array): VlanTag[] {
   const tags = new Set<number>();
   const view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
   for (let offset = 0; offset < payload.length; offset += 2) {
-    const tag = view.getUint16(offset, false);
+    // F244 contains native little-endian TCI words; Ethernet frame TCIs use network order.
+    const tag = view.getUint16(offset, true);
     if (tag) tags.add(tag);
   }
   return Array.from(tags)
