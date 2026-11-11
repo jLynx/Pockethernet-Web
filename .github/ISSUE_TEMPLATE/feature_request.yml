@@ -1,5 +1,6 @@
 name: Feature request
 description: Suggest a new feature or an improvement to Pocketweb for Pockethernet.
+type: Feature
 labels: ['enhancement']
 body:
   - type: markdown
