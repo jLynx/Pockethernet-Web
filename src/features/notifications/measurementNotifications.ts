@@ -110,7 +110,11 @@ export async function runMeasurementsWithNotifications(context: MeasurementConte
       }
     }
     await showResultNotification(
-      snapshot.error ? 'Pocketweb · Measurement interrupted' : 'Pocketweb · Results ready',
+      snapshot.error.startsWith('Measurements completed with errors:')
+        ? 'Pocketweb · Results ready with test failures'
+        : snapshot.error
+          ? 'Pocketweb · Measurement interrupted'
+          : 'Pocketweb · Results ready',
       notificationSummary(snapshot, context.toolSettings),
       image,
     );

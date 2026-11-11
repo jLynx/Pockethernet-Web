@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type ReactElement } from 'react';
 import logo from '@/assets/logo.png';
 import {
+  PACKET,
   blinkerCommand,
   parseFirmwareVersionResponse,
   tonerCommand,
@@ -35,6 +36,7 @@ import {
   type FirmwareCheck,
   type Ipv4UiSettings,
   type Ipv6DisplayResult,
+  type MeasurementFailures,
   type PingDisplayResult,
   type ReportDetails,
   type ReportPreferences,
@@ -136,6 +138,8 @@ export default function App(): ReactElement {
   const [running, setRunning] = useState(false);
   const ble = usePockethernet({ pollBattery: !running });
   const [activeTest, setActiveTest] = useState<TestId | null>(null);
+  const [measurementFailures, setMeasurementFailures] = useState<MeasurementFailures>({});
+  const [pendingTests, setPendingTests] = useState<Set<TestId>>(new Set());
   const [notice, setNotice] = useState('');
   const [firmwareCheck, setFirmwareCheck] = useState<FirmwareCheck | null>(null);
   const [firmwareChecking, setFirmwareChecking] = useState(false);
@@ -279,7 +283,11 @@ export default function App(): ReactElement {
       return false;
     }
     try {
-      await ble.send(blinkerCommand(settings.speed, settings.duplex, settings.mdi, settings.link));
+      await ble.request(
+        blinkerCommand(settings.speed, settings.duplex, settings.mdi, settings.link),
+        PACKET.ACK,
+        5000,
+      );
       return true;
     } catch (error) {
       setNotice(`Blinker failed: ${errorMessage(error)}`);
@@ -299,10 +307,12 @@ export default function App(): ReactElement {
       return false;
     }
     try {
-      await ble.send(
+      await ble.request(
         settings.power === 'on'
           ? tonerCommand(settings.pair, settings.shield, settings.tone, settings.volume)
           : tonerStopCommand(),
+        PACKET.ACK,
+        1000,
       );
       return true;
     } catch (error) {
@@ -320,10 +330,14 @@ export default function App(): ReactElement {
     }
     try {
       if (settings.enabled === 'on') {
-        await ble.send(wifiBridgeEthernetCommand());
-        await ble.send(wifiBridgeCommand(true, settings.name, settings.password));
+        await ble.request(wifiBridgeEthernetCommand(), PACKET.ACK, 5000);
+        await ble.request(
+          wifiBridgeCommand(true, settings.name, settings.password),
+          PACKET.ACK,
+          5000,
+        );
       } else {
-        await ble.send(wifiBridgeCommand(false));
+        await ble.request(wifiBridgeCommand(false), PACKET.ACK, 5000);
         await new Promise<void>((resolve) => setTimeout(resolve, 100));
       }
       return true;
@@ -354,6 +368,8 @@ export default function App(): ReactElement {
       pingTargets,
       setRunning,
       setActiveTest,
+      setFailures: setMeasurementFailures,
+      setPendingTests,
       setNotice,
       setWiremap,
       setTdr,
@@ -395,6 +411,8 @@ export default function App(): ReactElement {
           onExpandedChange={setExpanded}
           running={running}
           activeTest={activeTest}
+          failures={measurementFailures}
+          pendingTests={pendingTests}
           toolSettings={toolSettings}
           wiremap={wiremap}
           tdr={tdr}

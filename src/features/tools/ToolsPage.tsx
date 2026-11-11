@@ -71,7 +71,8 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
     value: BlinkerSettings[Key],
   ): Promise<void> => {
     const next = { ...blinkerSettings, [name]: value };
-    if (name === 'link' && !(await onBlinkerChange(next, tonerSettings.power === 'on'))) return;
+    const shouldApply = name === 'link' || blinkerSettings.link !== 'off';
+    if (shouldApply && !(await onBlinkerChange(next, tonerSettings.power === 'on'))) return;
     onBlinkerSettingsChange(next);
   };
   const updateSettings = <Key extends keyof ToolSettings>(

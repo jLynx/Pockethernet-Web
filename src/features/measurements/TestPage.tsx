@@ -15,6 +15,7 @@ import type {
   DiscoveryFailure,
   Ipv4UiSettings,
   Ipv6DisplayResult,
+  MeasurementFailures,
   PingDisplayResult,
   StateSetter,
   TdrGraphResult,
@@ -47,6 +48,8 @@ interface TestPageProps {
   onExpandedChange: StateSetter<Set<TestId>>;
   running: boolean;
   activeTest: TestId | null;
+  failures?: MeasurementFailures;
+  pendingTests?: Set<TestId>;
   toolSettings: ToolSettings;
   wiremap: WiremapResult | null;
   tdr: TdrResult | null;
@@ -143,12 +146,14 @@ export function TestPage(props: TestPageProps): ReactElement {
     selected: boolean;
     expanded: boolean;
     testing: boolean;
+    failure?: string;
     onToggle: () => void;
     onExpand: () => void;
   } => ({
     selected: selected.has(id),
     expanded: expanded.has(id),
-    testing: activeTest === id,
+    testing: props.pendingTests ? props.pendingTests.has(id) : activeTest === id,
+    failure: props.failures?.[id],
     onToggle: () => {
       onToggle(id);
     },

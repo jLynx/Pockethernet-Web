@@ -138,5 +138,7 @@ The BLE transport handles framed messages, checksums, notifications, request/rep
 
 ## Known limitations
 
+The measurement flow, failure handling and parser audit are documented in [APP_COMPATIBILITY.md](docs/APP_COMPATIBILITY.md), including regression coverage and the stock-firmware field retest checklist.
+
 - [Web Bluetooth](https://caniuse.com/web-bluetooth) is not supported by every browser or platform; use desktop Chrome or Edge.
 - Firmware checking is implemented, but firmware installation is not.

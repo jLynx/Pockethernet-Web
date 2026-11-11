@@ -66,19 +66,31 @@ export function parsePoePacket(payload: Uint8Array): PoeResult {
   if (payload.length !== 32)
     throw new Error(`Invalid PoE response: expected 32 bytes, received ${payload.length}`);
   const view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
-  const openVoltage = Math.round(view.getInt16(4, true) / 10);
+  const rawOpenVoltage = view.getInt16(4, true);
+  // measdata_pen.smali: the raw short is checked before rounding or mode classification.
+  if (rawOpenVoltage === 0)
+    return {
+      status: 'not_OK',
+      summary: 'No PoE',
+      poeType: '',
+      openVoltage: 0,
+      loadVoltage: 0,
+      polarity: '',
+      adc: [],
+      pairVoltages: [],
+    };
+  const openVoltage = Math.round(rawOpenVoltage / 10);
   const loadVoltage = Math.round(view.getInt16(6, true) / 10);
-  const adc = Array.from({ length: 4 }, (_, index) => view.getInt16(16 + index * 2, true));
+  // APK converts the ADC shorts to unsigned values, then computes absolute mode voltages.
+  const adc = Array.from({ length: 4 }, (_, index) => view.getUint16(16 + index * 2, true));
   const pairVoltages = Array.from({ length: 4 }, (_, index) =>
     Math.round(view.getInt16(24 + index * 2, true) / 10),
   );
-  const modeA = Math.abs(adc[0]) - Math.abs(adc[1]);
-  const modeB = Math.abs(adc[2]) - Math.abs(adc[3]);
+  const modeA = Math.fround(Math.abs(adc[0] - adc[1]) * 0.002393809);
+  const modeB = Math.fround(Math.abs(adc[2] - adc[3]) * 0.002393809);
   const polarity: string[] = [];
-  if (Math.abs(modeA) * 0.002393809 > 10)
-    polarity.push(adc[0] > adc[1] ? '1-2: - | 3-6: +' : '1-2: + | 3-6: -');
-  if (Math.abs(modeB) * 0.002393809 > 10)
-    polarity.push(adc[2] > adc[3] ? '4-5: - | 7-8: +' : '4-5: + | 7-8: -');
+  if (modeA > 10) polarity.push(adc[1] > adc[0] ? '1-2: - | 3-6: +' : '1-2: + | 3-6: -');
+  if (modeB > 10) polarity.push(adc[3] > adc[2] ? '4-5: - | 7-8: +' : '4-5: + | 7-8: -');
   const polarityText = polarity.join(' | ');
   const poeMode = payload[2];
   if (poeMode === 0) {
@@ -101,13 +113,13 @@ export function parsePoePacket(payload: Uint8Array): PoeResult {
       : payload[1] > 7 || payload[0] > 4
         ? 'BT'
         : 'AT/BT';
-  const minimumVoltage = type === 'AF/AT' || type === 'AT' ? 37 : 42;
-  const unbalanced =
-    openVoltage > 10 && loadVoltage > 10 && (Math.abs(modeA - modeB) * 100) / modeA > 10;
+  // APK uses 37 V only for AF/AT; the AT, AT/BT and BT classifications use 42 V.
+  const minimumVoltage = type === 'AF/AT' ? 37 : 42;
+  const unbalanced = modeA > 10 && modeB > 10 && (Math.abs(modeA - modeB) * 100) / modeA > 10;
   const status = openVoltage < minimumVoltage || loadVoltage < minimumVoltage ? 'not_OK' : 'OK';
   return {
     status,
-    summary: `PoE ${type}, Class: ${payload[1]}, ${loadVoltage}V${unbalanced ? ' (UB!)' : ''}`,
+    summary: `${unbalanced ? 'UB! ' : ''}PoE ${type}, Class: ${payload[1]}, ${loadVoltage}V`,
     poeType: type,
     maxClass: poeClass(payload[1]),
     openVoltage,

@@ -99,6 +99,7 @@ interface TestPanelProps {
   testing?: boolean;
   status?: PanelStatus;
   summary?: string;
+  failure?: string;
   help: {
     description: string;
     note?: string;
@@ -116,6 +117,7 @@ export function TestPanel({
   testing = false,
   status = 'idle',
   summary,
+  failure,
   help,
   children,
 }: TestPanelProps): ReactElement {
@@ -126,7 +128,7 @@ export function TestPanel({
     <Card className={`test-panel ${id} ${expanded ? 'expanded' : ''} ${testing ? 'testing' : ''}`}>
       <div className="test-panel-header">
         <Button unstyled className="test-label" onClick={onToggle}>
-          <SelectionSwitch selected={selected} status={status} />
+          <SelectionSwitch selected={selected} status={failure ? 'error' : status} />
           <span>{title}</span>
         </Button>
         <Button unstyled className="test-summary" onClick={onExpand}>
@@ -136,7 +138,7 @@ export function TestPanel({
               Testing
             </span>
           ) : (
-            <span>{summary || fallback}</span>
+            <span>{failure || summary || fallback}</span>
           )}
           <b aria-hidden="true" />
         </Button>

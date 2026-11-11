@@ -201,7 +201,7 @@ assert.equal(wifiView.getUint16(0, true), 3);
 assert.equal(wifi.payload[36], 9);
 assert.equal(wifi.payload[37], 6);
 assert.equal(wifi.payload[38], 1);
-assert.equal(wifi.payload[39], 3);
+assert.equal(wifi.payload[39], 4);
 assert.deepEqual(
   Array.from(wifi.payload.slice(40, 46)),
   Array.from(new TextEncoder().encode('secret')),

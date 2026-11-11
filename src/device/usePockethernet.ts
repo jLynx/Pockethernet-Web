@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPacketInbox, requestPacket, type PacketWaitOptions } from './packetInbox';
 import {
   BLE,
   PACKET,
@@ -25,22 +26,19 @@ export interface PockethernetClient extends PockethernetState {
   clearError: () => void;
   connect: () => Promise<void>;
   disconnect: () => void;
-  request: (command: Packet, types: number | number[], timeout?: number) => Promise<Packet>;
+  request: (
+    command: Packet,
+    types: number | number[],
+    timeout?: number,
+    options?: PacketWaitOptions,
+  ) => Promise<Packet>;
   send: (command: Packet) => Promise<void>;
-  waitFor: (types: number | number[], timeout?: number) => Promise<Packet>;
-  collectFor: (type: number, timeout?: number) => Promise<Packet[]>;
-}
-
-interface PacketWaiter {
-  types: number[];
-  resolve: (packet: Packet) => void;
-  reject: (reason: Error) => void;
-  timer?: ReturnType<typeof setTimeout>;
-}
-
-interface PacketCollector {
-  type: number;
-  packets: Packet[];
+  waitFor: (
+    types: number | number[],
+    timeout?: number,
+    options?: PacketWaitOptions,
+  ) => Promise<Packet>;
+  collectFor: (type: number, timeout?: number, options?: PacketWaitOptions) => Promise<Packet[]>;
 }
 
 interface BluetoothRefs {
@@ -48,8 +46,6 @@ interface BluetoothRefs {
   notify: BluetoothRemoteGATTCharacteristic | null;
   write: BluetoothRemoteGATTCharacteristic | null;
   chunks: number[];
-  waiters: PacketWaiter[];
-  collectors: PacketCollector[];
 }
 
 function errorMessage(error: unknown): string {
@@ -82,9 +78,8 @@ export function usePockethernet({ pollBattery = true } = {}): PockethernetClient
     notify: null,
     write: null,
     chunks: [],
-    waiters: [],
-    collectors: [],
   });
+  const inbox = useRef(createPacketInbox());
   const writes = useRef<Promise<void>>(Promise.resolve());
   const update = useCallback(
     (patch: Partial<PockethernetState>) => setState((current) => ({ ...current, ...patch })),
@@ -93,18 +88,7 @@ export function usePockethernet({ pollBattery = true } = {}): PockethernetClient
   const clearError = useCallback(() => update({ error: '' }), [update]);
 
   const onPacket = useCallback((packet: Packet) => {
-    refs.current.collectors
-      .filter((item) => item.type === packet.type)
-      .forEach((item) => item.packets.push(packet));
-    const waiter = refs.current.waiters.find(
-      (item) => item.types.includes(packet.type) || packet.type === PACKET.NACK,
-    );
-    if (waiter) {
-      if (waiter.timer) clearTimeout(waiter.timer);
-      refs.current.waiters = refs.current.waiters.filter((item) => item !== waiter);
-      if (packet.type === PACKET.NACK) waiter.reject(new Error('Device rejected the request'));
-      else waiter.resolve(packet);
-    }
+    inbox.current.receive(packet);
   }, []);
 
   const onNotification = useCallback(() => {
@@ -152,59 +136,40 @@ export function usePockethernet({ pollBattery = true } = {}): PockethernetClient
   }, []);
 
   const waitFor = useCallback(
-    (types: number | number[], timeout = 5000): Promise<Packet> =>
-      new Promise<Packet>((resolve, reject) => {
-        const waiter: PacketWaiter = {
-          types: Array.isArray(types) ? types : [types],
-          resolve,
-          reject,
-        };
-        waiter.timer = setTimeout(() => {
-          refs.current.waiters = refs.current.waiters.filter((item) => item !== waiter);
-          reject(new Error('The device did not respond in time'));
-        }, timeout);
-        refs.current.waiters.push(waiter);
-      }),
+    (types: number | number[], timeout = 5000, options?: PacketWaitOptions): Promise<Packet> =>
+      inbox.current.waitFor(types, timeout, options),
     [],
   );
 
   const collectFor = useCallback(
-    (type: number, timeout = 5000): Promise<Packet[]> =>
-      new Promise<Packet[]>((resolve) => {
-        const collector: PacketCollector = { type, packets: [] };
-        refs.current.collectors.push(collector);
-        setTimeout(() => {
-          refs.current.collectors = refs.current.collectors.filter((item) => item !== collector);
-          resolve(collector.packets);
-        }, timeout);
-      }),
+    (type: number, timeout = 5000, options?: PacketWaitOptions): Promise<Packet[]> =>
+      inbox.current.collectFor(type, timeout, options),
     [],
   );
 
   const request = useCallback(
-    async (command: Packet, types: number | number[], timeout = 5000): Promise<Packet> => {
-      const reply = waitFor(types, timeout);
-      // A failed write can leave the response promise pending until its timeout.
-      void reply.catch(() => undefined);
-      await send(command);
-      return reply;
-    },
-    [send, waitFor],
+    (
+      command: Packet,
+      types: number | number[],
+      timeout = 5000,
+      options?: PacketWaitOptions,
+    ): Promise<Packet> => requestPacket(inbox.current, send, command, types, timeout, options),
+    [send],
   );
 
   const disconnect = useCallback(() => {
     const { device } = refs.current;
+    inbox.current.cancel();
+    refs.current.notify?.removeEventListener('characteristicvaluechanged', onNotification);
     if (device?.gatt?.connected) device.gatt.disconnect();
     refs.current = {
       device: null,
       notify: null,
       write: null,
       chunks: [],
-      waiters: [],
-      collectors: [],
     };
     update({ status: 'disconnected', device: null, info: null, batteryPercent: null });
-  }, [update]);
+  }, [onNotification, update]);
 
   const connect = useCallback(async () => {
     if (!Reflect.has(navigator, 'bluetooth'))
@@ -227,6 +192,7 @@ export function usePockethernet({ pollBattery = true } = {}): PockethernetClient
       const response = await request(deviceInfoCommand(), PACKET.DEVICE_INFO, 3500);
       update({ info: parseDeviceInfo(response.payload) });
     } catch (error) {
+      disconnect();
       update({ status: 'disconnected', error: errorMessage(error) });
       throw error;
     }
@@ -241,7 +207,7 @@ export function usePockethernet({ pollBattery = true } = {}): PockethernetClient
     const refresh = async (): Promise<void> => {
       if (cancelled || refs.current.device !== device) return;
       // Leave the transport available for measurements and packet collection.
-      if (refs.current.waiters.length || refs.current.collectors.length) {
+      if (inbox.current.busy) {
         timer = setTimeout(() => void refresh(), 5000);
         return;
       }
@@ -271,6 +237,7 @@ export function usePockethernet({ pollBattery = true } = {}): PockethernetClient
 
   useEffect(
     () => () => {
+      inbox.current.cancel();
       if (refs.current.device?.gatt?.connected) refs.current.device.gatt.disconnect();
     },
     [],

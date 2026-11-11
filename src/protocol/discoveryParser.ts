@@ -11,6 +11,7 @@ function ethernetPayload(payload: Uint8Array): { type: number; offset: number; s
   if (payload.length < 14) throw new Error('Invalid Ethernet frame');
   const type = (payload[12] << 8) | payload[13];
   const offset = type === 0x8100 ? 18 : 14;
+  if (payload.length < offset) throw new Error('Truncated Ethernet VLAN header');
   return {
     type: type === 0x8100 ? (payload[16] << 8) | payload[17] : type,
     offset,
@@ -52,8 +53,14 @@ function parseCdpFrame(payload: Uint8Array, offset: number): DiscoveryFrame | nu
         payload[valueStart + 3];
       fields.Capabilities = `0x${(value >>> 0).toString(16)}`;
     }
-    if (type === 10 && length >= 8)
-      fields['Native VLAN'] = String((payload[valueStart + 4] << 8) | payload[valueStart + 5]);
+    // CDP TLV length includes its 4-byte header; native VLAN is the 2-byte value.
+    if (type === 10 && length === 6)
+      fields['Native VLAN'] = String((payload[valueStart] << 8) | payload[valueStart + 1]);
+    if (type === 11 && length === 5) fields.Duplex = payload[valueStart] ? 'Full' : 'Half';
+    if (type === 17 && length === 8)
+      fields.MTU = String(
+        new DataView(payload.buffer, payload.byteOffset + valueStart, 4).getUint32(0, false),
+      );
     cursor += length;
   }
   return { protocol: 'CDP', summary: 'CDP received', fields };
@@ -78,7 +85,12 @@ function lldpCapabilities(value: number): string {
 }
 
 function parseLldpFrame(payload: Uint8Array, offset: number, type: number): DiscoveryFrame | null {
-  if (type !== 0x88cc && type !== 0x88e7) return null;
+  if (type !== 0x88cc) {
+    // APK also accepts LLC/SNAP LLDP, which the firmware's second LLDP filter forwards.
+    const snap = [0xaa, 0xaa, 3, 0, 0, 0, 0x88, 0xcc];
+    if (!snap.every((byte, index) => payload[offset + index] === byte)) return null;
+    offset += snap.length;
+  }
   const fields: FieldMap = {};
   let cursor = offset;
   while (cursor + 2 <= payload.length) {

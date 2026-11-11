@@ -142,10 +142,12 @@ export function parseDeviceInfo(payload: Uint8Array): DeviceInfo {
   if (payload.length < 35) throw new Error('Invalid device-information response');
   const view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
   const deviceMac = payload.slice(29, 35);
+  let carry = 3; // APK treats the complete MAC as a big-endian 48-bit integer and adds 3.
   for (let index = deviceMac.length - 1; index >= 0; index -= 1) {
-    const incremented = deviceMac[index] + 3;
+    const incremented = deviceMac[index] + carry;
     deviceMac[index] = incremented & 255;
-    if (incremented <= 255) break;
+    carry = incremented >>> 8;
+    if (carry === 0) break;
   }
   return {
     serial: view.getInt32(0, true),

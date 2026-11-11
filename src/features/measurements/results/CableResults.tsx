@@ -17,6 +17,12 @@ export function PoeResults({
         Run a measurement to detect PoE and pair polarity
       </EmptyState>
     );
+  if (result.summary === 'No PoE')
+    return (
+      <EmptyState className="poe-no-power" tone="error">
+        No PoE
+      </EmptyState>
+    );
   const pairColors = pairColorsForTia(tia);
   const pairDisplay = [
     { label: '2', color: pairColors[0], value: result.pairVoltages[0] },

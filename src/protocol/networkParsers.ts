@@ -15,6 +15,7 @@ export function parseIpv4Packet(payload: Uint8Array): FieldsResult {
   const ipStart = ethLength;
   if (payload[ipStart] >>> 4 !== 4) throw new Error('Invalid IPv4 packet: unexpected IP version');
   const ipHeaderLength = (payload[ipStart] & 15) * 4;
+  if (ipHeaderLength < 20) throw new Error('Invalid IPv4 packet: IP header too short');
   const udpStart = ipStart + ipHeaderLength;
   if (payload[ipStart + 9] !== 17 || payload.length < udpStart + 8)
     throw new Error('Invalid IPv4 packet: DHCP UDP payload missing');
@@ -94,7 +95,9 @@ function ipv6PacketParts(payload: Uint8Array): {
   let nextHeader = payload[ipStart + 6];
   let cursor = ipStart + 40;
   while ([0, 43, 60].includes(nextHeader)) {
+    if (cursor + 2 > payload.length) throw new Error('Truncated IPv6 extension header');
     const length = (payload[cursor + 1] + 1) * 8;
+    if (cursor + length > payload.length) throw new Error('Truncated IPv6 extension header');
     nextHeader = payload[cursor];
     cursor += length;
   }
@@ -111,10 +114,12 @@ function parseRaOptions(payload: Uint8Array, start: number, fields: FieldMap): v
   for (let cursor = start; cursor + 2 <= payload.length;) {
     const type = payload[cursor];
     const length = payload[cursor + 1] * 8;
-    if (!length || cursor + length + 2 > payload.length) break;
-    const value = payload.slice(cursor + 2, cursor + length + 2);
-    if (type === 1 && length >= 6) fields['Source LLA'] = formatMac(value.slice(0, 6));
-    if (type === 3 && length >= 30) {
+    // RFC 4861 and APK pparser: the length in units of 8 bytes INCLUDES the type/length header.
+    if (!length || cursor + length > payload.length)
+      throw new Error('Invalid Router Advertisement option length');
+    const value = payload.slice(cursor + 2, cursor + length);
+    if (type === 1 && length >= 8) fields['Source LLA'] = formatMac(value.slice(0, 6));
+    if (type === 3 && length >= 32) {
       fields['Prefix Info'] =
         `Length: ${value[0]} Flags: ${value[1] & 0x80 ? 'On-link' : ''}${value[1] & 0x40 ? `${value[1] & 0x80 ? ', ' : ''}Autonomous` : ''}`;
       fields['Valid lifetime'] = String(
@@ -125,9 +130,9 @@ function parseRaOptions(payload: Uint8Array, start: number, fields: FieldMap): v
       );
       fields['Prefix addr'] = formatIpv6(value.slice(14, 30));
     }
-    if (type === 5 && length >= 6)
+    if (type === 5 && length >= 8)
       fields.MTU = String(new DataView(value.buffer, value.byteOffset + 2, 4).getUint32(0, false));
-    if (type === 25 && length >= 22) {
+    if (type === 25 && length >= 24) {
       fields['RDNSS lifetime'] = String(
         new DataView(value.buffer, value.byteOffset + 2, 4).getUint32(0, false),
       );
@@ -136,7 +141,7 @@ function parseRaOptions(payload: Uint8Array, start: number, fields: FieldMap): v
         addresses.push(formatIpv6(value.slice(index, index + 16)));
       fields['DNSv6 Server'] = addresses.join(', ');
     }
-    cursor += length + 2;
+    cursor += length;
   }
 }
 
@@ -172,12 +177,14 @@ export function parseIpv6Packet(
     'Source IP': source,
     'Destination IP': destination,
   };
-  if (mode === 'dhcpv6' || nextHeader === 17) {
-    if (nextHeader !== 17 || payload[cursor + 8] !== 7) throw new Error('Invalid DHCPv6 reply');
+  if (mode === 'dhcpv6') {
+    if (nextHeader !== 17 || payload.length < cursor + 12 || payload[cursor + 8] !== 7)
+      throw new Error('Invalid DHCPv6 reply');
     parseDhcpv6Options(payload, cursor + 12, fields);
     return { status: 'OK', summary: 'DHCPv6 reply received', protocol: 'DHCPv6', fields };
   }
-  if (nextHeader !== 58 || payload[cursor] !== 134) throw new Error('Invalid Router Advertisement');
+  if (nextHeader !== 58 || payload.length < cursor + 16 || payload[cursor] !== 134)
+    throw new Error('Invalid Router Advertisement');
   const flags = payload[cursor + 5];
   fields['Cur Hop Limit'] = String(payload[cursor + 4]);
   fields['Management flags'] =

@@ -42,6 +42,7 @@ export type TestId =
   | 'ping'
   | 'extip';
 export type Units = 'meters' | 'feet';
+export type MeasurementFailures = Partial<Record<TestId, string>>;
 export type TiaStandard = '568A' | '568B';
 export type OnOff = 'on' | 'off';
 export type StateSetter<T> = Dispatch<SetStateAction<T>>;
