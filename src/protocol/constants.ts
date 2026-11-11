@@ -26,6 +26,7 @@ export const PACKET = Object.freeze({
   HTTP_RESPONSE: 62064,
   ANA_TONER: 61984,
   ETH_STOP: 62208,
+  ESP_UPDATE: 0xf401, // ESP OTA only; F400 updates the STM32 and must not be sent here.
   ACK: 61690,
   NACK: 61680,
 });

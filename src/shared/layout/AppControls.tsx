@@ -43,10 +43,12 @@ export function AppFooter(): ReactElement {
 export function ConnectionButton({
   status,
   batteryPercent = null,
+  disabled = false,
   onClick,
 }: {
   status: ConnectionStatus;
   batteryPercent?: number | null;
+  disabled?: boolean;
   onClick: () => void;
 }): ReactElement {
   const label =
@@ -56,6 +58,7 @@ export function ConnectionButton({
     <Button
       unstyled
       className={`connection-button ${status}${hasBattery ? ' has-battery' : ''}`}
+      disabled={disabled}
       aria-label={hasBattery ? `Connected. Battery ${batteryPercent}%. Disconnect` : label}
       onClick={onClick}
     >

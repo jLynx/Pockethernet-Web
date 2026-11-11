@@ -80,6 +80,8 @@ export default defineConfig({
       ],
     },
     proxy: {
+      '/api/ota-files': { target: 'http://127.0.0.1:8787' },
+      '/f/': { target: 'http://127.0.0.1:8787' },
       '/api/latest-version': {
         target: 'https://ota.pockethernet.com',
         changeOrigin: true,

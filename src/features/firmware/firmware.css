@@ -1,0 +1,150 @@
+.firmware-updater {
+  min-width: 0;
+}
+.firmware-advanced form,
+.firmware-file-choice {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0;
+}
+.firmware-advanced .text-field,
+.firmware-file-input {
+  display: grid;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+.firmware-file-input input {
+  min-width: 0;
+  max-width: 100%;
+}
+.firmware-source {
+  font-family: monospace;
+  overflow-wrap: anywhere;
+}
+.firmware-offer {
+  margin-top: 12px;
+}
+.firmware-update-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  color: var(--text-warning, #9a6500);
+  background: var(--surface-warning, #fff7df);
+}
+.firmware-update-notice p {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.firmware-update-notice .firmware-update-button {
+  flex-shrink: 0;
+  min-height: 32px;
+  padding: 5px 10px;
+  font-size: 0.78rem;
+}
+.firmware-offer-help {
+  margin: 8px 0 0;
+  color: var(--text-muted, #68768a);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+.firmware-status p {
+  margin: 0 0 12px;
+  font-size: 0.87rem;
+  line-height: 1.55;
+}
+.firmware-detail {
+  color: var(--text-muted, #68768a);
+}
+.firmware-status {
+  margin: 12px;
+  padding: 16px;
+  border: 1px solid var(--border, #dfe6ed);
+  border-radius: 12px;
+  background: var(--surface-muted, #f4f6f8);
+  color: var(--text, #15243a);
+  overflow-wrap: anywhere;
+}
+.firmware-status h3 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+.firmware-progress {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 6px;
+  margin-bottom: 14px;
+  border-radius: 999px;
+  background: var(--border, #dfe6ed);
+}
+.firmware-progress-bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 40%;
+  border-radius: inherit;
+  background: var(--accent, #0878ca);
+  will-change: transform;
+  animation: firmware-progress-sweep 1.6s linear infinite;
+}
+/* Move the 40%-wide segment from just outside the left edge to the right edge.
+   Transform-only motion avoids recalculating layout or painting every frame. */
+@keyframes firmware-progress-sweep {
+  from {
+    transform: translate3d(-100%, 0, 0);
+  }
+  to {
+    transform: translate3d(250%, 0, 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .firmware-progress-bar {
+    left: 30%;
+    animation: none;
+    transform: none;
+    will-change: auto;
+  }
+}
+.firmware-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.firmware-status.failed {
+  border-color: var(--text-danger, #bb3242);
+}
+.firmware-status.verified,
+.firmware-status.restart {
+  border-color: var(--text-success, #168467);
+}
+.firmware-banner {
+  margin: 14px clamp(18px, 4vw, 34px);
+  padding: 12px 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid var(--border, #dfe6ed);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+  color: var(--text, #15243a);
+  font-size: 0.88rem;
+}
+fieldset.tool-controls {
+  min-width: 0;
+  margin: 0;
+  border: 0;
+}
+@media (max-width: 480px) {
+  .firmware-status .ui-button {
+    width: 100%;
+    white-space: normal;
+  }
+}

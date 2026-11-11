@@ -3,6 +3,7 @@ export * from './protocol/commands';
 export * from './protocol/constants';
 export * from './protocol/discoveryParser';
 export * from './protocol/encoding';
+export * from './protocol/firmwareUpdate';
 export * from './protocol/linkParsers';
 export * from './protocol/networkParsers';
 export * from './protocol/tdrParser';

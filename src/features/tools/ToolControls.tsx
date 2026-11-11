@@ -1,4 +1,10 @@
-import type { ChangeEvent, InputHTMLAttributes, ReactElement, ReactNode } from 'react';
+import type {
+  ChangeEvent,
+  InputHTMLAttributes,
+  MouseEventHandler,
+  ReactElement,
+  ReactNode,
+} from 'react';
 import {
   Button,
   ButtonLink,
@@ -14,6 +20,7 @@ interface ToolPanelProps {
   summary: string;
   children: ReactNode;
   className?: string;
+  disabled?: boolean;
 }
 
 export function ToolPanel({
@@ -22,6 +29,7 @@ export function ToolPanel({
   summary,
   children,
   className = '',
+  disabled = false,
 }: ToolPanelProps): ReactElement {
   return (
     <Card className={`tool-panel ${className} ${active ? 'active' : ''}`}>
@@ -32,7 +40,9 @@ export function ToolPanel({
         </div>
         <span className="tool-status">{active ? 'Active' : 'Ready'}</span>
       </header>
-      <div className="tool-controls">{children}</div>
+      <fieldset className="tool-controls" disabled={disabled} aria-label={title}>
+        {children}
+      </fieldset>
     </Card>
   );
 }
@@ -103,7 +113,8 @@ interface ToolActionProps {
   label: string;
   action: string;
   disabled?: boolean;
-  onClick?: () => void;
+  onClick?: MouseEventHandler<HTMLButtonElement>;
+  title?: string;
   href?: string;
 }
 
@@ -113,6 +124,7 @@ export function ToolAction({
   disabled = true,
   onClick,
   href,
+  title,
 }: ToolActionProps): ReactElement {
   return (
     <div className="tool-action">
@@ -122,7 +134,7 @@ export function ToolAction({
           {action}
         </ButtonLink>
       ) : (
-        <Button unstyled disabled={disabled} onClick={onClick}>
+        <Button unstyled disabled={disabled} onClick={onClick} title={title}>
           {action}
         </Button>
       )}

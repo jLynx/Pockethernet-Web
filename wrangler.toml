@@ -8,9 +8,19 @@ binding = "ASSETS"
 not_found_handling = "single-page-application"
 run_worker_first = [
   "/api/latest-version",
+  "/api/ota-files",
+  "/f/*",
   "/assets/index-*.js",
   "/assets/index-*.css",
   "/assets/logo-*.png",
   "/pockethernet-192.png",
   "/pockethernet-512.png",
 ]
+
+[[durable_objects.bindings]]
+name = "OTA_FILES"
+class_name = "OtaFileStore"
+
+[[migrations]]
+tag = "ota-files-v1"
+new_sqlite_classes = ["OtaFileStore"]

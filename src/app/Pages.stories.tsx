@@ -77,9 +77,30 @@ export const Tools: Story = {
         espVersion: 12,
         mac: '00:11:22:33:44:55',
       }}
-      firmwareCheck={null}
-      firmwareChecking={false}
-      onCheckFirmware={() => Promise.resolve()}
+      firmwareLocked={false}
+      firmwareUpdater={{
+        state: {
+          phase: 'idle',
+          check: null,
+          checking: false,
+          verifying: false,
+          message: '',
+          pending: null,
+          advanced: false,
+          selecting: false,
+          selection: null,
+        },
+        blockedReason: '',
+        check: () => Promise.resolve(),
+        confirm: noop,
+        cancel: noop,
+        start: () => Promise.resolve(),
+        verify: () => Promise.resolve(),
+        openAdvanced: () => {},
+        closeAdvanced: () => {},
+        chooseUrl: () => {},
+        chooseFile: () => Promise.resolve(),
+      }}
       settings={{ tia: '568B', units: 'meters', nvp: '68', customMac: 'off', mac: '' }}
       onSettingsChange={noop}
       blinkerSettings={{ speed: 'auto', duplex: 'auto', mdi: 'auto', link: 'off' }}

@@ -2,14 +2,15 @@ import type { ChangeEvent, ReactElement } from 'react';
 import type { DeviceInfo } from '@/pockethernetProtocol';
 import type {
   BlinkerSettings,
-  FirmwareCheck,
   ReportPreferences,
   StateSetter,
   TonerSettings,
   ToolSettings,
   WifiSettings,
 } from '@/app/types';
-import { ToolAction, ToolControl, ToolField, ToolInfoRow, ToolPanel } from './ToolControls';
+import { ToolControl, ToolField, ToolInfoRow, ToolPanel } from './ToolControls';
+import { FirmwareUpdatePanel } from '@/features/firmware/FirmwareUpdatePanel';
+import type { FirmwareUpdaterActions } from '@/features/firmware/useFirmwareUpdater';
 import { PageHeader } from '@/shared/ui/UiPrimitives';
 import { resizeReportImage } from '@/features/reports/images';
 import { ThemeSettings } from '@/shared/layout/ThemeSelector';
@@ -17,9 +18,8 @@ import { NotificationSettings } from '@/features/notifications/NotificationSetti
 
 interface ToolsPageProps {
   deviceInfo: DeviceInfo | null;
-  firmwareCheck: FirmwareCheck | null;
-  firmwareChecking: boolean;
-  onCheckFirmware: () => Promise<void>;
+  firmwareUpdater: FirmwareUpdaterActions;
+  firmwareLocked: boolean;
   settings: ToolSettings;
   onSettingsChange: StateSetter<ToolSettings>;
   blinkerSettings: BlinkerSettings;
@@ -39,9 +39,8 @@ interface ToolsPageProps {
 export function ToolsPage(props: ToolsPageProps): ReactElement {
   const {
     deviceInfo,
-    firmwareCheck,
-    firmwareChecking,
-    onCheckFirmware,
+    firmwareUpdater,
+    firmwareLocked,
     settings,
     onSettingsChange,
     blinkerSettings,
@@ -124,6 +123,7 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
         <div className="tools-column">
           <ToolPanel
             className="tool-panel-toner"
+            disabled={firmwareLocked}
             title="Cable toner"
             active={tonerSettings.power === 'on'}
             summary={
@@ -290,6 +290,7 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
           </ToolPanel>
           <ToolPanel
             className="tool-panel-wifi"
+            disabled={firmwareLocked}
             title="WiFi bridge"
             active={wifiSettings.enabled === 'on'}
             summary={wifiSettings.enabled === 'on' ? 'Bridge enabled' : 'Bridge disabled'}
@@ -323,6 +324,7 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
         <div className="tools-column">
           <ToolPanel
             className="tool-panel-blinker"
+            disabled={firmwareLocked}
             title="Link blinker"
             active={blinkerSettings.link !== 'off'}
             summary={
@@ -393,25 +395,11 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
                   label="FW version"
                   value={`${deviceInfo.espVersion}.${deviceInfo.stmVersion}`}
                 />
-                <ToolAction
-                  label="Firmware"
-                  action={firmwareChecking ? 'Checking...' : 'Check for upgrade'}
-                  disabled={firmwareChecking}
-                  onClick={() => {
-                    void onCheckFirmware();
-                  }}
-                />
-                {firmwareCheck && (
-                  <div
-                    className={`tool-firmware-result ${'error' in firmwareCheck ? 'error' : firmwareCheck.updateAvailable ? 'update' : 'current'}`}
-                  >
-                    {'error' in firmwareCheck ? firmwareCheck.error : firmwareCheck.message}
-                  </div>
-                )}
               </>
             ) : (
               <ToolInfoRow label="Device Info" value="Connect to view device info" />
             )}
+            <FirmwareUpdatePanel updater={firmwareUpdater} deviceInfo={deviceInfo} />
           </ToolPanel>
         </div>
       </div>

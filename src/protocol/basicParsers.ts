@@ -166,7 +166,12 @@ export function parseFirmwareVersionResponse(
   const versionText = separator >= 0 ? response.slice(0, separator).trim() : '';
   const downloadUrl = separator >= 0 ? response.slice(separator + 1).trim() : '';
   const latestVersion = Number(versionText);
-  if (!Number.isFinite(latestVersion) || !downloadUrl.includes('http'))
+  if (
+    !/^\d+$/.test(versionText) ||
+    !Number.isSafeInteger(latestVersion) ||
+    latestVersion < 1 ||
+    !/^https?:\/\/[^\s]+$/.test(downloadUrl)
+  )
     throw new Error('Invalid response from update server');
   return {
     latestVersion,

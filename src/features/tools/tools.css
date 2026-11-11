@@ -297,10 +297,6 @@
   font-size: 0.8rem;
   font-weight: 700;
 }
-.tool-firmware-result.update {
-  color: var(--text-warning, #9a6500);
-  background: var(--surface-warning, #fff7df);
-}
 .tool-firmware-result.current {
   color: var(--text-success, #159153);
   background: var(--surface-success, #eaf8f0);
