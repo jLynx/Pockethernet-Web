@@ -1,0 +1,91 @@
+.app-update {
+  position: fixed;
+  z-index: 1200;
+  top: calc(16px + env(safe-area-inset-top));
+  bottom: auto;
+  inset-inline: 16px;
+  width: min(400px, calc(100% - 32px));
+  max-width: 400px;
+  margin-inline: auto;
+  margin-block: 0;
+  padding: 18px;
+  border: 1px solid var(--border-control, #cfd9e4);
+  border-radius: 16px;
+  box-shadow: 0 8px 28px #0d15212e;
+  color: var(--text, #172133);
+  background: var(--surface, #fff);
+}
+.app-update::backdrop {
+  background: #0d152180;
+}
+.app-update-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.app-update-icon {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  color: var(--accent, #0878ca);
+  background: var(--surface-accent, #eaf5fd);
+}
+.app-update-icon svg {
+  width: 18px;
+  height: 18px;
+}
+.app-update-copy {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+.app-update-copy strong {
+  font-size: 1rem;
+  line-height: 1.4;
+}
+.app-update-copy span {
+  color: var(--text-secondary, #304056);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.app-update-dismiss {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  padding: 4px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  color: var(--text-muted, #718096);
+  background: transparent;
+  cursor: pointer;
+}
+.app-update-dismiss svg {
+  width: 18px;
+  height: 18px;
+}
+.app-update-dismiss:hover:not(:disabled) {
+  color: var(--text, #172133);
+  background: var(--surface-hover, #f4faff);
+}
+.app-update-dismiss:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.app-update-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+.app-update-actions .ui-button {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  border-radius: 9px;
+  font-size: 0.85rem;
+}

@@ -49,6 +49,8 @@ Open the local URL printed by Vite, click **Connect**, and select the Pockethern
 
 The production build is an installable PWA. Open the deployed HTTPS site in Chrome or Edge and use the browser's **Install app** action. After the first successful load, the application shell and bundled assets are cached and can be reopened without an internet connection. Bluetooth must still be enabled to connect to a Pockethernet device.
 
+Pocketweb checks for app updates on startup, when returning to the foreground or coming back online, and hourly. When a new version is downloaded, choose **Update now** to apply it and reload, or **Later** to keep working. Updating is disabled while measurements or device operations are active.
+
 Production check:
 
 ```powershell

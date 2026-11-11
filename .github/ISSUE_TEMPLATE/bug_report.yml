@@ -1,0 +1,72 @@
+name: Bug report
+description: Report something that is not working in Pocketweb for Pockethernet.
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Pocketweb! Please describe one bug per issue.
+        Remove private network details, credentials, and other sensitive information from screenshots and logs before sharing them.
+  - type: checkboxes
+    id: existing-issues
+    attributes:
+      label: Existing issues
+      options:
+        - label: I have searched open and closed issues for this bug.
+          required: true
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: What happened?
+      description: Describe the problem and include any error messages you saw.
+      placeholder: When I run a test or open a report, ...
+    validations:
+      required: true
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Include the relevant test, settings, and cable or network setup.
+      placeholder: |
+        1. Open ...
+        2. Select ...
+        3. Run ...
+        4. See ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      description: What should have happened?
+    validations:
+      required: true
+  - type: input
+    id: browser-os
+    attributes:
+      label: Browser and operating system
+      description: Include versions and whether you are using a browser tab or the installed app.
+      placeholder: Chrome 142 on Android 16, installed app
+    validations:
+      required: true
+  - type: input
+    id: app-version
+    attributes:
+      label: App version
+      description: Copy the App version from Tools → Device info, if available.
+      placeholder: Build commit or Unknown build
+  - type: textarea
+    id: device-details
+    attributes:
+      label: Pockethernet and firmware details
+      description: |
+        If relevant, include the hardware model, firmware versions shown in Tools → Device info, and wiremap adapter version.
+        Mention any custom firmware. If the issue occurs without a device, say so.
+      placeholder: Pockethernet 2, ESP firmware ..., STM firmware ..., adapter V2
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Screenshots, logs, and additional context
+      description: |
+        Attach screenshots or relevant logs if they help explain the problem.
+        Include how often it happens and any workaround you have found.

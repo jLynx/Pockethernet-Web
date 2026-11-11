@@ -57,6 +57,7 @@ import {
   Toast,
 } from '@/shared/layout/AppControls';
 import { MainNav } from '@/shared/layout/Layout';
+import { AppUpdate } from '@/shared/layout/AppUpdate';
 import { usePockethernet } from '@/device/usePockethernet';
 import { useDeviceTools } from '@/features/tools/useDeviceTools';
 import { useFirmwareUpdater } from '@/features/firmware/useFirmwareUpdater';
@@ -331,6 +332,7 @@ export default function App(): ReactElement {
         </div>
       </header>
       <MainNav tab={tab} onChange={setTab} />
+      <AppUpdate busy={running || deviceLocked || deviceTools.busy} />
       {deviceLocked && tab !== 'tools' && (
         <div className="firmware-banner" role="status">
           <span>

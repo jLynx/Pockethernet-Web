@@ -1,0 +1,44 @@
+name: Feature request
+description: Suggest a new feature or an improvement to Pocketweb for Pockethernet.
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for sharing your idea! Please describe one feature or improvement per issue.
+        Examples, sketches, and screenshots are welcome; remove any private information before sharing them.
+  - type: checkboxes
+    id: existing-issues
+    attributes:
+      label: Existing issues
+      options:
+        - label: I have searched open and closed issues for this feature or improvement.
+          required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What are you trying to do, and how would this feature help?
+      placeholder: When I ..., I currently have to ...
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed solution
+      description: Describe the behavior you would like, including where it would fit in the app.
+      placeholder: Add an option in ... that lets me ...
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives or workarounds
+      description: Have you tried another approach or considered a different solution?
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: |
+        Add examples, mockups, or screenshots that explain the idea.
+        Include browser, operating system, and Pockethernet model details if they affect the request.
