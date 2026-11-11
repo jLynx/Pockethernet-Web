@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { MdPowerOff } from 'react-icons/md';
 import type { LinkResult, PoeResult } from '@/pockethernetProtocol';
 import { pairColorsForTia } from '@/app/format';
 import type { TiaStandard } from '@/app/types';
@@ -20,7 +21,13 @@ export function PoeResults({
   if (result.summary === 'No PoE')
     return (
       <EmptyState className="poe-no-power" tone="error">
-        No PoE
+        <span className="poe-no-power-icon" aria-hidden="true">
+          <MdPowerOff />
+        </span>
+        <div>
+          <strong>No power detected</strong>
+          <p>No PoE supply was detected on this connection.</p>
+        </div>
       </EmptyState>
     );
   const pairColors = pairColorsForTia(tia);

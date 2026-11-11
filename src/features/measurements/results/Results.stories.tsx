@@ -12,6 +12,8 @@ import {
 } from './NetworkResults';
 import { TdrGraphs, TdrResults } from './TdrResults';
 import { WiremapDiagram } from './WiremapDiagram';
+import { TestPanel } from '@/shared/layout/Layout';
+import { parsePoePacket } from '@/pockethernetProtocol';
 
 const noop = (): void => undefined;
 const settings = {
@@ -93,6 +95,25 @@ export const CableResults: Story = {
         }}
       />
     </div>
+  ),
+};
+
+export const NoPoe: Story = {
+  args: { settings, disabled: false, onSettingsChange: noop, result: null },
+  render: () => (
+    <TestPanel
+      id="poe"
+      title="PoE"
+      selected
+      expanded
+      status="error"
+      summary="No PoE"
+      help={{ description: 'Detect active and passive Power over Ethernet.' }}
+      onToggle={noop}
+      onExpand={noop}
+    >
+      <PoeResults result={parsePoePacket(new Uint8Array(32))} tia="568B" />
+    </TestPanel>
   ),
 };
 

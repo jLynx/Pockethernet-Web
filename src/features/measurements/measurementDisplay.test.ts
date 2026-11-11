@@ -30,6 +30,7 @@ const noPower = renderToStaticMarkup(
     tia: '568B',
   }),
 );
-assert.match(noPower, /No PoE/);
+assert.match(noPower, /No power detected/);
+assert.match(noPower, /No PoE supply was detected/);
 assert.doesNotMatch(noPower, /Passive|0 V|undefined/);
 console.log('Measurement failure/No PoE display tests passed.');

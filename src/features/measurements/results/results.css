@@ -82,6 +82,43 @@
   color: var(--text-muted, #718096);
   text-align: center;
 }
+
+/* A completed negative PoE result needs less space than a full measurement table. */
+.test-panel.poe .test-result:has(> .poe-no-power) {
+  min-height: 0;
+}
+.poe-no-power {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 26px 24px;
+  color: var(--text, #192a40);
+}
+.poe-no-power-icon {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: var(--text-muted, #718096);
+  background: var(--surface-muted, #f4f6f8);
+}
+.poe-no-power-icon svg {
+  width: 26px;
+  height: 26px;
+}
+.poe-no-power strong {
+  display: block;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+.poe-no-power p {
+  margin: 5px 0 0;
+  color: var(--text-muted, #718096);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
 .link-no-link,
 .cdplldp-no-result,
 .vlan-no-result,
