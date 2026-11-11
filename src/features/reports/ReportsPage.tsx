@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent, type ReactElement } from 'react';
+import { useState, type ReactElement } from 'react';
 import type {
   ReportDetails,
   ReportPreferences,
@@ -8,7 +8,7 @@ import type {
   ToolSettings,
 } from '@/app/types';
 import { Button, EmptyState, PageHeader, TextField } from '@/shared/ui/UiPrimitives';
-import { resizeReportImage } from './images';
+import { ReportPhotos } from './ReportPhotos';
 import { createLlmExport } from './llmExport';
 import { downloadReportsPdf, previewReportPdf, shareReportPdf } from './pdf';
 
@@ -18,7 +18,6 @@ const FIELDS: readonly [keyof ReportDetails, string, string][] = [
   ['user', 'User', 'Technician or customer'],
   ['location', 'Location', 'Room or rack'],
   ['portId', 'Port ID', 'Outlet or switch port'],
-  ['comment', 'Comment', 'Report notes'],
 ];
 
 interface ReportsPageProps {
@@ -71,22 +70,13 @@ export function ReportsPage({
   toolSettings,
   onNotice,
 }: ReportsPageProps): ReactElement {
-  const [photoDataUrl, setPhotoDataUrl] = useState('');
+  const [photoDataUrls, setPhotoDataUrls] = useState<string[]>([]);
+  const [addingPhotos, setAddingPhotos] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const count = measuredCount(currentResults);
 
-  const addPhoto = async (event: ChangeEvent<HTMLInputElement>): Promise<void> => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    try {
-      setPhotoDataUrl(await resizeReportImage(file));
-    } catch (error) {
-      onNotice(error instanceof Error ? error.message : 'Could not read this image.');
-    }
-    event.target.value = '';
-  };
-
   const save = (): void => {
+    if (addingPhotos) return;
     if (count === 0) {
       onNotice('Run at least one measurement before saving a report.');
       return;
@@ -97,10 +87,16 @@ export function ReportsPage({
       details: { ...details },
       settings: { tia: toolSettings.tia, units: toolSettings.units, nvp: toolSettings.nvp },
       results: structuredClone(currentResults),
-      photoDataUrl,
+      photoDataUrls: [...photoDataUrls],
     };
+    try {
+      localStorage.setItem('pockethernet.reports', JSON.stringify([report, ...reports]));
+    } catch {
+      onNotice('Not enough storage to save this report. Remove an image or delete an old report.');
+      return;
+    }
     onReportsChange((current) => [report, ...current]);
-    setPhotoDataUrl('');
+    setPhotoDataUrls([]);
     onNotice('Measurement report saved.');
   };
 
@@ -145,7 +141,7 @@ export function ReportsPage({
                 : 'No completed measurements yet'}
             </p>
           </div>
-          <Button variant="primary" disabled={count === 0} onClick={save}>
+          <Button variant="primary" disabled={count === 0 || addingPhotos} onClick={save}>
             Save report
           </Button>
         </header>
@@ -164,25 +160,25 @@ export function ReportsPage({
               }
             />
           ))}
-        </div>
-        <div className="report-photo-row">
-          <span>Report image</span>
-          {photoDataUrl && <img src={photoDataUrl} alt="Report attachment preview" />}
-          <label className="report-file-button">
-            {photoDataUrl ? 'Replace image' : 'Add image'}
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={(event) => void addPhoto(event)}
+          <label className="text-field report-comment">
+            <span>Comment</span>
+            <textarea
+              value={details.comment}
+              placeholder="Explain the test and findings for your client"
+              rows={4}
+              onChange={(event) =>
+                onDetailsChange((current) => ({ ...current, comment: event.target.value }))
+              }
             />
           </label>
-          {photoDataUrl && (
-            <Button variant="ghost" onClick={() => setPhotoDataUrl('')}>
-              Remove
-            </Button>
-          )}
         </div>
+        <ReportPhotos
+          photos={photoDataUrls}
+          onPhotosChange={setPhotoDataUrls}
+          busy={addingPhotos}
+          onBusyChange={setAddingPhotos}
+          onNotice={onNotice}
+        />
       </section>
 
       <section className="report-library" aria-labelledby="saved-reports-title">
@@ -230,6 +226,8 @@ export function ReportsPage({
                   <span>
                     {new Date(report.createdAt).toLocaleString()} · {measuredCount(report.results)}{' '}
                     tests
+                    {report.photoDataUrls.length > 0 &&
+                      ` · ${report.photoDataUrls.length} image${report.photoDataUrls.length === 1 ? '' : 's'}`}
                   </span>
                   {(report.details.location || report.details.portId) && (
                     <small>

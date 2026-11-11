@@ -1,5 +1,6 @@
 import type {
   BlinkerSettings,
+  PingDefaults,
   ReportDetails,
   ReportPreferences,
   SavedReport,
@@ -126,6 +127,14 @@ export function loadReportDetails(): ReportDetails {
   };
 }
 
+export function loadPingDefaults(): PingDefaults {
+  const saved = storedRecord('pockethernet.pingDefaults');
+  const targets: unknown[] = Array.isArray(saved.targets) ? saved.targets : [];
+  const target = (index: number): string =>
+    typeof targets[index] === 'string' ? targets[index].trim().slice(0, 127) : '';
+  return { enabled: saved.enabled === true, targets: [target(0), target(1), target(2)] };
+}
+
 export function loadReportPreferences(): ReportPreferences {
   const saved = storedRecord('pockethernet.reportPreferences');
   return {
@@ -138,7 +147,19 @@ export function loadReportPreferences(): ReportPreferences {
 export function loadReports(): SavedReport[] {
   try {
     const saved: unknown = JSON.parse(localStorage.getItem('pockethernet.reports') ?? '[]');
-    return Array.isArray(saved) ? saved.filter(isSavedReport) : [];
+    if (!Array.isArray(saved)) return [];
+    return saved
+      .map((value: unknown) => {
+        if (!isRecord(value)) return value;
+        const { photoDataUrl, ...report } = value;
+        return {
+          ...report,
+          photoDataUrls:
+            value.photoDataUrls ??
+            (typeof photoDataUrl === 'string' ? (photoDataUrl ? [photoDataUrl] : []) : undefined),
+        };
+      })
+      .filter(isSavedReport);
   } catch {
     return [];
   }
@@ -157,7 +178,8 @@ function isSavedReport(value: unknown): value is SavedReport {
   return (
     typeof value.id === 'string' &&
     typeof value.createdAt === 'string' &&
-    typeof value.photoDataUrl === 'string' &&
+    Array.isArray(value.photoDataUrls) &&
+    value.photoDataUrls.every((photo: unknown) => typeof photo === 'string') &&
     Object.keys(DEFAULT_REPORT_DETAILS).every((key) => typeof details[key] === 'string') &&
     (settings.tia === '568A' || settings.tia === '568B') &&
     (settings.units === 'meters' || settings.units === 'feet') &&

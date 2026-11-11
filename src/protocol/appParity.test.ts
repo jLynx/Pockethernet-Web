@@ -8,8 +8,49 @@ import {
   ethernetStopCommand,
   parseDeviceInfo,
   PACKET,
+  blinkerCommand,
 } from '@/pockethernetProtocol';
 import { ipv6Payload, lldpPayload, trafficPayload } from '@/app/measurementFixtures';
+
+// APK protocol_pen.smali's manual config: timing word 10 at offset 10,
+// and auto-negotiation only for an automatic speed or duplex selection.
+for (const [speed, speedBits] of [
+  ['10', 64],
+  ['100', 128],
+  ['1000', 256],
+  ['auto', 448],
+] as const) {
+  for (const [duplex, duplexBits] of [
+    ['half', 512],
+    ['full', 1024],
+    ['auto', 1536],
+  ] as const) {
+    for (const [mdi, mdiBits] of [
+      ['mdi', 4],
+      ['mdix', 8],
+      ['auto', 12],
+    ] as const) {
+      for (const link of ['on', 'blink'] as const) {
+        const expected = new Uint8Array(53);
+        const view = new DataView(expected.buffer);
+        view.setUint16(0, link === 'blink' ? 25 : 9, true);
+        view.setUint32(
+          4,
+          65537 +
+            speedBits +
+            duplexBits +
+            mdiBits +
+            (speed === 'auto' || duplex === 'auto' ? 32 : 0),
+          true,
+        );
+        view.setUint16(10, 10, true);
+        const command = blinkerCommand(speed, duplex, mdi, link);
+        assert.equal(command.type, PACKET.ETH_CONFIG);
+        assert.deepEqual(command.payload, expected, `${speed}/${duplex}/${mdi}/${link}`);
+      }
+    }
+  }
+}
 
 // APK measdata_pen.smali's no-power branch precedes every PoE mode, including stale flags.
 for (const mode of [0, 1, 79, 80, 255]) {

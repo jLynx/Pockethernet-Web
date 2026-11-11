@@ -103,6 +103,8 @@ export const Tools: Story = {
       }}
       settings={{ tia: '568B', units: 'meters', nvp: '68', customMac: 'off', mac: '' }}
       onSettingsChange={noop}
+      pingDefaults={{ enabled: false, targets: ['', '', ''] }}
+      onPingDefaultsChange={noop}
       blinkerSettings={{ speed: 'auto', duplex: 'auto', mdi: 'auto', link: 'off' }}
       onBlinkerSettingsChange={noop}
       onBlinkerChange={() => Promise.resolve(true)}

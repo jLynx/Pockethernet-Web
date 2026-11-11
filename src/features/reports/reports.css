@@ -50,14 +50,34 @@
   display: grid;
   gap: 7px;
 }
+.report-comment {
+  grid-column: 1 / -1;
+}
+.report-comment textarea {
+  min-width: 0;
+  min-height: 100px;
+  padding: 9px;
+  border: 1px solid var(--border-control, #cfd9e4);
+  border-radius: 6px;
+  color: var(--text, #192a40);
+  background: var(--surface, #fff);
+  font: inherit;
+  line-height: 1.5;
+  /* eslint-disable-next-line css/use-baseline -- Desktop resizing is optional; mobile textareas stay scrollable. */
+  resize: vertical;
+}
+.report-photos {
+  margin: 0 18px;
+  padding-bottom: 18px;
+  border-top: 1px solid var(--border, #e5ebf1);
+}
 .report-photo-row {
   min-height: 58px;
-  margin: 0 18px;
-  padding: 10px 0 18px;
+  padding: 10px 0;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
-  border-top: 1px solid var(--border, #e5ebf1);
   color: var(--text-secondary, #5f6e80);
   font-size: 0.8rem;
   font-weight: 700;
@@ -65,28 +85,43 @@
 .report-photo-row > span {
   margin-right: auto;
 }
-.report-photo-row img {
-  width: 58px;
-  height: 42px;
-  object-fit: cover;
-  border-radius: 4px;
+.report-photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
-.report-file-button {
-  min-height: 36px;
-  padding: 7px 12px;
-  display: inline-flex;
-  align-items: center;
-  border: 1px solid var(--border-control, #cfd9e4);
+.report-photo-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+.report-photo-gallery figure {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--border, #dfe6ed);
   border-radius: 6px;
-  color: var(--accent, #0878ca);
-  background: var(--surface-hover, #f4faff);
-  cursor: pointer;
 }
-.report-file-button input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  opacity: 0;
+.report-photo-gallery img {
+  display: block;
+  width: 100%;
+  height: 130px;
+  object-fit: contain;
+  background: var(--surface-hover, #f4faff);
+}
+.report-photo-gallery figcaption {
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-secondary, #5f6e80);
+  font-size: 0.8rem;
+}
+.report-photo-status {
+  margin: 0 0 10px;
+  color: var(--text-muted, #718096);
+  font-size: 0.8rem;
 }
 .reports-empty {
   margin: 18px;

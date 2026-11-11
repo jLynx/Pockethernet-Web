@@ -6,16 +6,27 @@ export function resizeReportImage(
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const image = new Image();
+    const source = URL.createObjectURL(file);
     image.onload = () => {
-      const scale = Math.min(1, maxWidth / image.width, maxHeight / image.height);
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.round(image.width * scale);
-      canvas.height = Math.round(image.height * scale);
-      canvas.getContext('2d')?.drawImage(image, 0, 0, canvas.width, canvas.height);
-      URL.revokeObjectURL(image.src);
-      resolve(canvas.toDataURL(outputType, 0.86));
+      try {
+        const scale = Math.min(1, maxWidth / image.width, maxHeight / image.height);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.width * scale));
+        canvas.height = Math.max(1, Math.round(image.height * scale));
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Could not resize this image.');
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL(outputType, 0.86));
+      } catch (error) {
+        reject(error instanceof Error ? error : new Error('Could not resize this image.'));
+      } finally {
+        URL.revokeObjectURL(source);
+      }
     };
-    image.onerror = () => reject(new Error('Could not read this image.'));
-    image.src = URL.createObjectURL(file);
+    image.onerror = () => {
+      URL.revokeObjectURL(source);
+      reject(new Error('Could not read this image.'));
+    };
+    image.src = source;
   });
 }

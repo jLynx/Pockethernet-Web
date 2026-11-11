@@ -13,6 +13,7 @@ import { errorMessage } from '@/app/format';
 import { runMeasurementsWithNotifications } from '@/features/notifications/measurementNotifications';
 import {
   loadBlinkerSettings,
+  loadPingDefaults,
   loadReportDetails,
   loadReportPreferences,
   loadReports,
@@ -30,6 +31,7 @@ import {
   type Ipv6DisplayResult,
   type MeasurementFailures,
   type PingDisplayResult,
+  type PingDefaults,
   type ReportDetails,
   type ReportPreferences,
   type ReportResults,
@@ -61,6 +63,7 @@ import { useFirmwareUpdater } from '@/features/firmware/useFirmwareUpdater';
 import { readPendingUpdate } from '@/features/firmware/updateRecovery';
 import { updateLocked, updateWorking } from '@/features/firmware/firmwareUpdateController';
 import { Button } from '@/shared/ui/UiPrimitives';
+import { initialPingTargets, updatePingTargets } from '@/app/pingDefaults';
 
 const LINK_DEPENDENT_TESTS: readonly TestId[] = [
   'cdplldp',
@@ -123,7 +126,12 @@ export default function App(): ReactElement {
     dns: '',
   });
   const [ipv6Mode, setIpv6Mode] = useState<Ipv6Mode>('slaac');
-  const [pingTargets, setPingTargets] = useState(['', '', '']);
+  const [pingDefaults, setPingDefaults] = useState<PingDefaults>(loadPingDefaults);
+  const [pingTargets, setPingTargets] = useState(() => initialPingTargets(pingDefaults));
+  const changePingDefaults = (next: PingDefaults): void => {
+    setPingTargets((current) => updatePingTargets(current, pingDefaults, next));
+    setPingDefaults(next);
+  };
   const [toolSettings, setToolSettings] = useState<ToolSettings>(loadToolSettings);
   const [blinkerSettings, setBlinkerSettings] = useState<BlinkerSettings>(loadBlinkerSettings);
   const [tonerSettings, setTonerSettings] = useState<TonerSettings>(loadTonerSettings);
@@ -183,6 +191,9 @@ export default function App(): ReactElement {
   useEffect(() => {
     localStorage.setItem('pockethernet.toolSettings', JSON.stringify(toolSettings));
   }, [toolSettings]);
+  useEffect(() => {
+    localStorage.setItem('pockethernet.pingDefaults', JSON.stringify(pingDefaults));
+  }, [pingDefaults]);
   useEffect(() => {
     localStorage.setItem('pockethernet.blinkerSettings', JSON.stringify(blinkerSettings));
   }, [blinkerSettings]);
@@ -372,6 +383,8 @@ export default function App(): ReactElement {
           firmwareLocked={deviceLocked}
           settings={toolSettings}
           onSettingsChange={setToolSettings}
+          pingDefaults={pingDefaults}
+          onPingDefaultsChange={changePingDefaults}
           blinkerSettings={blinkerSettings}
           onBlinkerSettingsChange={setBlinkerSettings}
           onBlinkerChange={deviceTools.applyBlinker}

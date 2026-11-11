@@ -58,6 +58,11 @@ export interface ToolSettings {
   mac: string;
 }
 
+export interface PingDefaults {
+  enabled: boolean;
+  targets: [string, string, string];
+}
+
 export interface ReportDetails {
   address: string;
   tag: string;
@@ -95,7 +100,7 @@ export interface SavedReport {
   details: ReportDetails;
   settings: Pick<ToolSettings, 'tia' | 'units' | 'nvp'>;
   results: ReportResults;
-  photoDataUrl: string;
+  photoDataUrls: string[];
 }
 
 export interface BlinkerSettings {

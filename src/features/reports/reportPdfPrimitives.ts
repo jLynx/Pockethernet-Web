@@ -5,6 +5,7 @@ import logo from '@/assets/logo.png?inline';
 
 export const BLUE = '#246fc5';
 export const GREY = '#777777';
+export const TEXT_LINE_HEIGHT = 3.1;
 
 export function line(doc: jsPDF, y: number): void {
   doc.setDrawColor(128, 128, 128);
@@ -20,6 +21,7 @@ export function textLine(
   y: number,
   width = 57,
   color = '#000000',
+  maxLines = Infinity,
 ): number {
   doc.setFontSize(7.2);
   doc.setFont('helvetica', 'normal');
@@ -28,8 +30,11 @@ export function textLine(
   const offset = doc.getTextWidth(label);
   doc.setTextColor(color);
   const wrapped = wrap(doc, value, Math.max(8, width - offset));
-  doc.text(wrapped.slice(0, 3), x + offset, y);
-  return y + Math.max(3.1, wrapped.slice(0, 3).length * 3.1);
+  const lines = wrapped.slice(0, maxLines);
+  doc.text(lines, x + offset, y, {
+    lineHeightFactor: (TEXT_LINE_HEIGHT * doc.internal.scaleFactor) / 7.2,
+  });
+  return y + Math.max(TEXT_LINE_HEIGHT, lines.length * TEXT_LINE_HEIGHT);
 }
 
 export function sectionTitle(
@@ -73,9 +78,15 @@ export function drawBrand(doc: jsPDF, logoDataUrl: string, footer = false): void
   }
 }
 
-export function drawWiremap(doc: jsPDF, report: SavedReport, x: number, y: number): void {
+export function drawWiremap(
+  doc: jsPDF,
+  report: SavedReport,
+  x: number,
+  y: number,
+  showTitle = true,
+): void {
   const result = report.results.wiremap;
-  sectionTitle(doc, 'Wiremap', result?.summary ?? '', x, y, Boolean(result));
+  if (showTitle) sectionTitle(doc, 'Wiremap', result?.summary ?? '', x, y, Boolean(result));
   if (!result) return;
   const pins = [1, 2, 3, 6, 4, 5, 7, 8, 9];
   const colors = pairColorsForTia(report.settings.tia);

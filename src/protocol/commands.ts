@@ -156,7 +156,10 @@ export function blinkerCommand(
   const payload = new Uint8Array(53);
   const view = new DataView(payload.buffer);
   view.setUint16(0, 9 + (link === 'blink' ? 16 : 0), true);
-  view.setUint32(4, 1 | speedFlags | duplexFlags | mdiFlags | 32 | 65536, true);
+  const negotiationFlag = speed === 'auto' || duplex === 'auto' ? 32 : 0;
+  view.setUint32(4, 1 | speedFlags | duplexFlags | mdiFlags | negotiationFlag | 65536, true);
+  // APK protocol_pen's manual configuration sets this timing word to 10.
+  view.setUint16(10, 10, true);
   return { type: PACKET.ETH_CONFIG, payload };
 }
 

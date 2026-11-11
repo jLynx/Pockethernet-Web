@@ -2,6 +2,7 @@ import type { ChangeEvent, ReactElement } from 'react';
 import type { DeviceInfo } from '@/pockethernetProtocol';
 import type {
   BlinkerSettings,
+  PingDefaults,
   ReportPreferences,
   StateSetter,
   TonerSettings,
@@ -15,6 +16,7 @@ import { PageHeader } from '@/shared/ui/UiPrimitives';
 import { resizeReportImage } from '@/features/reports/images';
 import { ThemeSettings } from '@/shared/layout/ThemeSelector';
 import { NotificationSettings } from '@/features/notifications/NotificationSettings';
+import { PingDefaultsPanel } from './PingDefaultsPanel';
 
 interface ToolsPageProps {
   deviceInfo: DeviceInfo | null;
@@ -22,6 +24,8 @@ interface ToolsPageProps {
   firmwareLocked: boolean;
   settings: ToolSettings;
   onSettingsChange: StateSetter<ToolSettings>;
+  pingDefaults: PingDefaults;
+  onPingDefaultsChange: (defaults: PingDefaults) => void;
   blinkerSettings: BlinkerSettings;
   onBlinkerSettingsChange: StateSetter<BlinkerSettings>;
   onBlinkerChange: (settings: BlinkerSettings, tonerActive: boolean) => Promise<boolean>;
@@ -380,6 +384,7 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
             />
           </ToolPanel>
           <NotificationSettings />
+          <PingDefaultsPanel defaults={props.pingDefaults} onChange={props.onPingDefaultsChange} />
           <ToolPanel
             className="tool-panel-info"
             title="Device info"

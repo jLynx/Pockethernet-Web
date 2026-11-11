@@ -129,7 +129,8 @@ function exportReport(report: SavedReport): Record<string, unknown> {
     created_at: report.createdAt,
     metadata: report.details,
     settings: report.settings,
-    attachment_present: Boolean(report.photoDataUrl),
+    attachment_present: report.photoDataUrls.length > 0,
+    attachment_count: report.photoDataUrls.length,
     measurements: {
       wiremap: wiremapExport(report),
       tdr: tdrExport(report),
