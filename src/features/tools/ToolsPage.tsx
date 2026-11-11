@@ -1,5 +1,6 @@
 import type { ChangeEvent, ReactElement } from 'react';
 import type { DeviceInfo } from '@/pockethernetProtocol';
+import { APP_VERSION } from '@/app/buildInfo';
 import type {
   BlinkerSettings,
   PingDefaults,
@@ -391,7 +392,7 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
             active={Boolean(deviceInfo)}
             summary={deviceInfo ? 'Connected device' : 'No device connected'}
           >
-            <ToolInfoRow label="App version" value="Web migration" />
+            <ToolInfoRow label="App version" value={APP_VERSION} />
             {deviceInfo ? (
               <>
                 <ToolInfoRow label="Serial" value={String(deviceInfo.serial)} />

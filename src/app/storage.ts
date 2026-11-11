@@ -151,12 +151,22 @@ export function loadReports(): SavedReport[] {
     return saved
       .map((value: unknown) => {
         if (!isRecord(value)) return value;
-        const { photoDataUrl, ...report } = value;
+        const { photoDataUrl, photoDataUrls, photos, ...report } = value;
+        const attachments =
+          photos ??
+          photoDataUrls ??
+          (typeof photoDataUrl === 'string' ? (photoDataUrl ? [photoDataUrl] : []) : undefined);
         return {
           ...report,
-          photoDataUrls:
-            value.photoDataUrls ??
-            (typeof photoDataUrl === 'string' ? (photoDataUrl ? [photoDataUrl] : []) : undefined),
+          photos: Array.isArray(attachments)
+            ? attachments.map((photo: unknown) =>
+                typeof photo === 'string'
+                  ? { dataUrl: photo, description: '' }
+                  : isRecord(photo)
+                    ? { ...photo, description: photo.description ?? '' }
+                    : photo,
+              )
+            : attachments,
         };
       })
       .filter(isSavedReport);
@@ -178,8 +188,13 @@ function isSavedReport(value: unknown): value is SavedReport {
   return (
     typeof value.id === 'string' &&
     typeof value.createdAt === 'string' &&
-    Array.isArray(value.photoDataUrls) &&
-    value.photoDataUrls.every((photo: unknown) => typeof photo === 'string') &&
+    Array.isArray(value.photos) &&
+    value.photos.every(
+      (photo: unknown) =>
+        isRecord(photo) &&
+        typeof photo.dataUrl === 'string' &&
+        typeof photo.description === 'string',
+    ) &&
     Object.keys(DEFAULT_REPORT_DETAILS).every((key) => typeof details[key] === 'string') &&
     (settings.tia === '568A' || settings.tia === '568B') &&
     (settings.units === 'meters' || settings.units === 'feet') &&

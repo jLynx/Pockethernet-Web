@@ -38,7 +38,7 @@ function report(comment: string): SavedReport {
       comment,
     },
     settings: { tia: '568B', units: 'meters', nvp: '68' },
-    photoDataUrls: [],
+    photos: [],
     results: {
       wiremap: {
         status: 'OK',
@@ -153,7 +153,7 @@ assert.ok(batchPages[batchPages.length - 1]?.some((item) => item.text === 'Last 
 const photo = `data:image/png;base64,${readFileSync('src/assets/logo.png').toString('base64')}`;
 const illustrated = {
   ...report('Photos must follow these test results.'),
-  photoDataUrls: Array<string>(7).fill(photo),
+  photos: Array.from({ length: 7 }, () => ({ dataUrl: photo, description: '' })),
 };
 const illustratedPdf = createReportsPdf([illustrated, report('Next report')], '', true);
 const illustratedPages = textPages(illustratedPdf);
@@ -193,7 +193,15 @@ for (const data of pageStreams(illustratedPdf)) {
 }
 assert.equal(photoCount, 7, 'Every photo must be drawn, including repeated images');
 const unreadable = createReportsPdf(
-  [{ ...illustrated, photoDataUrls: ['broken-image', photo] }],
+  [
+    {
+      ...illustrated,
+      photos: [
+        { dataUrl: 'broken-image', description: '' },
+        { dataUrl: photo, description: '' },
+      ],
+    },
+  ],
   '',
   false,
 );
@@ -239,7 +247,7 @@ const sparse: SavedReport = {
       batchCount: 1,
     },
   },
-  photoDataUrls: [photo],
+  photos: [{ dataUrl: photo, description: '' }],
 };
 const sparsePdf = createReportsPdf([sparse], '', false);
 const sparsePages = textPages(sparsePdf);
@@ -295,6 +303,85 @@ const ispLines = longPages.flat().filter((item) => /^ISP line \d+$/.test(item.te
 assert.equal(ispLines.length, 200, 'Fields longer than one page must keep every line');
 assert.ok(longPages.flat().some((item) => item.text === 'External IP (continued)'));
 assert.ok(ispLines.every((item) => item.y <= 280));
+
+const descriptionLines = Array.from(
+  { length: 180 },
+  (_, index) => `Photo description line ${index + 1}`,
+);
+const described = createReportsPdf(
+  [
+    {
+      ...report('Descriptions should flow beneath each photo.'),
+      photos: [
+        { dataUrl: photo, description: 'Switch port 24\nPatch panel A, outlet 12.' },
+        { dataUrl: photo, description: descriptionLines.join('\n') },
+        {
+          dataUrl: photo,
+          description: 'Access point installed above the ceiling. '.repeat(45) + 'DESCRIPTION_END',
+        },
+        { dataUrl: photo, description: ' \n  ' },
+      ],
+    },
+    report('Report after described images'),
+  ],
+  '',
+  true,
+);
+const describedPages = textPages(described);
+const describedText = describedPages.flat();
+assert.ok(describedPages.length >= 5, 'Long descriptions must continue onto extra pages');
+assert.deepEqual(
+  describedText
+    .filter((item) => /^Photo description line \d+$/.test(item.text))
+    .map((item) => item.text),
+  descriptionLines,
+  'Every explicit description line must be preserved in order',
+);
+assert.ok(
+  describedText.some((item) => item.text.includes('DESCRIPTION_END')),
+  'Wrapped descriptions must not be truncated',
+);
+assert.ok(describedText.some((item) => item.text === 'Image 2 of 4 description (continued)'));
+assert.ok(
+  describedPages[describedPages.length - 1]?.some(
+    (item) => item.text === 'Report after described images',
+  ),
+);
+const firstPhotoPage = describedPages.find((page) =>
+  page.some((item) => item.text === 'Image 1 of 4'),
+);
+assert.ok(firstPhotoPage);
+const firstLine = firstPhotoPage.find((item) => item.text === 'Switch port 24');
+const secondLine = firstPhotoPage.find((item) => item.text === 'Patch panel A, outlet 12.');
+assert.ok(firstLine && secondLine, 'Keep short multiline descriptions with their image');
+assert.ok(secondLine.y > firstLine.y + 3.9, 'Explicit line breaks must use separate lines');
+described.setFont('helvetica', 'normal');
+described.setFontSize(8.5);
+for (const page of describedPages) {
+  for (const item of page) {
+    assert.ok(item.y <= 280 + 0.001, 'Photo description text must remain above the footer');
+    if (/^(?:Photo description line|Switch port|Patch panel A|Access point)/.test(item.text))
+      assert.ok(item.x >= 12 && item.x + described.getTextWidth(item.text) <= 198 + 0.1);
+  }
+}
+pageStreams(described).forEach((data, pageIndex) => {
+  const descriptions = describedPages[pageIndex].filter((item) =>
+    /^(?:Photo description line|Switch port|Patch panel A|Access point)/.test(item.text),
+  );
+  for (const image of data.matchAll(/([\d.-]+) 0 0 ([\d.-]+) ([\d.-]+) ([\d.-]+) cm\n\/I\d+ Do/g)) {
+    const height = Number(image[2]) / described.internal.scaleFactor;
+    const top =
+      described.internal.pageSize.getHeight() -
+      Number(image[4]) / described.internal.scaleFactor -
+      height;
+    if (top < 24 || top > 280) continue;
+    assert.ok(top + height <= 280 + 0.001);
+    assert.ok(
+      descriptions.every((item) => item.y < top || item.y >= top + height + 3.9),
+      'Descriptions must clear the image above them and the next image below them',
+    );
+  }
+});
 console.log(
-  'Compact recorded-only report sections, long External IP fields and page continuation passed.',
+  'Compact report sections, long fields, multiline photo descriptions and page continuation passed.',
 );

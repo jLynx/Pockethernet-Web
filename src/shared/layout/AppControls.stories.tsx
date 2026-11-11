@@ -45,7 +45,7 @@ export const HeaderWidths: Story = {
   args: Header.args,
   render: () => (
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
-      {[320, 390, 394, 430, 600].map((width) => (
+      {[320, 390, 394, 410, 412, 430, 600, 720, 721].map((width) => (
         <figure key={width} style={{ margin: 0 }}>
           <figcaption>{width}px</figcaption>
           <iframe

@@ -94,13 +94,18 @@ export interface ReportResults {
   extip: FieldsResult | null;
 }
 
+export interface ReportPhoto {
+  dataUrl: string;
+  description: string;
+}
+
 export interface SavedReport {
   id: string;
   createdAt: string;
   details: ReportDetails;
   settings: Pick<ToolSettings, 'tia' | 'units' | 'nvp'>;
   results: ReportResults;
-  photoDataUrls: string[];
+  photos: ReportPhoto[];
 }
 
 export interface BlinkerSettings {

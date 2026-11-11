@@ -4,14 +4,14 @@
   gap: 10px;
 }
 
-@media (max-width: 410px) {
+@media (max-width: 720px) {
   .original-app .original-header {
     flex-wrap: nowrap;
     gap: 8px;
     padding-inline: 12px;
   }
   .original-header .wordmark {
-    width: min(155px, 36vw);
+    width: min(210px, 42vw);
     min-width: 0;
     flex-shrink: 1;
   }
@@ -22,6 +22,15 @@
   .original-header .connection-button {
     gap: 6px;
     padding-inline: 8px;
+  }
+  .original-header .github-link {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+  .original-header .github-link svg {
+    width: 20px;
+    height: 20px;
   }
 }
 .github-link {

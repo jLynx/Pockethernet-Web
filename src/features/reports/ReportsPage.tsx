@@ -1,6 +1,7 @@
 import { useState, type ReactElement } from 'react';
 import type {
   ReportDetails,
+  ReportPhoto,
   ReportPreferences,
   ReportResults,
   SavedReport,
@@ -70,7 +71,7 @@ export function ReportsPage({
   toolSettings,
   onNotice,
 }: ReportsPageProps): ReactElement {
-  const [photoDataUrls, setPhotoDataUrls] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<ReportPhoto[]>([]);
   const [addingPhotos, setAddingPhotos] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const count = measuredCount(currentResults);
@@ -87,7 +88,7 @@ export function ReportsPage({
       details: { ...details },
       settings: { tia: toolSettings.tia, units: toolSettings.units, nvp: toolSettings.nvp },
       results: structuredClone(currentResults),
-      photoDataUrls: [...photoDataUrls],
+      photos: photos.map((photo) => ({ ...photo })),
     };
     try {
       localStorage.setItem('pockethernet.reports', JSON.stringify([report, ...reports]));
@@ -96,7 +97,7 @@ export function ReportsPage({
       return;
     }
     onReportsChange((current) => [report, ...current]);
-    setPhotoDataUrls([]);
+    setPhotos([]);
     onNotice('Measurement report saved.');
   };
 
@@ -173,8 +174,8 @@ export function ReportsPage({
           </label>
         </div>
         <ReportPhotos
-          photos={photoDataUrls}
-          onPhotosChange={setPhotoDataUrls}
+          photos={photos}
+          onPhotosChange={setPhotos}
           busy={addingPhotos}
           onBusyChange={setAddingPhotos}
           onNotice={onNotice}
@@ -226,8 +227,8 @@ export function ReportsPage({
                   <span>
                     {new Date(report.createdAt).toLocaleString()} · {measuredCount(report.results)}{' '}
                     tests
-                    {report.photoDataUrls.length > 0 &&
-                      ` · ${report.photoDataUrls.length} image${report.photoDataUrls.length === 1 ? '' : 's'}`}
+                    {report.photos.length > 0 &&
+                      ` · ${report.photos.length} image${report.photos.length === 1 ? '' : 's'}`}
                   </span>
                   {(report.details.location || report.details.portId) && (
                     <small>

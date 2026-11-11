@@ -49,6 +49,13 @@ try {
     },
   };
   const photos = ['data:image/jpeg;base64,first', 'data:image/jpeg;base64,second'];
+  const describedPhotos = [
+    { dataUrl: photos[0], description: 'Switch port 24\nConnected to patch panel A.' },
+    {
+      dataUrl: photos[1],
+      description: 'Access point installation\n' + 'Long explanation. '.repeat(60),
+    },
+  ];
   storage.setItem(
     'pockethernet.reports',
     JSON.stringify([
@@ -56,21 +63,41 @@ try {
       { ...base, id: 'legacy-no-photo', photoDataUrl: '' },
       { ...base, id: 'multiple-photos', photoDataUrls: photos },
       { ...base, id: 'both-fields', photoDataUrls: photos, photoDataUrl: photos[0] },
+      { ...base, id: 'described-photos', photos: describedPhotos },
+      { ...base, id: 'optional-description', photos: [{ dataUrl: photos[0] }] },
+      { ...base, id: 'new-photos-preferred', photos: describedPhotos, photoDataUrls: photos },
       { ...base, id: 'bad-photos', photoDataUrls: [photos[0], 123] },
+      { ...base, id: 'bad-description', photos: [{ dataUrl: photos[0], description: 123 }] },
       { ...base, id: 'bad-details', details: null, photoDataUrls: [] },
     ]),
   );
   const reports = loadReports();
   assert.deepEqual(
     reports.map((report) => report.id),
-    ['legacy-photo', 'legacy-no-photo', 'multiple-photos', 'both-fields'],
+    [
+      'legacy-photo',
+      'legacy-no-photo',
+      'multiple-photos',
+      'both-fields',
+      'described-photos',
+      'optional-description',
+      'new-photos-preferred',
+    ],
   );
   assert.deepEqual(
-    reports.map((report) => report.photoDataUrls),
-    [[photos[0]], [], photos, photos],
+    reports.map((report) => report.photos),
+    [
+      [{ dataUrl: photos[0], description: '' }],
+      [],
+      photos.map((dataUrl) => ({ dataUrl, description: '' })),
+      photos.map((dataUrl) => ({ dataUrl, description: '' })),
+      describedPhotos,
+      [{ dataUrl: photos[0], description: '' }],
+      describedPhotos,
+    ],
   );
   assert.ok(
-    reports.every((report) => !('photoDataUrl' in report)),
+    reports.every((report) => !('photoDataUrl' in report) && !('photoDataUrls' in report)),
     'Migration must not duplicate image storage',
   );
   assert.equal(reports[0].details.comment, base.details.comment);
@@ -80,6 +107,15 @@ try {
   assert.match(exported, /"attachment_present": true/);
   assert.match(exported, /"attachment_count": 2/);
   assert.ok(!exported.includes(photos[0]), 'Clipboard summaries must not include raw image data');
+  const describedExport = createLlmExport([reports[4]]);
+  assert.match(describedExport, /"image_number": 1/);
+  assert.match(describedExport, /"image_number": 2/);
+  for (const photo of describedPhotos)
+    assert.ok(
+      describedExport.includes(JSON.stringify(photo.description)),
+      'Export full multiline descriptions',
+    );
+  assert.ok(!describedExport.includes(photos[0]), 'Descriptions must not expose raw photo data');
   storage.setItem('pockethernet.reports', '{broken');
   assert.deepEqual(loadReports(), []);
 } finally {

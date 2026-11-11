@@ -6,6 +6,7 @@ import type { FirmwareUpdateState } from './firmwareUpdateController';
 import { createFirmwareUpdater } from './firmwareUpdateController';
 import type { PockethernetClient } from '@/device/usePockethernet';
 import { ToolInfoRow, ToolPanel } from '@/features/tools/ToolControls';
+import { APP_VERSION } from '@/app/buildInfo';
 
 const device = {
   serial: 104716,
@@ -60,7 +61,7 @@ const meta = {
           active={!!context.args.deviceInfo}
           summary={context.args.deviceInfo ? 'Connected device' : 'No device connected'}
         >
-          <ToolInfoRow label="App version" value="Web migration" />
+          <ToolInfoRow label="App version" value={APP_VERSION} />
           {context.args.deviceInfo && (
             <>
               <ToolInfoRow label="Serial" value={String(context.args.deviceInfo.serial)} />

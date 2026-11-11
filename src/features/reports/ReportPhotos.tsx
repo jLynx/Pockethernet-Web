@@ -1,6 +1,6 @@
 import { useRef, type ChangeEvent, type ReactElement } from 'react';
 import { FiCamera, FiImage } from 'react-icons/fi';
-import type { StateSetter } from '@/app/types';
+import type { ReportPhoto, StateSetter } from '@/app/types';
 import { Button } from '@/shared/ui/UiPrimitives';
 import { resizeReportImage } from './images';
 
@@ -11,8 +11,8 @@ export function ReportPhotos({
   onBusyChange,
   onNotice,
 }: {
-  photos: string[];
-  onPhotosChange: StateSetter<string[]>;
+  photos: ReportPhoto[];
+  onPhotosChange: StateSetter<ReportPhoto[]>;
   busy: boolean;
   onBusyChange: (busy: boolean) => void;
   onNotice: (message: string) => void;
@@ -26,13 +26,13 @@ export function ReportPhotos({
     if (files.length === 0 || pending.current) return;
     pending.current = true;
     onBusyChange(true);
-    const added: string[] = [];
+    const added: ReportPhoto[] = [];
     let failed = 0;
     try {
       // Resize sequentially to keep large camera originals out of memory together.
       for (const file of files) {
         try {
-          added.push(await resizeReportImage(file));
+          added.push({ dataUrl: await resizeReportImage(file), description: '' });
         } catch {
           failed++;
         }
@@ -84,7 +84,7 @@ export function ReportPhotos({
         <div className="report-photo-gallery">
           {photos.map((photo, index) => (
             <figure key={index}>
-              <img src={photo} alt={`Report image ${index + 1}`} />
+              <img src={photo.dataUrl} alt={`Report image ${index + 1}`} />
               <figcaption>
                 <span>Image {index + 1}</span>
                 <Button
@@ -98,6 +98,23 @@ export function ReportPhotos({
                   Remove
                 </Button>
               </figcaption>
+              <label className="text-field report-photo-description">
+                <span>Description (optional)</span>
+                <textarea
+                  aria-label={`Description for image ${index + 1} (optional)`}
+                  value={photo.description}
+                  placeholder="Describe the installation or what this image shows"
+                  rows={3}
+                  onChange={(event) => {
+                    const description = event.currentTarget.value;
+                    onPhotosChange((current) =>
+                      current.map((item, itemIndex) =>
+                        itemIndex === index ? { ...item, description } : item,
+                      ),
+                    );
+                  }}
+                />
+              </label>
             </figure>
           ))}
         </div>

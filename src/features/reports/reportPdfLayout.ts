@@ -75,5 +75,5 @@ export function drawReportPage(
   drawPageHeader(doc, logoDataUrl, showFooterLogo);
   const metadataEnd = drawMetadata(doc, report, newPage);
   const resultsEnd = drawFlowingSections(doc, reportPdfSections(report), metadataEnd + 5, newPage);
-  drawReportPhotos(doc, report.photoDataUrls, resultsEnd, newPage);
+  drawReportPhotos(doc, report.photos, resultsEnd, newPage);
 }

@@ -13,7 +13,7 @@ Pocketweb for Pockethernet is a modern, installable browser application built sp
 - A redesigned responsive interface for desktop and mobile workflows
 - Selectable multi-test runs with live status and expandable results
 - Interactive TDR impedance and crosstalk charts
-- Saved measurement history with photos, site metadata, and custom branding
+- Saved measurement history with multiple photos, optional multiline image descriptions, site metadata, and custom branding
 - PDF preview, download, multi-report export, and native sharing
 - Installable PWA support with an offline application shell
 - Persistent cable, network, and reporting preferences
@@ -66,6 +66,8 @@ The production PWA uses service-worker notifications; tapping one focuses Pocket
 ## Cloudflare Workers
 
 This is a static React SPA served through Cloudflare Workers Assets. The Pockethernet connection still runs in the browser through Web Bluetooth; the Worker does not access Bluetooth hardware.
+
+**Tools → Device info → App version** shows the first 12 characters of the Git commit embedded when the app was built. Local builds with uncommitted changes append `(modified)`. Builds without Git metadata can use `WORKERS_CI_COMMIT_SHA`, `CF_PAGES_COMMIT_SHA` or `GITHUB_SHA`; without a revision, the app shows `Unknown build`.
 
 Run the built app through Wrangler locally:
 
@@ -132,7 +134,7 @@ The BLE transport handles framed messages, checksums, notifications, request/rep
 | Ping                 | Implemented and device-tested                                            | Sends sequential Ping requests for up to three entered IP/domain targets, parses binary IPv4/IPv6 addresses and RTT/timeout results, and displays per-server details.                                                                                                                                                                         |
 | External IP          | Implemented and device-tested                                            | Enables DHCP on the Pockethernet, requests the public-IP lookup through packet `62064`, parses the JSON response, and displays IP, AS, ISP, and Geo IP fields.                                                                                                                                                                                |
 | Error rate / BER     | Implemented and device-tested                                            | Configures the Ethernet link, sends BER batches, and displays sent, received, error, and error-rate totals.                                                                                                                                                                                                                                   |
-| Reports              | Implemented and tested                                                   | Saves measurement snapshots and report details locally, supports multiple images, direct mobile camera capture, long comments and a custom logo, and previews, downloads, or shares single and combined branded PDFs.                                                                                                                                                                      |
+| Reports              | Implemented and tested                                                   | Saves measurement snapshots and report details locally, supports multiple images, direct mobile camera capture, long comments and a custom logo, and previews, downloads, or shares single and combined branded PDFs.                                                                                                                         |
 | Tools                | WiFi bridge device-tested; Toner and Blinker physical validation pending | WiFi bridge sends device-compatible Ethernet and WiFi configuration commands. Toner and Blinker have complete controls, device command wiring, and synthetic protocol tests. Official ESP firmware updates include confirmation, installation status, recovery handling and restart verification; browser OTA hardware validation is pending. |
 | Settings             | Implemented                                                              | Global TIA, units, NVP, and Custom MAC settings are persisted and applied across measurements.                                                                                                                                                                                                                                                |
 
