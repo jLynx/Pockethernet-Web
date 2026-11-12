@@ -54,6 +54,9 @@
   margin: 0 0 16px;
   font-size: 1rem;
 }
+.settings-reset {
+  padding: 16px;
+}
 .settings-card fieldset,
 .batch-fields {
   min-width: 0;
