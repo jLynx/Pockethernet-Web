@@ -181,17 +181,14 @@ export function ConfigurePage({
           </section>
         </div>
         <div className="settings-column">
-          <section className="settings-card">
-            <fieldset disabled={disabled}>
-              <GeneralSettings
-                settings={settings}
-                onSettingsChange={app.setToolSettings}
-                reportPreferences={app.reportPreferences}
-                onReportPreferencesChange={app.setReportPreferences}
-                onNotice={onNotice}
-              />
-            </fieldset>
-          </section>
+          <GeneralSettings
+            disabled={disabled}
+            settings={settings}
+            onSettingsChange={app.setToolSettings}
+            reportPreferences={app.reportPreferences}
+            onReportPreferencesChange={app.setReportPreferences}
+            onNotice={onNotice}
+          />
           {batch && (
             <>
               <section className="settings-card">

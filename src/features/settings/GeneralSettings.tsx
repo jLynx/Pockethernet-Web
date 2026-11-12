@@ -4,6 +4,7 @@ import { ToolControl, ToolField, ToolPanel } from '@/features/tools/ToolControls
 import { resizeReportImage } from '@/features/reports/images';
 
 interface GeneralSettingsProps {
+  disabled: boolean;
   settings: ToolSettings;
   onSettingsChange: StateSetter<ToolSettings>;
   reportPreferences: ReportPreferences;
@@ -12,6 +13,7 @@ interface GeneralSettingsProps {
 }
 
 export function GeneralSettings({
+  disabled,
   settings,
   onSettingsChange,
   reportPreferences,
@@ -38,6 +40,7 @@ export function GeneralSettings({
   return (
     <ToolPanel
       className="tool-panel-settings"
+      disabled={disabled}
       title="Cable & report settings"
       active={false}
       summary="Cable and report defaults"
