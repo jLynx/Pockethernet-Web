@@ -3,11 +3,11 @@ import type { DeviceInfo } from '@/pockethernetProtocol';
 import type { TestId } from '@/app/types';
 import type { useAppSettings } from '@/app/useAppSettings';
 import { APP_VERSION } from '@/app/buildInfo';
-import { Button, PageHeader, SelectField, TextField, ToggleSwitch } from '@/shared/ui/UiPrimitives';
+import { Button, PageHeader, SelectField, TextField } from '@/shared/ui/UiPrimitives';
 import { ThemeSettings } from '@/shared/layout/ThemeSelector';
 import { NotificationSettings } from '@/features/notifications/NotificationSettings';
 import { PingDefaultsPanel } from '@/features/tools/PingDefaultsPanel';
-import { ToolInfoRow } from '@/features/tools/ToolControls';
+import { ToolControl, ToolInfoRow } from '@/features/tools/ToolControls';
 import { FirmwareUpdatePanel } from '@/features/firmware/FirmwareUpdatePanel';
 import type { FirmwareUpdaterActions } from '@/features/firmware/useFirmwareUpdater';
 import { GeneralSettings } from './GeneralSettings';
@@ -88,26 +88,30 @@ export function SettingsPage({
         <section className="settings-card">
           <h2>Wiremap acceptance</h2>
           <fieldset disabled={disabled} className="settings-fields">
-            <label className="settings-toggle">
-              Shield test
-              <ToggleSwitch
-                checked={settings.shieldTest === true}
-                ariaLabel="Shield test"
-                onChange={() => update('shieldTest', !settings.shieldTest)}
-              />
-            </label>
+            <ToolControl
+              label="Shield test"
+              name="shieldTest"
+              value={settings.shieldTest === true ? 'on' : 'off'}
+              options={[
+                ['off', 'Off'],
+                ['on', 'On'],
+              ]}
+              onChange={(_, value) => update('shieldTest', value === 'on')}
+            />
             <p className="settings-hint">
               When enabled, show the shield and require shield continuity to pass. Shorts involving
               a cable pin still fail when disabled.
             </p>
-            <label className="settings-toggle">
-              Allow crossover
-              <ToggleSwitch
-                checked={settings.allowCrossover !== false}
-                ariaLabel="Allow crossover"
-                onChange={() => update('allowCrossover', settings.allowCrossover === false)}
-              />
-            </label>
+            <ToolControl
+              label="Allow crossover"
+              name="allowCrossover"
+              value={settings.allowCrossover !== false ? 'on' : 'off'}
+              options={[
+                ['off', 'Off'],
+                ['on', 'On'],
+              ]}
+              onChange={(_, value) => update('allowCrossover', value === 'on')}
+            />
             <SelectField
               label="Required wiring"
               value={settings.requiredPairs ?? 'any'}
@@ -181,14 +185,16 @@ export function SettingsPage({
                 }
               />
             ))}
-            <label className="settings-toggle">
-              Auto increment Cable ID
-              <ToggleSwitch
-                checked={app.autoIncrement}
-                ariaLabel="Auto increment Cable ID"
-                onChange={() => app.setAutoIncrement(!app.autoIncrement)}
-              />
-            </label>
+            <ToolControl
+              label="Auto increment Cable ID"
+              name="autoIncrement"
+              value={app.autoIncrement ? 'on' : 'off'}
+              options={[
+                ['off', 'Off'],
+                ['on', 'On'],
+              ]}
+              onChange={(_, value) => app.setAutoIncrement(value === 'on')}
+            />
             <p className="settings-hint">
               Save & next increases the final number, preserves leading zeros, and skips existing
               cable IDs. Retrying a test keeps the same ID.

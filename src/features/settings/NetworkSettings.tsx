@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import type { Ipv4UiSettings, MeasurementSettings, StateSetter } from '@/app/types';
-import { SelectField, TextField, ToggleSwitch } from '@/shared/ui/UiPrimitives';
+import { SelectField, TextField } from '@/shared/ui/UiPrimitives';
+import { ToolControl } from '@/features/tools/ToolControls';
 
 interface NetworkSettingsProps {
   settings: MeasurementSettings;
@@ -88,19 +89,21 @@ export function NetworkSettings({
         Shorter observation times can miss switch advertisements. Disable CDP / LLDP in the test
         selection to skip discovery.
       </p>
-      <label className="settings-toggle">
-        Outgoing VLAN tagging
-        <ToggleSwitch
-          checked={settings.vlanSettings.tagging}
-          ariaLabel="Outgoing VLAN tagging"
-          onChange={() =>
-            onChange((current) => ({
-              ...current,
-              vlanSettings: { ...current.vlanSettings, tagging: !current.vlanSettings.tagging },
-            }))
-          }
-        />
-      </label>
+      <ToolControl
+        label="Outgoing VLAN tagging"
+        name="tagging"
+        value={settings.vlanSettings.tagging ? 'on' : 'off'}
+        options={[
+          ['off', 'Off'],
+          ['on', 'On'],
+        ]}
+        onChange={(_, value) =>
+          onChange((current) => ({
+            ...current,
+            vlanSettings: { ...current.vlanSettings, tagging: value === 'on' },
+          }))
+        }
+      />
       <TextField
         label="Outgoing VLAN ID"
         value={settings.vlanSettings.id}

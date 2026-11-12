@@ -61,12 +61,6 @@
   min-width: 0;
   box-sizing: border-box;
 }
-.settings-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
 .settings-hint,
 .batch-hint {
   margin: 0;
