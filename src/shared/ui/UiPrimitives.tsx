@@ -138,20 +138,6 @@ export function ToggleSwitch({
   );
 }
 
-export function SelectionSwitch({
-  selected,
-  status = 'idle',
-}: {
-  selected: boolean;
-  status?: 'idle' | 'ok' | 'error';
-}): ReactElement {
-  return (
-    <span className={`selection-switch switch ${selected ? status : 'off'}`} aria-hidden="true">
-      <i />
-    </span>
-  );
-}
-
 export function StatusIndicator({
   status,
   className = '',

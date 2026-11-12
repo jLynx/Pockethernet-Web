@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { SelectionSwitch, StatusIndicator, ToggleSwitch } from './UiPrimitives';
+import { StatusIndicator, ToggleSwitch } from './UiPrimitives';
+import { SelectionSwitch } from './SelectionSwitch';
 
 const meta = {
   title: 'UI/Toggle switch',

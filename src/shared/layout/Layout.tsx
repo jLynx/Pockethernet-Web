@@ -1,7 +1,8 @@
 import { useState, type ReactElement, type ReactNode } from 'react';
 import { FiSettings } from 'react-icons/fi';
 import type { AppIconName, PanelStatus, Tab, TestId } from '@/app/types';
-import { Button, Card, SelectionSwitch } from '@/shared/ui/UiPrimitives';
+import { Button, Card } from '@/shared/ui/UiPrimitives';
+import { SelectionSwitch } from '@/shared/ui/SelectionSwitch';
 
 export function AppIcon({ name }: { name: AppIconName }): ReactElement {
   if (name === 'test')
