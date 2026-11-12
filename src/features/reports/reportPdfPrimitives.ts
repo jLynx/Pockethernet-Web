@@ -1,6 +1,7 @@
 import type { jsPDF } from 'jspdf';
 import { distanceForUnits, distanceUnitLabel, pairColorsForTia } from '@/app/format';
 import type { SavedReport, TiaStandard, Units } from '@/app/types';
+import { formatDecimal, type DecimalSeparator } from '@/app/numberFormat';
 import logo from '@/assets/logo.png?inline';
 
 export const BLUE = '#246fc5';
@@ -88,7 +89,8 @@ export function drawWiremap(
   const result = report.results.wiremap;
   if (showTitle) sectionTitle(doc, 'Wiremap', result?.summary ?? '', x, y, Boolean(result));
   if (!result) return;
-  const pins = [1, 2, 3, 6, 4, 5, 7, 8, 9];
+  const pins =
+    report.settings.shieldTest !== false ? [1, 2, 3, 6, 4, 5, 7, 8, 9] : [1, 2, 3, 6, 4, 5, 7, 8];
   const colors = pairColorsForTia(report.settings.tia);
   const pinColors = [
     colors[0],
@@ -129,7 +131,7 @@ export function drawWiremap(
 
   pins.forEach((pin) => {
     const destination = result.connections[pin];
-    if (destination > 0 && destination < 10) {
+    if (destination > 0 && destination < 10 && pins.includes(destination)) {
       drawWire(pin, x + 14, lineY(pin), x + 43, lineY(destination));
     } else if (destination === 255) {
       drawWire(pin, x + 14, lineY(pin), x + 27.5, lineY(pin));
@@ -143,7 +145,7 @@ export function drawWiremap(
   const seenShorts = new Set<string>();
   pins.forEach((pin) => {
     const other = result.shorts[pin];
-    if (!(other > 0 && other < 10)) return;
+    if (!(other > 0 && other < 10) || !pins.includes(other)) return;
     const low = Math.min(pin, other);
     const high = Math.max(pin, other);
     const key = `${low}-${high}`;
@@ -165,8 +167,12 @@ export function drawWiremap(
   doc.text(`Wiremap ID: ${result.id}`, x + 2, y + 25.2);
 }
 
-export function formatDistance(value: number, units: Units): string {
-  return `${distanceForUnits(value, units).toFixed(1)} ${distanceUnitLabel(units)}`;
+export function formatDistance(
+  value: number,
+  units: Units,
+  separator: DecimalSeparator = '.',
+): string {
+  return `${formatDecimal(distanceForUnits(value, units), 1, separator)} ${distanceUnitLabel(units)}`;
 }
 
 export function pairColor(tia: TiaStandard, index: number): string {

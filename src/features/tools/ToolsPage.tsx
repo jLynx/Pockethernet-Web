@@ -1,32 +1,10 @@
-import type { ChangeEvent, ReactElement } from 'react';
-import type { DeviceInfo } from '@/pockethernetProtocol';
-import { APP_VERSION } from '@/app/buildInfo';
-import type {
-  BlinkerSettings,
-  PingDefaults,
-  ReportPreferences,
-  StateSetter,
-  TonerSettings,
-  ToolSettings,
-  WifiSettings,
-} from '@/app/types';
-import { ToolControl, ToolField, ToolInfoRow, ToolPanel } from './ToolControls';
-import { FirmwareUpdatePanel } from '@/features/firmware/FirmwareUpdatePanel';
-import type { FirmwareUpdaterActions } from '@/features/firmware/useFirmwareUpdater';
+import type { ReactElement } from 'react';
+import type { BlinkerSettings, StateSetter, TonerSettings, WifiSettings } from '@/app/types';
+import { ToolControl, ToolField, ToolPanel } from './ToolControls';
 import { PageHeader } from '@/shared/ui/UiPrimitives';
-import { resizeReportImage } from '@/features/reports/images';
-import { ThemeSettings } from '@/shared/layout/ThemeSelector';
-import { NotificationSettings } from '@/features/notifications/NotificationSettings';
-import { PingDefaultsPanel } from './PingDefaultsPanel';
 
 interface ToolsPageProps {
-  deviceInfo: DeviceInfo | null;
-  firmwareUpdater: FirmwareUpdaterActions;
   firmwareLocked: boolean;
-  settings: ToolSettings;
-  onSettingsChange: StateSetter<ToolSettings>;
-  pingDefaults: PingDefaults;
-  onPingDefaultsChange: (defaults: PingDefaults) => void;
   blinkerSettings: BlinkerSettings;
   onBlinkerSettingsChange: StateSetter<BlinkerSettings>;
   onBlinkerChange: (settings: BlinkerSettings, tonerActive: boolean) => Promise<boolean>;
@@ -36,18 +14,11 @@ interface ToolsPageProps {
   wifiSettings: WifiSettings;
   onWifiSettingsChange: StateSetter<WifiSettings>;
   onWifiChange: (settings: WifiSettings) => Promise<boolean>;
-  reportPreferences: ReportPreferences;
-  onReportPreferencesChange: StateSetter<ReportPreferences>;
-  onNotice: (message: string) => void;
 }
 
 export function ToolsPage(props: ToolsPageProps): ReactElement {
   const {
-    deviceInfo,
-    firmwareUpdater,
     firmwareLocked,
-    settings,
-    onSettingsChange,
     blinkerSettings,
     onBlinkerSettingsChange,
     onBlinkerChange,
@@ -57,9 +28,6 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
     wifiSettings,
     onWifiSettingsChange,
     onWifiChange,
-    reportPreferences,
-    onReportPreferencesChange,
-    onNotice,
   } = props;
   const updateToner = async <Key extends keyof TonerSettings>(
     name: Key,
@@ -79,12 +47,6 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
     if (shouldApply && !(await onBlinkerChange(next, tonerSettings.power === 'on'))) return;
     onBlinkerSettingsChange(next);
   };
-  const updateSettings = <Key extends keyof ToolSettings>(
-    name: Key,
-    value: ToolSettings[Key],
-  ): void => {
-    onSettingsChange((current) => ({ ...current, [name]: value }));
-  };
   const updateWifi = async <Key extends keyof WifiSettings>(
     name: Key,
     value: WifiSettings[Key],
@@ -94,24 +56,13 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
     if (shouldApply && !(await onWifiChange(next))) return;
     onWifiSettingsChange(next);
   };
-  const chooseReportLogo = async (event: ChangeEvent<HTMLInputElement>): Promise<void> => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    try {
-      const logoDataUrl = await resizeReportImage(file, 1200, 400, 'image/png');
-      onReportPreferencesChange((current) => ({ ...current, logoDataUrl, logoName: file.name }));
-    } catch (error) {
-      onNotice(error instanceof Error ? error.message : 'Could not read this logo.');
-    }
-    event.target.value = '';
-  };
   return (
     <main className="tools-page">
       <PageHeader
         className="tools-header"
         eyebrow="Device tools"
-        title="Signal and device controls"
-        description="Configure cable tone, link behavior, and device preferences."
+        title="Tools"
+        description="Trace a cable, identify a port, or enable the WiFi bridge."
         action={
           <a
             className="tools-manual-link"
@@ -123,13 +74,12 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
           </a>
         }
       />
-      <ThemeSettings />
       <div className="tools-board">
         <div className="tools-column">
           <ToolPanel
             className="tool-panel-toner"
             disabled={firmwareLocked}
-            title="Cable toner"
+            title="Tone generator"
             active={tonerSettings.power === 'on'}
             summary={
               tonerSettings.power === 'on'
@@ -194,106 +144,6 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
             />
           </ToolPanel>
           <ToolPanel
-            className="tool-panel-settings"
-            title="Device preferences"
-            active={false}
-            summary="Cable and report defaults"
-          >
-            <ToolControl
-              label="TIA"
-              name="tia"
-              value={settings.tia}
-              options={[
-                ['568A', '568A'],
-                ['568B', '568B'],
-              ]}
-              onChange={updateSettings}
-            />
-            <ToolControl
-              label="Units"
-              name="units"
-              value={settings.units}
-              options={[
-                ['meters', 'Meters'],
-                ['feet', 'Feet'],
-              ]}
-              onChange={updateSettings}
-            />
-            <ToolField
-              label="NVP value"
-              value={settings.nvp}
-              onChange={(event) => {
-                updateSettings('nvp', event.target.value.replace(/\D/g, '').slice(0, 3));
-              }}
-              inputMode="numeric"
-            />
-            <ToolControl
-              label="Custom MAC"
-              name="customMac"
-              value={settings.customMac}
-              options={[
-                ['off', 'Off'],
-                ['on', 'On'],
-              ]}
-              onChange={updateSettings}
-            />
-            <ToolField
-              label="MAC"
-              value={settings.mac}
-              onChange={(event) => {
-                updateSettings('mac', event.target.value.slice(0, 17));
-              }}
-              placeholder="00:11:22:33:44:55"
-              disabled={settings.customMac !== 'on'}
-            />
-            <div className="tool-action report-logo-action">
-              <span>Report logo</span>
-              {reportPreferences.logoDataUrl && (
-                <img src={reportPreferences.logoDataUrl} alt="Current report logo" />
-              )}
-              <label className="tool-action-button">
-                {reportPreferences.logoName || 'Add custom logo'}
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  onChange={(event) => void chooseReportLogo(event)}
-                />
-              </label>
-              {reportPreferences.logoDataUrl && (
-                <button
-                  type="button"
-                  className="report-logo-remove"
-                  aria-label="Remove custom report logo"
-                  title="Remove custom report logo"
-                  onClick={() =>
-                    onReportPreferencesChange((current) => ({
-                      ...current,
-                      logoDataUrl: '',
-                      logoName: '',
-                    }))
-                  }
-                >
-                  ×
-                </button>
-              )}
-            </div>
-            <ToolControl
-              label="Show bottom report logo"
-              name="showFooterLogo"
-              value={reportPreferences.showFooterLogo ? 'on' : 'off'}
-              options={[
-                ['off', 'Off'],
-                ['on', 'On'],
-              ]}
-              onChange={(_, value) =>
-                onReportPreferencesChange((current) => ({
-                  ...current,
-                  showFooterLogo: value === 'on',
-                }))
-              }
-            />
-          </ToolPanel>
-          <ToolPanel
             className="tool-panel-wifi"
             disabled={firmwareLocked}
             title="WiFi bridge"
@@ -330,7 +180,7 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
           <ToolPanel
             className="tool-panel-blinker"
             disabled={firmwareLocked}
-            title="Link blinker"
+            title="Blink port light"
             active={blinkerSettings.link !== 'off'}
             summary={
               blinkerSettings.link === 'off'
@@ -383,29 +233,6 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
               ]}
               onChange={updateBlinker}
             />
-          </ToolPanel>
-          <NotificationSettings />
-          <PingDefaultsPanel defaults={props.pingDefaults} onChange={props.onPingDefaultsChange} />
-          <ToolPanel
-            className="tool-panel-info"
-            title="Device info"
-            active={Boolean(deviceInfo)}
-            summary={deviceInfo ? 'Connected device' : 'No device connected'}
-          >
-            <ToolInfoRow label="App version" value={APP_VERSION} />
-            {deviceInfo ? (
-              <>
-                <ToolInfoRow label="Serial" value={String(deviceInfo.serial)} />
-                <ToolInfoRow label="MAC" value={deviceInfo.mac} />
-                <ToolInfoRow
-                  label="FW version"
-                  value={`${deviceInfo.espVersion}.${deviceInfo.stmVersion}`}
-                />
-              </>
-            ) : (
-              <ToolInfoRow label="Device Info" value="Connect to view device info" />
-            )}
-            <FirmwareUpdatePanel updater={firmwareUpdater} deviceInfo={deviceInfo} />
           </ToolPanel>
         </div>
       </div>

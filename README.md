@@ -20,6 +20,8 @@ Pocketweb for Pockethernet is a modern, installable browser application built sp
 - Opt-in measurement result notifications with optional wiremap images and watch mirroring
 - Reusable typed protocol, device, UI, and feature modules
 
+The batch testing workflow, automatic IndexedDB report migration, and remaining decisions from issue #6 are documented in [WORKFLOW_REQUEST.md](docs/WORKFLOW_REQUEST.md).
+
 ## Compatibility approach
 
 This is an original React/TypeScript application with its own interface, architecture, state management, reporting system, and browser-focused workflows. Pockethernet 2 compatibility was developed from device testing, observed behavior, public networking standards, and technical analysis of the original software where needed to understand the device protocol.
@@ -59,7 +61,7 @@ npm run build
 
 ## Result notifications and watches
 
-In **Tools → Result notifications**, enable notifications, accept the browser permission prompt, and use **Send test notification** to check delivery. Each measurement run sends one summary, including any interruption and results collected before it. Wiremap notifications can include a locally generated PNG; the text also includes pin faults for watches that do not display images. Preferences are saved on this browser and notifications are off by default.
+In **Settings → Appearance & notifications**, enable notifications, accept the browser permission prompt, and use **Send test notification** to check delivery. Each measurement run sends one summary, including any interruption and results collected before it. Wiremap notifications can include a locally generated PNG; the text also includes pin faults for watches that do not display images. Preferences are saved on this browser and notifications are off by default.
 
 For watch delivery, run Pocketweb in Chrome on the Android phone paired with the watch and enable Chrome/Pocketweb notification mirroring in the watch companion app. Pixel Watch can receive mirrored Android notifications; Pebble behavior depends on its companion app. Images, text truncation, vibration, and delivery are controlled by the phone/watch software. Desktop Chrome notifications generally do not route to a phone or watch. There is no standard browser API for directly targeting a watch or detecting whether it is worn.
 
@@ -69,7 +71,7 @@ The production PWA uses service-worker notifications; tapping one focuses Pocket
 
 This is a static React SPA served through Cloudflare Workers Assets. The Pockethernet connection still runs in the browser through Web Bluetooth; the Worker does not access Bluetooth hardware.
 
-**Tools → Device info → App version** shows the first 12 characters of the Git commit embedded when the app was built. Local builds with uncommitted changes append `(modified)`. Builds without Git metadata can use `WORKERS_CI_COMMIT_SHA`, `CF_PAGES_COMMIT_SHA` or `GITHUB_SHA`; without a revision, the app shows `Unknown build`.
+**Settings → About & firmware → App version** shows the first 12 characters of the Git commit embedded when the app was built. Local builds with uncommitted changes append `(modified)`. Builds without Git metadata can use `WORKERS_CI_COMMIT_SHA`, `CF_PAGES_COMMIT_SHA` or `GITHUB_SHA`; without a revision, the app shows `Unknown build`.
 
 Run the built app through Wrangler locally:
 
@@ -113,7 +115,7 @@ npm run build
 
 Feature modules may import from `app`, `device`, `protocol`, and `shared`. Shared modules must remain feature-independent so they can be reused without creating circular dependencies. Components, stories, and styles that belong to one feature should stay colocated in that feature folder. Use the `@/` source alias for cross-folder imports and relative paths for files in the same folder.
 
-All TypeScript, TSX, and CSS source files are limited to 300 physical lines. `npm run lint` enforces the limit alongside type-aware TypeScript and CSS rules.
+All TypeScript, TSX, and CSS source files are limited to 500 physical lines. `npm run lint` enforces the limit alongside type-aware TypeScript and CSS rules.
 
 The BLE transport handles framed messages, checksums, notifications, request/reply matching, and browser-compatible chunked writes. Protocol parsing is separated from React so measurement behavior can be covered by synthetic regression tests.
 
@@ -122,7 +124,7 @@ The BLE transport handles framed messages, checksums, notifications, request/rep
 | Module               | Status                                                                   | Notes                                                                                                                                                                                                                                                                                                                                         |
 | -------------------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Bluetooth connection | Implemented and device-tested                                            | Connect/disconnect, notifications, command writes, response matching, ACK/NACK handling, CRC, and COBS are working.                                                                                                                                                                                                                           |
-| Device information   | Implemented                                                              | Requested during connection and displayed in the device tools panel.                                                                                                                                                                                                                                                                          |
+| Device information   | Implemented                                                              | Requested during connection and displayed in Settings under About & firmware.                                                                                                                                                                                                                                                                 |
 | Wiremap              | Implemented and device-tested                                            | Supports adapter V1/V2 detection, straight/crossover/rollover/miswire/open/short/unknown wires, shield state, adapter ID, and the dynamic diagram.                                                                                                                                                                                            |
 | TDR                  | Implemented and device-tested                                            | Sends the required diagnostic setup and four-pair TDR commands, decompresses traces, detects peaks, and reports Open/Short/Terminated plus distance.                                                                                                                                                                                          |
 | TDR Graph            | Implemented and device-tested                                            | Reuses the four impedance traces, requests six crosstalk traces with packet `61969`, and renders interactive charts with a distance cursor.                                                                                                                                                                                                   |
@@ -142,9 +144,9 @@ The BLE transport handles framed messages, checksums, notifications, request/rep
 
 ## Known limitations
 
-**Tools → Ping defaults** saves optional targets for Server 0, 1 and 2. Enable the defaults to prefill Ping tests; you can still override each target for an individual test. Reports include recorded measurements only, wrap their fields to fit, and place photos directly after the results.
+**Settings → Network & discovery → Ping defaults** saves optional targets for Server 0, 1 and 2. Enable the defaults to prefill Ping tests; you can still override each target for an individual test. Reports include recorded measurements only, wrap their fields to fit, and place photos directly after the results.
 
 The measurement flow, failure handling and parser audit are documented in [APP_COMPATIBILITY.md](docs/APP_COMPATIBILITY.md), including regression coverage and the stock-firmware field retest checklist.
 
 - [Web Bluetooth](https://caniuse.com/web-bluetooth) is not supported by every browser or platform; use desktop Chrome or Edge.
-- ESP firmware installation is available under **Tools → Device info**. See [firmware update instructions and compatibility gotchas](docs/FIRMWARE_UPDATE.md). Installing official firmware replaces custom ESP firmware; STM stays unchanged.
+- ESP firmware installation is available under **Settings → About & firmware**. See [firmware update instructions and compatibility gotchas](docs/FIRMWARE_UPDATE.md). Installing official firmware replaces custom ESP firmware; STM stays unchanged.

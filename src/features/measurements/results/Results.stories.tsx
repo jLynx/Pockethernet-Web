@@ -16,12 +16,6 @@ import { TestPanel } from '@/shared/layout/Layout';
 import { parsePoePacket } from '@/pockethernetProtocol';
 
 const noop = (): void => undefined;
-const settings = {
-  speed: 1000 as const,
-  frameSize: 'both' as const,
-  payloadMode: 'random' as const,
-  total: 100000,
-};
 
 const meta = {
   title: 'Results/Measurement results',
@@ -41,9 +35,6 @@ type Story = StoryObj<typeof meta>;
 
 export const BitErrorRate: Story = {
   args: {
-    settings,
-    disabled: false,
-    onSettingsChange: noop,
     result: {
       sent: 100000,
       received: 99998,
@@ -58,7 +49,7 @@ export const BitErrorRate: Story = {
 };
 
 export const CableResults: Story = {
-  args: { settings, disabled: false, onSettingsChange: noop, result: null },
+  args: { result: null },
   render: () => (
     <div style={{ display: 'grid', gap: 18 }}>
       <PoeResults
@@ -99,7 +90,7 @@ export const CableResults: Story = {
 };
 
 export const NoPoe: Story = {
-  args: { settings, disabled: false, onSettingsChange: noop, result: null },
+  args: { result: null },
   render: () => (
     <TestPanel
       id="poe"
@@ -118,7 +109,7 @@ export const NoPoe: Story = {
 };
 
 export const NetworkResults: Story = {
-  args: { settings, disabled: false, onSettingsChange: noop, result: null },
+  args: { result: null },
   render: () => (
     <div style={{ display: 'grid', gap: 18 }}>
       <CdpLldpResults
@@ -151,7 +142,7 @@ export const NetworkResults: Story = {
 };
 
 export const ConfigurableResults: Story = {
-  args: { settings, disabled: false, onSettingsChange: noop, result: null },
+  args: { result: null },
   render: () => (
     <div style={{ display: 'grid', gap: 18 }}>
       <VlanResults
@@ -160,9 +151,6 @@ export const ConfigurableResults: Story = {
           summary: 'VLAN detected',
           tags: [{ id: 100, priority: 5, dei: false }],
         }}
-        settings={{ tagging: true, id: '100' }}
-        onSettingsChange={noop}
-        disabled={false}
       />
       <Ipv4Results
         result={{
@@ -170,9 +158,6 @@ export const ConfigurableResults: Story = {
           summary: 'DHCP complete',
           fields: { 'Your IP': '192.168.1.42', Gateway: '192.168.1.1', DNS: '1.1.1.1' },
         }}
-        settings={{ mode: 'dhcp', ip: '', netmask: '', gateway: '', dns: '' }}
-        onSettingsChange={noop}
-        disabled={false}
       />
       <Ipv6Results
         result={{
@@ -187,9 +172,6 @@ export const ConfigurableResults: Story = {
             },
           ],
         }}
-        mode="slaac"
-        onModeChange={noop}
-        disabled={false}
       />
       <PingResults
         result={{
@@ -197,16 +179,13 @@ export const ConfigurableResults: Story = {
           summary: 'Reachable',
           servers: [{ status: 'OK', ip: '1.1.1.1', time: '12 ms' }],
         }}
-        targets={['one.one.one.one', '', '']}
-        onTargetsChange={noop}
-        disabled={false}
       />
     </div>
   ),
 };
 
 export const CableDiagrams: Story = {
-  args: { settings, disabled: false, onSettingsChange: noop, result: null },
+  args: { result: null },
   render: () => (
     <div style={{ display: 'grid', gap: 18 }}>
       <WiremapDiagram
@@ -235,6 +214,6 @@ export const CableDiagrams: Story = {
 };
 
 export const GraphsAwaitingMeasurement: Story = {
-  args: { settings, disabled: false, onSettingsChange: noop, result: null },
+  args: { result: null },
   render: () => <TdrGraphs result={null} units="meters" tia="568B" />,
 };

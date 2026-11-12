@@ -1,34 +1,16 @@
 import { useState, type ReactElement } from 'react';
-import type {
-  ReportDetails,
-  ReportPhoto,
-  ReportPreferences,
-  ReportResults,
-  SavedReport,
-  StateSetter,
-  ToolSettings,
-} from '@/app/types';
-import { Button, EmptyState, PageHeader, TextField } from '@/shared/ui/UiPrimitives';
-import { ReportPhotos } from './ReportPhotos';
+import type { ReportPreferences, ReportResults, SavedReport } from '@/app/types';
+import { Button, EmptyState, PageHeader, SelectField } from '@/shared/ui/UiPrimitives';
 import { createLlmExport } from './llmExport';
 import { downloadReportsPdf, previewReportPdf, shareReportPdf } from './pdf';
 
-const FIELDS: readonly [keyof ReportDetails, string, string][] = [
-  ['address', 'Address', 'Site or street address'],
-  ['tag', 'Tag', 'Cable or job tag'],
-  ['user', 'User', 'Technician or customer'],
-  ['location', 'Location', 'Room or rack'],
-  ['portId', 'Port ID', 'Outlet or switch port'],
-];
-
 interface ReportsPageProps {
-  details: ReportDetails;
-  onDetailsChange: StateSetter<ReportDetails>;
   preferences: ReportPreferences;
   reports: SavedReport[];
-  onReportsChange: StateSetter<SavedReport[]>;
-  currentResults: ReportResults;
-  toolSettings: ToolSettings;
+  onRemove: (id: string) => Promise<boolean>;
+  busy: boolean;
+  ready: boolean;
+  error: string;
   onNotice: (message: string) => void;
 }
 
@@ -62,47 +44,23 @@ async function writeClipboard(text: string): Promise<void> {
 }
 
 export function ReportsPage({
-  details,
-  onDetailsChange,
   preferences,
   reports,
-  onReportsChange,
-  currentResults,
-  toolSettings,
+  onRemove,
+  busy,
+  ready,
+  error,
   onNotice,
 }: ReportsPageProps): ReactElement {
-  const [photos, setPhotos] = useState<ReportPhoto[]>([]);
-  const [addingPhotos, setAddingPhotos] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
-  const count = measuredCount(currentResults);
-
-  const save = (): void => {
-    if (addingPhotos) return;
-    if (count === 0) {
-      onNotice('Run at least one measurement before saving a report.');
-      return;
-    }
-    const report: SavedReport = {
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      details: { ...details },
-      settings: { tia: toolSettings.tia, units: toolSettings.units, nvp: toolSettings.nvp },
-      results: structuredClone(currentResults),
-      photos: photos.map((photo) => ({ ...photo })),
-    };
-    try {
-      localStorage.setItem('pockethernet.reports', JSON.stringify([report, ...reports]));
-    } catch {
-      onNotice('Not enough storage to save this report. Remove an image or delete an old report.');
-      return;
-    }
-    onReportsChange((current) => [report, ...current]);
-    setPhotos([]);
-    onNotice('Measurement report saved.');
-  };
-
-  const remove = (id: string): void => {
-    onReportsChange((current) => current.filter((report) => report.id !== id));
+  const [project, setProject] = useState('');
+  const visibleReports = reports.filter((report) => !project || report.details.project === project);
+  const selectedReports = visibleReports.filter((report) => selected.has(report.id));
+  const projects = [...new Set(reports.map((report) => report.details.project ?? ''))]
+    .filter(Boolean)
+    .sort();
+  const remove = async (id: string): Promise<void> => {
+    if (!(await onRemove(id))) return;
     setSelected((current) => {
       const next = new Set(current);
       next.delete(id);
@@ -130,58 +88,25 @@ export function ReportsPage({
         className="reports-header"
         eyebrow="Measurement history"
         title="Reports"
-        description="Save the current test results, then download or share a branded PDF."
+        description="View, export, and share your saved measurement reports."
       />
-      <section className="report-composer" aria-labelledby="new-report-title">
-        <header>
-          <div>
-            <h2 id="new-report-title">New report</h2>
-            <p>
-              {count
-                ? `${count} completed measurement${count === 1 ? '' : 's'} ready`
-                : 'No completed measurements yet'}
-            </p>
-          </div>
-          <Button variant="primary" disabled={count === 0 || addingPhotos} onClick={save}>
-            Save report
-          </Button>
-        </header>
-        <div className="report-fields">
-          {FIELDS.map(([key, label, placeholder]) => (
-            <TextField
-              key={key}
-              label={label}
-              value={details[key]}
-              placeholder={placeholder}
-              onChange={(event) =>
-                onDetailsChange((current) => ({
-                  ...current,
-                  [key]: event.target.value.slice(0, 160),
-                }))
-              }
-            />
-          ))}
-          <label className="text-field report-comment">
-            <span>Comment</span>
-            <textarea
-              value={details.comment}
-              placeholder="Explain the test and findings for your client"
-              rows={4}
-              onChange={(event) =>
-                onDetailsChange((current) => ({ ...current, comment: event.target.value }))
-              }
-            />
-          </label>
-        </div>
-        <ReportPhotos
-          photos={photos}
-          onPhotosChange={setPhotos}
-          busy={addingPhotos}
-          onBusyChange={setAddingPhotos}
-          onNotice={onNotice}
-        />
-      </section>
-
+      {error && <p role="alert">{error}</p>}
+      {!ready && !error && <p role="status">Loading saved reports…</p>}
+      <SelectField
+        label="Filter by project"
+        value={project}
+        onChange={(event) => {
+          setProject(event.target.value);
+          setSelected(new Set());
+        }}
+      >
+        <option value="">All projects</option>
+        {projects.map((name) => (
+          <option key={name} value={name}>
+            {name}
+          </option>
+        ))}
+      </SelectField>
       <section className="report-library" aria-labelledby="saved-reports-title">
         <header>
           <div>
@@ -189,10 +114,10 @@ export function ReportsPage({
             <p>{reports.length} stored on this device</p>
           </div>
           <Button
-            disabled={selected.size < 2}
+            disabled={selectedReports.length === 0 || busy}
             onClick={() =>
               downloadReportsPdf(
-                reports.filter((report) => selected.has(report.id)),
+                selectedReports,
                 preferences.logoDataUrl,
                 preferences.showFooterLogo,
               )
@@ -203,11 +128,11 @@ export function ReportsPage({
         </header>
         {reports.length === 0 ? (
           <EmptyState className="reports-empty">
-            Saved measurement reports will appear here.
+            Save reports from the Test tab to see them here.
           </EmptyState>
         ) : (
           <div className="report-list">
-            {reports.map((report) => (
+            {visibleReports.map((report) => (
               <article className="report-row" key={report.id}>
                 <input
                   type="checkbox"
@@ -277,7 +202,8 @@ export function ReportsPage({
                   <Button
                     variant="ghost"
                     className="report-delete"
-                    onClick={() => remove(report.id)}
+                    disabled={busy || !ready}
+                    onClick={() => void remove(report.id)}
                   >
                     Delete
                   </Button>

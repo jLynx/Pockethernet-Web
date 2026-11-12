@@ -1,0 +1,36 @@
+# Batch testing workflow (issue #6)
+
+The navigation is **Test → Reports → Tools → Settings**. Configure the tests once in Settings, then enter the Cable ID, measure, review, add notes or photos, and save from Test. Reports manages the saved library and PDF exports. Tools contains Tone generator, WiFi bridge, and Blink port light.
+
+## Implemented behavior
+
+- Settings groups test selection, wiremap acceptance, TIA/NVP/units, network configuration, Ping targets/defaults, discovery timeout, BER, project defaults, numbering, decimal formatting, branding, appearance, notifications, and firmware information/updates.
+- Static IPv4 fields stack vertically and use the available width. Discovery can be excluded from test selection or configured for 10, 30, or 60 seconds.
+- Each report captures only its own measurement run, including the selected tests, settings used, actual start/end timestamps, failures, and partial results. Failed or interrupted runs can be saved. Starting another measurement prompts before replacing unsaved results.
+- Cable IDs are required for new reports. With auto increment enabled, Save & next requires a numeric suffix, preserves padding (`CAB-009 → CAB-010`), and skips IDs already saved for the same project and site. Normal Save does not advance the ID. Save & next advances only after storage succeeds and clears cable-specific notes, photos, and Port ID.
+- Duplicate Cable IDs prompt to save as a retest while retaining the earlier reports. Matching ignores case and surrounding whitespace and includes project and site.
+- Wiremap acceptance supports optional shield continuity, crossover acceptance, and two-pair or four-pair wiring requirements. Raw measured pin connections are retained. These rules do not certify an Ethernet speed.
+- Changing the project filter clears the report selection; combined PDF exports include only selected visible reports.
+- Reset deletes this browser's application reports, migration backups, and preferences after confirmation. It is blocked while measurements, report/photo operations, migration, or firmware/device commands are active.
+
+## Existing data and storage
+
+Saved reports now use IndexedDB (`pockethernet-reports`, version 2). On first load, the application imports the existing `pockethernet.reports` localStorage value, including results, site metadata, single-photo reports, multiple photos, and image descriptions.
+
+The original JSON and existing `pockethernet.*` preferences are copied into the `migrationBackups` store in the same transaction as the import. Existing IndexedDB report IDs are not overwritten. The legacy report value is removed only after that transaction commits, every original record is recognized, and an older tab has not changed the value. A failed transaction leaves the source intact; unrecognized records retain their original source and recovery copy and produce a storage notice.
+
+Preferences continue to use localStorage for synchronous startup and firmware recovery and retain their existing values. Report photos are stored with reports in IndexedDB; no report data is uploaded. Browser storage remains specific to its browser profile and site origin.
+
+An unchanged recovery source is imported once, so retained unreadable data does not restore subsequently deleted reports. If migration fails, recognized legacy reports remain available for viewing and PDF export; saving and deletion stay disabled until storage opens successfully.
+
+## Decisions still needed
+
+1. **Speed-labelled limits:** decide whether a limit means required wiring, negotiated link speed, or cable qualification. The manual describes actual links up to 1 Gbit/s and advertised capability detection up to 10 Gbit/s; higher-speed qualification cannot be inferred from a wiremap or advertisement.
+2. **Auto shutoff:** define browser idle disconnect versus physical device power-off, what resets the five-minute timer, and behavior during tests, tools, and firmware updates. Physical power control needs hardware validation.
+3. **Date/time overrides:** define whether this changes report metadata or the device clock, timezone handling, and whether a manual value applies to one report or remains an offset. Actual measurement timestamps are implemented.
+4. **Languages:** select supported languages/regions, a translation/review process, and PDF font coverage.
+5. **Speedtest:** define LAN versus Internet testing, endpoint, upload/download behavior, duration, and firmware/hardware support.
+
+## Validation
+
+Synthetic tests cover migration, rollback, concurrent legacy writes, report snapshots, partial failures, numbering, duplicate scopes, acceptance rules, and formatting. Browser previews cover navigation, persistence, mobile static-IP layout, Save & next, occupied-ID skipping, and storage-failure retry. Physical testing with Pockethernet remains required for the changed workflow and acceptance settings.

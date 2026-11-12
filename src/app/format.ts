@@ -1,5 +1,6 @@
 import type { TdrResult } from '@/pockethernetProtocol';
 import type { TiaStandard, Units } from './types';
+import { formatDecimal, type DecimalSeparator } from './numberFormat';
 
 export function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -19,8 +20,12 @@ export function distanceUnitLabel(units: Units): 'ft' | 'm' {
   return units === 'feet' ? 'ft' : 'm';
 }
 
-export function tdrSummary(result: TdrResult, units: Units): string {
+export function tdrSummary(
+  result: TdrResult,
+  units: Units,
+  separator: DecimalSeparator = '.',
+): string {
   if (result.summary === 'Mixed results') return result.summary;
   const average = result.pairs.reduce((sum, pair) => sum + pair.distance, 0) / result.pairs.length;
-  return `${result.pairs[0].status} @ ${distanceForUnits(average, units).toFixed(1)} ${distanceUnitLabel(units)}`;
+  return `${result.pairs[0].status} @ ${formatDecimal(distanceForUnits(average, units), 1, separator)} ${distanceUnitLabel(units)}`;
 }

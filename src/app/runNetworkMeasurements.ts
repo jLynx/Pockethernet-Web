@@ -74,7 +74,7 @@ export async function runNetworkMeasurements(
     context.setCdplldp(null);
     jobs.push(
       ble
-        .collectFor(PACKET.ETH_FILTER_MATCH, 30000, options)
+        .collectFor(PACKET.ETH_FILTER_MATCH, context.discoveryTimeout ?? 30000, options)
         .then((packets) => {
           const discoveries = packets.flatMap((packet) => {
             try {

@@ -1,3 +1,5 @@
+import { useDecimalSeparator } from '@/app/decimalPreference';
+import { formatScalar } from '@/app/numberFormat';
 import type { ReactElement } from 'react';
 import { MdPowerOff } from 'react-icons/md';
 import type { LinkResult, PoeResult } from '@/pockethernetProtocol';
@@ -12,6 +14,7 @@ export function PoeResults({
   result: PoeResult | null;
   tia: TiaStandard;
 }): ReactElement {
+  const separator = useDecimalSeparator();
   if (!result)
     return (
       <EmptyState className="poe-awaiting">
@@ -39,8 +42,8 @@ export function PoeResults({
   ];
   const rows = [
     ['PSE type', result.poeType],
-    ['Open circuit', `${result.openVoltage} V`],
-    ['With load', `${result.loadVoltage} V`],
+    ['Open circuit', formatScalar(`${result.openVoltage} V`, separator)],
+    ['With load', formatScalar(`${result.loadVoltage} V`, separator)],
     ['Polarity', result.polarity || '---'],
   ];
   if (result.maxClass) rows.push(['Maximum class', result.maxClass]);
@@ -55,7 +58,7 @@ export function PoeResults({
           className="poe-row poe-pair"
           key={label}
           label={<span style={{ color }}>Pair {label}</span>}
-          value={`${value} V`}
+          value={formatScalar(`${value} V`, separator)}
         />
       ))}
     </div>

@@ -1,6 +1,7 @@
 import type { jsPDF } from 'jspdf';
 import { distanceForUnits, distanceUnitLabel } from '@/app/format';
 import type { TdrGraphResult, Units } from '@/app/types';
+import { formatDecimal, type DecimalSeparator } from '@/app/numberFormat';
 import { tdrSampleDistance } from '@/pockethernetProtocol';
 import { pairColor } from './reportPdfPrimitives';
 
@@ -16,6 +17,7 @@ export function drawTdrChart(
   height: number,
   units: Units,
   tia: '568A' | '568B',
+  separator: DecimalSeparator = '.',
 ): void {
   const traces = graph?.[kind] ?? [];
   const left = x + 8;
@@ -71,10 +73,15 @@ export function drawTdrChart(
   doc.setTextColor(0, 0, 0);
   const distance = distanceForUnits(tdrSampleDistance(last, graph.nvp), units);
   doc.text('0', left, bottom + 2.5, { align: 'center' });
-  doc.text(`${(distance / 2).toFixed(1)}`, left + (right - left) / 2, bottom + 2.5, {
+  doc.text(formatDecimal(distance / 2, 1, separator), left + (right - left) / 2, bottom + 2.5, {
     align: 'center',
   });
-  doc.text(`${distance.toFixed(1)} ${distanceUnitLabel(units)}`, right, bottom + 2.5, {
-    align: 'center',
-  });
+  doc.text(
+    `${formatDecimal(distance, 1, separator)} ${distanceUnitLabel(units)}`,
+    right,
+    bottom + 2.5,
+    {
+      align: 'center',
+    },
+  );
 }

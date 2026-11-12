@@ -16,6 +16,15 @@ export function AppIcon({ name }: { name: AppIconName }): ReactElement {
         <path d="M6 3h9l4 4v14H6zM15 3v5h4M9 12h7M9 16h7" />
       </svg>
     );
+  if (name === 'settings')
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 6h16M4 12h16M4 18h16" />
+        <circle cx="9" cy="6" r="2" />
+        <circle cx="15" cy="12" r="2" />
+        <circle cx="9" cy="18" r="2" />
+      </svg>
+    );
   if (name === 'tools')
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -64,6 +73,12 @@ export function MainNav({
           onChange('tools');
         }}
       />
+      <NavTile
+        icon="settings"
+        label="Settings"
+        active={tab === 'settings'}
+        onClick={() => onChange('settings')}
+      />
     </nav>
   );
 }
@@ -90,6 +105,7 @@ function NavTile({
 }
 
 interface TestPanelProps {
+  selectable?: boolean;
   id: TestId;
   title: string;
   selected: boolean;
@@ -117,6 +133,7 @@ export function TestPanel({
   testing = false,
   status = 'idle',
   summary,
+  selectable = true,
   failure,
   help,
   children,
@@ -127,8 +144,12 @@ export function TestPanel({
   return (
     <Card className={`test-panel ${id} ${expanded ? 'expanded' : ''} ${testing ? 'testing' : ''}`}>
       <div className="test-panel-header">
-        <Button unstyled className="test-label" onClick={onToggle}>
-          <SelectionSwitch selected={selected} status={failure ? 'error' : status} />
+        <Button unstyled className="test-label" onClick={selectable ? onToggle : onExpand}>
+          {selectable ? (
+            <SelectionSwitch selected={selected} status={failure ? 'error' : status} />
+          ) : (
+            <span className={`test-status-dot ${failure ? 'error' : status}`} aria-hidden="true" />
+          )}
           <span>{title}</span>
         </Button>
         <Button unstyled className="test-summary" onClick={onExpand}>
