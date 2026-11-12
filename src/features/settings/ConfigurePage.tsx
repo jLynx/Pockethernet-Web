@@ -55,165 +55,172 @@ export function ConfigurePage({
         }
       />
       <div className="settings-board">
-        {batch && (
-          <>
-            <section className="settings-card">
-              <h2>Tests to run</h2>
-              <fieldset disabled={disabled} className="settings-test-selection">
-                <legend>Select measurements</legend>
-                {TESTS.map(([id, title]) => (
-                  <label key={id}>
-                    <input
-                      type="checkbox"
-                      checked={app.selected.has(id)}
-                      onChange={() => onToggle(id)}
-                    />
-                    {title}
-                  </label>
-                ))}
-              </fieldset>
-              <p className="settings-hint">
-                Network tests enable Link automatically. Ping and External IP also enable IPv4. Use
-                the wiremap adapter for Wiremap, an active port for network tests, and the loopback
-                adapter for BER.
-              </p>
-            </section>
-          </>
-        )}
-        <section className="settings-card">
-          <h2>Wiremap acceptance</h2>
-          <fieldset disabled={disabled} className="settings-fields">
-            <ToolControl
-              label="Shield test"
-              name="shieldTest"
-              value={settings.shieldTest === true ? 'on' : 'off'}
-              options={[
-                ['off', 'Off'],
-                ['on', 'On'],
-              ]}
-              onChange={(_, value) => update('shieldTest', value === 'on')}
-            />
-            <p className="settings-hint">
-              When enabled, show the shield and require shield continuity to pass. Shorts involving
-              a cable pin still fail when disabled.
-            </p>
-            <ToolControl
-              label="Allow crossover"
-              name="allowCrossover"
-              value={settings.allowCrossover !== false ? 'on' : 'off'}
-              options={[
-                ['off', 'Off'],
-                ['on', 'On'],
-              ]}
-              onChange={(_, value) => update('allowCrossover', value === 'on')}
-            />
-            <SelectField
-              label="Required wiring"
-              value={settings.requiredPairs ?? 'any'}
-              onChange={(event) =>
-                update(
-                  'requiredPairs',
-                  event.target.value === '2' ? '2' : event.target.value === '4' ? '4' : 'any',
-                )
-              }
-            >
-              <option value="any">Wiremap only (existing classifications)</option>
-              <option value="2">2 pairs (pins 1, 2, 3, 6)</option>
-              <option value="4">4 pairs (all 8 pins)</option>
-            </SelectField>
-            <p className="settings-hint">
-              These are wiring requirements. They do not qualify a cable for a specific Ethernet
-              speed.
-            </p>
-          </fieldset>
-        </section>
-        <section className="settings-card">
-          <fieldset disabled={disabled}>
-            <GeneralSettings
-              settings={settings}
-              onSettingsChange={app.setToolSettings}
-              reportPreferences={app.reportPreferences}
-              onReportPreferencesChange={app.setReportPreferences}
-              onNotice={onNotice}
-            />
-          </fieldset>
-        </section>
-        {batch && (
-          <>
-            <section className="settings-card">
-              <h2>Network & discovery</h2>
-              <fieldset disabled={disabled}>
-                <NetworkSettings
-                  settings={app.measurementSettings}
-                  onChange={app.setMeasurementSettings}
-                  pingTargets={app.pingTargets}
-                  onPingTargetsChange={app.setPingTargets}
-                />
-                <PingDefaultsPanel defaults={app.pingDefaults} onChange={app.changePingDefaults} />
-              </fieldset>
-            </section>
-            <section className="settings-card">
-              <h2>Error rate / BER</h2>
-              <fieldset disabled={disabled}>
-                <BerSettingsPanel
-                  settings={app.measurementSettings}
-                  onChange={app.setMeasurementSettings}
-                />
-              </fieldset>
-            </section>
-          </>
-        )}
-        <section className="settings-card">
-          <h2>Project & workflow</h2>
-          <fieldset disabled={disabled} className="settings-fields">
-            {(
-              [
-                ['project', 'Project'],
-                ['address', 'Address / site'],
-                ['user', 'Technician'],
-                ['location', 'Location'],
-              ] as const
-            ).map(([key, label]) => (
-              <TextField
-                key={key}
-                label={label}
-                value={app.reportDetails[key] ?? ''}
-                maxLength={160}
-                onChange={(event) =>
-                  app.setReportDetails((current) => ({ ...current, [key]: event.target.value }))
-                }
-              />
-            ))}
-            {batch && (
-              <>
-                <ToolControl
-                  label="Auto increment Cable ID"
-                  name="autoIncrement"
-                  value={app.autoIncrement ? 'on' : 'off'}
-                  options={[
-                    ['off', 'Off'],
-                    ['on', 'On'],
-                  ]}
-                  onChange={(_, value) => app.setAutoIncrement(value === 'on')}
-                />
+        <div className="settings-column">
+          {batch && (
+            <>
+              <section className="settings-card">
+                <h2>Tests to run</h2>
+                <fieldset disabled={disabled} className="settings-test-selection">
+                  <legend>Select measurements</legend>
+                  {TESTS.map(([id, title]) => (
+                    <label key={id}>
+                      <input
+                        type="checkbox"
+                        checked={app.selected.has(id)}
+                        onChange={() => onToggle(id)}
+                      />
+                      {title}
+                    </label>
+                  ))}
+                </fieldset>
                 <p className="settings-hint">
-                  Save & next increases the final number, preserves leading zeros, and skips
-                  existing cable IDs. Retrying a test keeps the same ID.
+                  Network tests enable Link automatically. Ping and External IP also enable IPv4.
+                  Use the wiremap adapter for Wiremap, an active port for network tests, and the
+                  loopback adapter for BER.
                 </p>
-              </>
-            )}
-            <SelectField
-              label="Decimal separator"
-              value={settings.decimalSeparator ?? '.'}
-              onChange={(event) =>
-                update('decimalSeparator', event.target.value === ',' ? ',' : '.')
-              }
-            >
-              <option value=".">0.00</option>
-              <option value=",">0,00</option>
-            </SelectField>
-          </fieldset>
-        </section>
+              </section>
+            </>
+          )}
+          <section className="settings-card">
+            <h2>Wiremap acceptance</h2>
+            <fieldset disabled={disabled} className="settings-fields">
+              <ToolControl
+                label="Shield test"
+                name="shieldTest"
+                value={settings.shieldTest === true ? 'on' : 'off'}
+                options={[
+                  ['off', 'Off'],
+                  ['on', 'On'],
+                ]}
+                onChange={(_, value) => update('shieldTest', value === 'on')}
+              />
+              <p className="settings-hint">
+                When enabled, show the shield and require shield continuity to pass. Shorts
+                involving a cable pin still fail when disabled.
+              </p>
+              <ToolControl
+                label="Allow crossover"
+                name="allowCrossover"
+                value={settings.allowCrossover !== false ? 'on' : 'off'}
+                options={[
+                  ['off', 'Off'],
+                  ['on', 'On'],
+                ]}
+                onChange={(_, value) => update('allowCrossover', value === 'on')}
+              />
+              <SelectField
+                label="Required wiring"
+                value={settings.requiredPairs ?? 'any'}
+                onChange={(event) =>
+                  update(
+                    'requiredPairs',
+                    event.target.value === '2' ? '2' : event.target.value === '4' ? '4' : 'any',
+                  )
+                }
+              >
+                <option value="any">Wiremap only (existing classifications)</option>
+                <option value="2">2 pairs (pins 1, 2, 3, 6)</option>
+                <option value="4">4 pairs (all 8 pins)</option>
+              </SelectField>
+              <p className="settings-hint">
+                These are wiring requirements. They do not qualify a cable for a specific Ethernet
+                speed.
+              </p>
+            </fieldset>
+          </section>
+          <section className="settings-card">
+            <h2>Project & workflow</h2>
+            <fieldset disabled={disabled} className="settings-fields">
+              {(
+                [
+                  ['project', 'Project'],
+                  ['address', 'Address / site'],
+                  ['user', 'Technician'],
+                  ['location', 'Location'],
+                ] as const
+              ).map(([key, label]) => (
+                <TextField
+                  key={key}
+                  label={label}
+                  value={app.reportDetails[key] ?? ''}
+                  maxLength={160}
+                  onChange={(event) =>
+                    app.setReportDetails((current) => ({ ...current, [key]: event.target.value }))
+                  }
+                />
+              ))}
+              {batch && (
+                <>
+                  <ToolControl
+                    label="Auto increment Cable ID"
+                    name="autoIncrement"
+                    value={app.autoIncrement ? 'on' : 'off'}
+                    options={[
+                      ['off', 'Off'],
+                      ['on', 'On'],
+                    ]}
+                    onChange={(_, value) => app.setAutoIncrement(value === 'on')}
+                  />
+                  <p className="settings-hint">
+                    Save & next increases the final number, preserves leading zeros, and skips
+                    existing cable IDs. Retrying a test keeps the same ID.
+                  </p>
+                </>
+              )}
+              <SelectField
+                label="Decimal separator"
+                value={settings.decimalSeparator ?? '.'}
+                onChange={(event) =>
+                  update('decimalSeparator', event.target.value === ',' ? ',' : '.')
+                }
+              >
+                <option value=".">0.00</option>
+                <option value=",">0,00</option>
+              </SelectField>
+            </fieldset>
+          </section>
+        </div>
+        <div className="settings-column">
+          <section className="settings-card">
+            <fieldset disabled={disabled}>
+              <GeneralSettings
+                settings={settings}
+                onSettingsChange={app.setToolSettings}
+                reportPreferences={app.reportPreferences}
+                onReportPreferencesChange={app.setReportPreferences}
+                onNotice={onNotice}
+              />
+            </fieldset>
+          </section>
+          {batch && (
+            <>
+              <section className="settings-card">
+                <h2>Network & discovery</h2>
+                <fieldset disabled={disabled}>
+                  <NetworkSettings
+                    settings={app.measurementSettings}
+                    onChange={app.setMeasurementSettings}
+                    pingTargets={app.pingTargets}
+                    onPingTargetsChange={app.setPingTargets}
+                  />
+                  <PingDefaultsPanel
+                    defaults={app.pingDefaults}
+                    onChange={app.changePingDefaults}
+                  />
+                </fieldset>
+              </section>
+              <section className="settings-card">
+                <h2>Error rate / BER</h2>
+                <fieldset disabled={disabled}>
+                  <BerSettingsPanel
+                    settings={app.measurementSettings}
+                    onChange={app.setMeasurementSettings}
+                  />
+                </fieldset>
+              </section>
+            </>
+          )}
+        </div>
       </div>
     </main>
   );
