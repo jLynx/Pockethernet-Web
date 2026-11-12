@@ -9,6 +9,7 @@ import {
 } from './reportWorkflow';
 
 interface WorkflowOptions {
+  singleTest?: boolean;
   library: ReportLibrary;
   draft: ReportDraft | null;
   details: ReportDetails;
@@ -37,7 +38,13 @@ function useReportWorkflowInternal(options: WorkflowOptions) {
     try {
       let reports = library.reports;
       if (!saved) {
-        const report = createSavedReport(draft, details, photos, crypto.randomUUID());
+        const report = createSavedReport(
+          draft,
+          details,
+          photos,
+          crypto.randomUUID(),
+          !options.singleTest,
+        );
         const duplicates = matchingCableReports(reports, details);
         if (
           duplicates.length &&
@@ -66,7 +73,10 @@ function useReportWorkflowInternal(options: WorkflowOptions) {
         onNotice(
           next ? `Report saved. Ready for ${next}.` : 'Report saved. Ready for the next cable.',
         );
-      } else onNotice('Measurement report saved.');
+      } else {
+        if (options.singleTest) setPhotos([]);
+        onNotice('Measurement report saved.');
+      }
     } catch (reason) {
       onNotice(reason instanceof Error ? reason.message : 'Could not save this report.');
     } finally {
@@ -77,6 +87,7 @@ function useReportWorkflowInternal(options: WorkflowOptions) {
   const beforeMeasure = (): boolean => {
     if (busy || addingPhotos || library.busy) return false;
     if (
+      !options.singleTest &&
       draft &&
       !saved &&
       !window.confirm(

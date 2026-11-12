@@ -1,10 +1,11 @@
-import { useState, type ReactElement } from 'react';
+import { useState, type ReactElement, type ReactNode } from 'react';
 import type { ReportPreferences, ReportResults, SavedReport } from '@/app/types';
 import { Button, EmptyState, PageHeader, SelectField } from '@/shared/ui/UiPrimitives';
 import { createLlmExport } from './llmExport';
 import { downloadReportsPdf, previewReportPdf, shareReportPdf } from './pdf';
 
 interface ReportsPageProps {
+  children?: ReactNode;
   preferences: ReportPreferences;
   reports: SavedReport[];
   onRemove: (id: string) => Promise<boolean>;
@@ -44,6 +45,7 @@ async function writeClipboard(text: string): Promise<void> {
 }
 
 export function ReportsPage({
+  children,
   preferences,
   reports,
   onRemove,
@@ -91,6 +93,7 @@ export function ReportsPage({
         description="View, export, and share your saved measurement reports."
       />
       {error && <p role="alert">{error}</p>}
+      {children}
       {!ready && !error && <p role="status">Loading saved reports…</p>}
       <SelectField
         label="Filter by project"
@@ -128,7 +131,9 @@ export function ReportsPage({
         </header>
         {reports.length === 0 ? (
           <EmptyState className="reports-empty">
-            Save reports from the Test tab to see them here.
+            {children
+              ? 'Run tests, then save a report here to add it to your history.'
+              : 'Save reports from the Test tab to see them here.'}
           </EmptyState>
         ) : (
           <div className="report-list">

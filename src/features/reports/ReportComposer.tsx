@@ -4,6 +4,7 @@ import { Button, TextField } from '@/shared/ui/UiPrimitives';
 import { ReportPhotos } from './ReportPhotos';
 
 interface ReportComposerProps {
+  batch?: boolean;
   draft: ReportDraft | null;
   details: ReportDetails;
   onDetailsChange: StateSetter<ReportDetails>;
@@ -30,6 +31,7 @@ const FIELDS: readonly [keyof ReportDetails, string, string][] = [
 
 export function ReportComposer(props: ReportComposerProps): ReactElement {
   const {
+    batch = true,
     draft,
     details,
     onDetailsChange,
@@ -45,15 +47,19 @@ export function ReportComposer(props: ReportComposerProps): ReactElement {
     <section className="report-composer batch-composer" aria-labelledby="cable-report-title">
       <header>
         <div>
-          <h2 id="cable-report-title">Cable report</h2>
+          <h2 id="cable-report-title">{batch ? 'Cable report' : 'New report'}</h2>
           <p>
             {running
               ? 'Measurement in progress'
               : saved
                 ? 'Report saved'
                 : draft
-                  ? 'Results ready to save'
-                  : 'Enter the cable ID, then run your tests'}
+                  ? batch
+                    ? 'Results ready to save'
+                    : 'Latest measurement run ready to save'
+                  : batch
+                    ? 'Enter the cable ID, then run your tests'
+                    : 'Run tests from the Test tab to create a report'}
           </p>
         </div>
         <div className="batch-save-actions">
@@ -63,32 +69,34 @@ export function ReportComposer(props: ReportComposerProps): ReactElement {
           >
             Save report
           </Button>
-          <Button
-            variant="primary"
-            disabled={!draft || disabled || !ready}
-            onClick={() => void props.onSave(true)}
-          >
-            {busy ? 'Saving…' : saved ? 'Next cable' : 'Save & next'}
-          </Button>
+          {batch && (
+            <Button
+              variant="primary"
+              disabled={!draft || disabled || !ready}
+              onClick={() => void props.onSave(true)}
+            >
+              {busy ? 'Saving…' : saved ? 'Next cable' : 'Save & next'}
+            </Button>
+          )}
         </div>
       </header>
       <fieldset className="batch-fields" disabled={disabled || saved}>
         <TextField
-          label="Cable ID / Tag"
+          label={batch ? 'Cable ID / Tag' : 'Tag (optional)'}
           value={details.tag}
-          placeholder="CAB-001"
+          placeholder={batch ? 'CAB-001' : 'Cable or job tag'}
           maxLength={160}
           onChange={(event) =>
             onDetailsChange((current) => ({ ...current, tag: event.target.value }))
           }
         />
-        {autoIncrement && (
+        {batch && autoIncrement && (
           <p className="batch-hint">
             Save & next increases the trailing number and skips IDs already saved in this project
             and site.
           </p>
         )}
-        <details className="batch-project-details">
+        <details className="batch-project-details" open={batch ? undefined : true}>
           <summary>Project details, notes & photos</summary>
           <div className="report-fields">
             {FIELDS.map(([key, label, placeholder]) => (

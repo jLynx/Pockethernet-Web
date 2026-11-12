@@ -45,11 +45,38 @@ export function AppPages({
   onReset,
   onNotice,
 }: AppPagesProps): ReactElement {
-  const displaySettings = measurement.draft?.settings ?? app.toolSettings;
+  const batch = app.workflowMode === 'batch';
+  const displaySettings = batch
+    ? (measurement.draft?.settings ?? app.toolSettings)
+    : app.toolSettings;
+  const composer = (
+    <ReportComposer
+      batch={batch}
+      draft={measurement.draft}
+      details={app.reportDetails}
+      onDetailsChange={app.setReportDetails}
+      photos={workflow.photos}
+      onPhotosChange={workflow.setPhotos}
+      addingPhotos={workflow.addingPhotos}
+      onAddingPhotosChange={workflow.setAddingPhotos}
+      saved={workflow.saved}
+      busy={workflow.busy}
+      running={measurement.running}
+      ready={library.ready}
+      autoIncrement={batch && app.autoIncrement}
+      onSave={workflow.save}
+      onNotice={onNotice}
+    />
+  );
   return tab === 'test' ? (
     <TestPage
+      batch={batch}
+      configuration={app}
+      disabled={measurement.running || deviceLocked}
       {...measurement.results}
-      selected={measurement.draft ? new Set(measurement.draft.selectedTests) : app.selected}
+      selected={
+        batch && measurement.draft ? new Set(measurement.draft.selectedTests) : app.selected
+      }
       expanded={measurement.expanded}
       onToggle={onToggle}
       onExpandedChange={measurement.setExpanded}
@@ -65,22 +92,7 @@ export function AppPages({
           Report storage: {library.error}. Results and photos remain available in this session.
         </p>
       )}
-      <ReportComposer
-        draft={measurement.draft}
-        details={app.reportDetails}
-        onDetailsChange={app.setReportDetails}
-        photos={workflow.photos}
-        onPhotosChange={workflow.setPhotos}
-        addingPhotos={workflow.addingPhotos}
-        onAddingPhotosChange={workflow.setAddingPhotos}
-        saved={workflow.saved}
-        busy={workflow.busy}
-        running={measurement.running}
-        ready={library.ready}
-        autoIncrement={app.autoIncrement}
-        onSave={workflow.save}
-        onNotice={onNotice}
-      />
+      {batch && composer}
     </TestPage>
   ) : tab === 'tools' ? (
     <ToolsPage
@@ -126,6 +138,8 @@ export function AppPages({
       busy={library.busy}
       error={library.error}
       onNotice={onNotice}
-    />
+    >
+      {!batch && composer}
+    </ReportsPage>
   );
 }

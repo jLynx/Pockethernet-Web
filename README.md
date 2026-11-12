@@ -11,7 +11,7 @@ Pocketweb for Pockethernet is a modern, installable browser application built sp
 ## What this project adds
 
 - A redesigned responsive interface for desktop and mobile workflows
-- Selectable multi-test runs with live status and expandable results
+- Single test and batch testing workflows with separate configurations, live status, and expandable results
 - Interactive TDR impedance and crosstalk charts
 - Saved measurement history with multiple photos, optional multiline image descriptions, site metadata, and custom branding
 - PDF preview, download, multi-report export, and native sharing

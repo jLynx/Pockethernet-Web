@@ -113,6 +113,7 @@ function NavTile({
 }
 
 interface TestPanelProps {
+  selectionDisabled?: boolean;
   selectable?: boolean;
   id: TestId;
   title: string;
@@ -142,6 +143,7 @@ export function TestPanel({
   status = 'idle',
   summary,
   selectable = true,
+  selectionDisabled = false,
   failure,
   help,
   children,
@@ -152,7 +154,13 @@ export function TestPanel({
   return (
     <Card className={`test-panel ${id} ${expanded ? 'expanded' : ''} ${testing ? 'testing' : ''}`}>
       <div className="test-panel-header">
-        <Button unstyled className="test-label" onClick={selectable ? onToggle : onExpand}>
+        <Button
+          unstyled
+          className="test-label"
+          onClick={selectable ? onToggle : onExpand}
+          disabled={selectable && selectionDisabled}
+          aria-pressed={selectable ? selected : undefined}
+        >
           {selectable ? (
             <SelectionSwitch selected={selected} status={failure ? 'error' : status} />
           ) : (

@@ -4,11 +4,12 @@ import logo from '@/assets/logo.png';
 import { errorMessage } from '@/app/format';
 import { NumberFormatProvider } from '@/app/NumberFormatContext';
 import { runReportMeasurement } from '@/app/runReportMeasurement';
-import { SUPPORTED_TESTS, type Tab, type TestId } from '@/app/types';
+import { SUPPORTED_TESTS, type Tab, type TestId, type WorkflowMode } from '@/app/types';
 import { useAppSettings } from '@/app/useAppSettings';
-import { emptyResults, useMeasurementState } from '@/app/useMeasurementState';
+import { emptyResults } from '@/app/useMeasurementState';
 import { useReports } from '@/app/useReports';
-import { useReportWorkflow } from '@/app/useReportWorkflow';
+import { useTestingWorkflows } from '@/app/useTestingWorkflows';
+import { WorkflowSelector } from '@/shared/layout/WorkflowSelector';
 import { toggleSelection } from '@/app/testSelection';
 import { clearReportDatabase } from '@/app/reportDatabase';
 import {
@@ -31,8 +32,9 @@ export default function App(): ReactElement {
   const [tab, setTab] = useState<Tab>('test');
   const [notice, setNotice] = useState('');
   const app = useAppSettings();
-  const measurement = useMeasurementState();
   const library = useReports();
+  const testing = useTestingWorkflows(app, library, setNotice);
+  const { measurement, workflow } = testing;
   const [firmwareLocked, setFirmwareLocked] = useState(
     () => !!readPendingUpdate(window.localStorage),
   );
@@ -60,21 +62,12 @@ export default function App(): ReactElement {
   });
   const deviceLocked = updateLocked(firmwareUpdater.state);
   const measuring = useRef(false);
-  const nextCable = (): void => {
-    measurement.setDraft(null);
-    measurement.setResults(emptyResults());
-    measurement.setters.setFailures?.({});
-    measurement.setExpanded(new Set());
+  const changeWorkflow = (mode: WorkflowMode): void => {
+    if (measuring.current || testing.busy || deviceLocked || deviceTools.busy || library.busy)
+      return;
+    app.setWorkflowMode(mode);
+    setNotice('');
   };
-  const workflow = useReportWorkflow({
-    library,
-    draft: measurement.draft,
-    details: app.reportDetails,
-    setDetails: app.setReportDetails,
-    autoIncrement: app.autoIncrement,
-    onNext: nextCable,
-    onNotice: setNotice,
-  });
   useEffect(() => {
     const openResults = (event: MessageEvent<unknown>): void => {
       if (event.origin !== window.location.origin) return;
@@ -124,12 +117,16 @@ export default function App(): ReactElement {
       return;
     }
     if (!SUPPORTED_TESTS.some((id) => app.selected.has(id))) {
-      setNotice('Choose at least one test in Configure.');
+      setNotice(
+        app.workflowMode === 'single'
+          ? 'Choose at least one test.'
+          : 'Choose at least one test in Configure.',
+      );
       return;
     }
     if (!workflow.beforeMeasure()) return;
     measuring.current = true;
-    measurement.setResults(emptyResults());
+    if (app.workflowMode === 'batch') measurement.setResults(emptyResults());
     measurement.setDraft(null);
     setNotice('');
     try {
@@ -178,7 +175,10 @@ export default function App(): ReactElement {
       setNotice(`Reset could not finish: ${errorMessage(error)}`);
     }
   };
-  const displaySettings = measurement.draft?.settings ?? app.toolSettings;
+  const displaySettings =
+    app.workflowMode === 'batch'
+      ? (measurement.draft?.settings ?? app.toolSettings)
+      : app.toolSettings;
   return (
     <NumberFormatProvider separator={displaySettings.decimalSeparator ?? '.'}>
       <div className="original-app">
@@ -195,6 +195,11 @@ export default function App(): ReactElement {
           </div>
         </header>
         <MainNav tab={tab} onChange={setTab} />
+        <WorkflowSelector
+          mode={app.workflowMode}
+          disabled={testing.busy || deviceLocked || deviceTools.busy || library.busy}
+          onChange={changeWorkflow}
+        />
         <AppUpdate
           busy={
             measurement.running ||

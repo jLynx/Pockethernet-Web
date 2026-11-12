@@ -26,9 +26,9 @@ export function toggleSelection(current: Set<TestId>, id: TestId): Set<TestId> {
   return normalizeSelection([...next]);
 }
 
-export function loadSelection(): Set<TestId> {
+export function loadSelection(key = 'pockethernet.selectedTests'): Set<TestId> {
   try {
-    const saved: unknown = JSON.parse(localStorage.getItem('pockethernet.selectedTests') ?? '[]');
+    const saved: unknown = JSON.parse(localStorage.getItem(key) ?? '[]');
     return normalizeSelection(
       Array.isArray(saved) ? SUPPORTED_TESTS.filter((id) => saved.includes(id)) : [],
     );

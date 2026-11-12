@@ -9,8 +9,10 @@ export const DEFAULT_MEASUREMENT_SETTINGS: MeasurementSettings = {
   discoveryTimeout: 30000,
 };
 
-export function loadMeasurementSettings(): MeasurementSettings {
-  const saved = storedRecord('pockethernet.measurementSettings');
+export function loadMeasurementSettings(
+  key = 'pockethernet.measurementSettings',
+): MeasurementSettings {
+  const saved = storedRecord(key);
   const record = (value: unknown): Record<string, unknown> => (isRecord(value) ? value : {});
   const ber = record(saved.berSettings),
     vlan = record(saved.vlanSettings),

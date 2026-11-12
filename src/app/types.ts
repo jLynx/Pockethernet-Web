@@ -27,6 +27,7 @@ import type {
 } from '@/pockethernetProtocol';
 
 export type Tab = 'test' | 'configure' | 'report' | 'tools' | 'settings';
+export type WorkflowMode = 'single' | 'batch';
 export type TestId =
   | 'wiremap'
   | 'tdr'

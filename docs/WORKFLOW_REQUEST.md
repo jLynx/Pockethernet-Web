@@ -1,13 +1,23 @@
 # Batch testing workflow (issue #6)
 
-The navigation is **Test → Configure → Reports → Tools → Settings**. Choose tests and report defaults in Configure, then enter the Cable ID, measure, review, add notes or photos, and save from Test. Reports manages the saved library and PDF exports. Tools contains Tone generator, WiFi bridge, and Blink port light. Settings contains appearance, notifications, device information/firmware, and application reset.
+The navigation is **Test → Configure → Reports → Tools → Settings**. A persistent **Single test / Batch testing** selector keeps both workflows available. Tools contains Tone generator, WiFi bridge, and Blink port light. Settings contains appearance, notifications, device information/firmware, and application reset.
+
+## Single test and batch workflows
+
+**Single test** restores all selectable test cards and their network, Ping, discovery and BER controls on Test. Cable and report defaults are available in Configure. Reports contains the composer for saving the latest measurement run, with an optional Tag and the shared saved library. Subsequent runs keep other test results visible for troubleshooting; each saved report contains only the latest run, identified explicitly in the composer.
+
+**Batch testing** keeps test selection and all test/report defaults in Configure. Enter the Cable ID, measure, review, add notes or photos, and save or Save & next from Test. Reports manages the library and PDF exports.
+
+Each workflow retains its own selection, cable/network configuration, Ping settings and report details. The first single-test configuration starts from existing preferences, then changes are saved separately. Existing batch settings retain their original storage keys. New users and users upgrading from the original interface start in Single test; users already using the batch selection retain Batch testing. The mode choice persists across reloads.
+
+Switching modes keeps each workflow's pending results, draft and photos in memory. Mode changes are disabled during measurements, photo processing, storage/device operations or firmware work. Saved reports, branding, device tools and app preferences are shared. Unsaved results and photos remain session data and should be saved before reloading.
 
 ## Implemented behavior
 
 - Configure groups test selection, wiremap acceptance, TIA/NVP/units, network configuration, Ping targets/defaults, discovery timeout, BER, project defaults, numbering, decimal formatting, and branding. General app/device controls are kept in Settings.
 - Static IPv4 fields stack vertically and use the available width. Discovery can be excluded from test selection or configured for 10, 30, or 60 seconds.
-- Each report captures only its own measurement run, including the selected tests, settings used, actual start/end timestamps, failures, and partial results. Failed or interrupted runs can be saved. Starting another measurement prompts before replacing unsaved results.
-- Cable IDs are required for new reports. With auto increment enabled, Save & next requires a numeric suffix, preserves padding (`CAB-009 → CAB-010`), and skips IDs already saved for the same project and site. Normal Save does not advance the ID. Save & next advances only after storage succeeds and clears cable-specific notes, photos, and Port ID.
+- Each report captures only its own measurement run, including the selected tests, settings used, actual start/end timestamps, failures, and partial results. Failed or interrupted runs can be saved. In Batch testing, starting another measurement prompts before replacing unsaved results.
+- Cable IDs are required for new batch reports; Single test reports allow an optional Tag. With auto increment enabled, Save & next requires a numeric suffix, preserves padding (`CAB-009 → CAB-010`), and skips IDs already saved for the same project and site. Normal Save does not advance the ID. Save & next advances only after storage succeeds and clears cable-specific notes, photos, and Port ID.
 - Duplicate Cable IDs prompt to save as a retest while retaining the earlier reports. Matching ignores case and surrounding whitespace and includes project and site.
 - Wiremap acceptance supports optional shield continuity, crossover acceptance, and two-pair or four-pair wiring requirements. Raw measured pin connections are retained. These rules do not certify an Ethernet speed.
 - Changing the project filter clears the report selection; combined PDF exports include only selected visible reports.

@@ -25,8 +25,10 @@ export function createSavedReport(
   details: ReportDetails,
   photos: ReportPhoto[],
   id: string,
+  requireCableId = true,
 ): SavedReport {
-  if (!details.tag.trim()) throw new Error('Enter a Cable ID / Tag before saving.');
+  if (requireCableId && !details.tag.trim())
+    throw new Error('Enter a Cable ID / Tag before saving.');
   if (
     !Object.values(draft.results).some(Boolean) &&
     !Object.keys(draft.failures).length &&

@@ -66,8 +66,8 @@ export function storedRecord(key: string): Record<string, unknown> {
   }
 }
 
-export function loadToolSettings(): ToolSettings {
-  const saved = storedRecord('pockethernet.toolSettings');
+export function loadToolSettings(key = 'pockethernet.toolSettings'): ToolSettings {
+  const saved = storedRecord(key);
   return {
     tia: saved.tia === '568A' ? '568A' : DEFAULT_TOOL_SETTINGS.tia,
     units: saved.units === 'feet' ? 'feet' : DEFAULT_TOOL_SETTINGS.units,
@@ -125,8 +125,8 @@ export function loadWifiSettings(): WifiSettings {
   };
 }
 
-export function loadReportDetails(): ReportDetails {
-  const saved = storedRecord('pockethernet.reportDetails');
+export function loadReportDetails(key = 'pockethernet.reportDetails'): ReportDetails {
+  const saved = storedRecord(key);
   return {
     address: typeof saved.address === 'string' ? saved.address : '',
     tag: typeof saved.tag === 'string' ? saved.tag : '',
@@ -138,8 +138,8 @@ export function loadReportDetails(): ReportDetails {
   };
 }
 
-export function loadPingDefaults(): PingDefaults {
-  const saved = storedRecord('pockethernet.pingDefaults');
+export function loadPingDefaults(key = 'pockethernet.pingDefaults'): PingDefaults {
+  const saved = storedRecord(key);
   const targets: unknown[] = Array.isArray(saved.targets) ? saved.targets : [];
   const target = (index: number): string =>
     typeof targets[index] === 'string' ? targets[index].trim().slice(0, 127) : '';

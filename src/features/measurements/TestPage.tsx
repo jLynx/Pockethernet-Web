@@ -37,9 +37,14 @@ import {
 import { TdrGraphs, TdrResults } from './results/TdrResults';
 import { WiremapDiagram } from './results/WiremapDiagram';
 import { TEST_HELP } from './testHelp';
+import type { useTestConfiguration } from '@/app/useTestConfiguration';
+import { MeasurementControls } from './MeasurementControls';
 import { Button, PageHeader } from '@/shared/ui/UiPrimitives';
 
 interface TestPageProps {
+  batch?: boolean;
+  configuration?: ReturnType<typeof useTestConfiguration>;
+  disabled?: boolean;
   selected: Set<TestId>;
   expanded: Set<TestId>;
   onToggle: (id: TestId) => void;
@@ -67,7 +72,16 @@ interface TestPageProps {
 }
 
 export function TestPage(props: TestPageProps): ReactElement {
-  const { selected, expanded, onExpandedChange, activeTest, toolSettings } = props;
+  const { selected, expanded, onExpandedChange, activeTest, toolSettings, batch = true } = props;
+  const visible = (id: TestId): boolean => !batch || selected.has(id);
+  const controls = (id: TestId): ReactNode =>
+    !batch && props.configuration ? (
+      <MeasurementControls
+        id={id}
+        configuration={props.configuration}
+        disabled={props.disabled ?? props.running}
+      />
+    ) : null;
   const panel = (
     id: TestId,
   ): {
@@ -83,7 +97,8 @@ export function TestPage(props: TestPageProps): ReactElement {
     testing: props.pendingTests ? props.pendingTests.has(id) : activeTest === id,
     failure: props.failures?.[id],
     onToggle: () => {
-      props.onOpenConfigure?.();
+      if (!batch) props.onToggle(id);
+      else props.onOpenConfigure?.();
     },
     onExpand: () => {
       onExpandedChange((current) => {
@@ -99,11 +114,15 @@ export function TestPage(props: TestPageProps): ReactElement {
       <PageHeader
         className="test-intro"
         eyebrow="Cable diagnostics"
-        title="Test cable"
-        description="Run your configured tests, review the results, then save and move to the next cable."
+        title={batch ? 'Test cable' : 'Choose your tests'}
+        description={
+          batch
+            ? 'Run your configured tests, review the results, then save and move to the next cable.'
+            : 'Select one or more tests, adjust their controls, then measure. Save the latest run from Reports.'
+        }
         action={
           <div className="batch-save-actions">
-            <Button onClick={props.onOpenConfigure}>Choose tests</Button>
+            {batch && <Button onClick={props.onOpenConfigure}>Choose tests</Button>}
             <Button
               className="collapse-all-button"
               disabled={expanded.size === 0}
@@ -117,14 +136,15 @@ export function TestPage(props: TestPageProps): ReactElement {
         }
       />
       {props.children}
-      {selected.size === 0 && (
+      {batch && selected.size === 0 && (
         <p className="batch-empty">
           Choose the tests to run in Configure, then connect Pockethernet.
         </p>
       )}
-      {selected.has('wiremap') && (
+      {visible('wiremap') && (
         <TestPanel
-          selectable={false}
+          selectable={!batch}
+          selectionDisabled={props.disabled ?? props.running}
           id="wiremap"
           title="Wiremap"
           help={TEST_HELP.wiremap}
@@ -139,9 +159,10 @@ export function TestPage(props: TestPageProps): ReactElement {
           />
         </TestPanel>
       )}
-      {selected.has('tdr') && (
+      {visible('tdr') && (
         <TestPanel
-          selectable={false}
+          selectable={!batch}
+          selectionDisabled={props.disabled ?? props.running}
           id="tdr"
           title="TDR"
           help={TEST_HELP.tdr}
@@ -156,9 +177,10 @@ export function TestPage(props: TestPageProps): ReactElement {
           <TdrResults result={props.tdr} units={toolSettings.units} tia={toolSettings.tia} />
         </TestPanel>
       )}
-      {selected.has('tdr-graph') && (
+      {visible('tdr-graph') && (
         <TestPanel
-          selectable={false}
+          selectable={!batch}
+          selectionDisabled={props.disabled ?? props.running}
           id="tdr-graph"
           title="TDR Graph"
           help={TEST_HELP['tdr-graph']}
@@ -169,9 +191,10 @@ export function TestPage(props: TestPageProps): ReactElement {
           <TdrGraphs result={props.tdrGraph} units={toolSettings.units} tia={toolSettings.tia} />
         </TestPanel>
       )}
-      {selected.has('ber') && (
+      {visible('ber') && (
         <TestPanel
-          selectable={false}
+          selectable={!batch}
+          selectionDisabled={props.disabled ?? props.running}
           id="ber"
           title="Error rate"
           help={TEST_HELP.ber}
@@ -183,12 +206,14 @@ export function TestPage(props: TestPageProps): ReactElement {
               : 'Not measured'
           }
         >
+          {controls('ber')}
           <BerResults result={props.ber} />
         </TestPanel>
       )}
-      {selected.has('poe') && (
+      {visible('poe') && (
         <TestPanel
-          selectable={false}
+          selectable={!batch}
+          selectionDisabled={props.disabled ?? props.running}
           id="poe"
           title="PoE"
           help={TEST_HELP.poe}
@@ -199,9 +224,10 @@ export function TestPage(props: TestPageProps): ReactElement {
           <PoeResults result={props.poe} tia={toolSettings.tia} />
         </TestPanel>
       )}
-      {selected.has('link') && (
+      {visible('link') && (
         <TestPanel
-          selectable={false}
+          selectable={!batch}
+          selectionDisabled={props.disabled ?? props.running}
           id="link"
           title="Link"
           help={TEST_HELP.link}
@@ -212,9 +238,10 @@ export function TestPage(props: TestPageProps): ReactElement {
           <LinkResults result={props.link} tia={toolSettings.tia} />
         </TestPanel>
       )}
-      {selected.has('cdplldp') && (
+      {visible('cdplldp') && (
         <TestPanel
-          selectable={false}
+          selectable={!batch}
+          selectionDisabled={props.disabled ?? props.running}
           id="cdplldp"
           title="CDP/LLDP"
           help={TEST_HELP.cdplldp}
@@ -222,12 +249,14 @@ export function TestPage(props: TestPageProps): ReactElement {
           status={props.cdplldp ? (props.cdplldp.status === 'not_OK' ? 'error' : 'ok') : 'idle'}
           summary={props.cdplldp?.summary ?? 'Not measured'}
         >
+          {controls('cdplldp')}
           <CdpLldpResults result={props.cdplldp} />
         </TestPanel>
       )}
-      {selected.has('vlan') && (
+      {visible('vlan') && (
         <TestPanel
-          selectable={false}
+          selectable={!batch}
+          selectionDisabled={props.disabled ?? props.running}
           id="vlan"
           title="VLAN"
           help={TEST_HELP.vlan}
@@ -235,12 +264,14 @@ export function TestPage(props: TestPageProps): ReactElement {
           status={props.vlan ? (props.vlan.status === 'OK' ? 'ok' : 'error') : 'idle'}
           summary={props.vlan?.summary ?? 'Not measured'}
         >
+          {controls('vlan')}
           <VlanResults result={props.vlan} />
         </TestPanel>
       )}
-      {selected.has('traffic') && (
+      {visible('traffic') && (
         <TestPanel
-          selectable={false}
+          selectable={!batch}
+          selectionDisabled={props.disabled ?? props.running}
           id="traffic"
           title="Traffic"
           help={TEST_HELP.traffic}
@@ -251,9 +282,10 @@ export function TestPage(props: TestPageProps): ReactElement {
           <TrafficResults result={props.traffic} />
         </TestPanel>
       )}
-      {selected.has('ipv4') && (
+      {visible('ipv4') && (
         <TestPanel
-          selectable={false}
+          selectable={!batch}
+          selectionDisabled={props.disabled ?? props.running}
           id="ipv4"
           title="IPv4"
           help={TEST_HELP.ipv4}
@@ -261,12 +293,14 @@ export function TestPage(props: TestPageProps): ReactElement {
           status={props.ipv4 ? (props.ipv4.status === 'OK' ? 'ok' : 'error') : 'idle'}
           summary={props.ipv4?.summary ?? 'Not measured'}
         >
+          {controls('ipv4')}
           <Ipv4Results result={props.ipv4} />
         </TestPanel>
       )}
-      {selected.has('ipv6') && (
+      {visible('ipv6') && (
         <TestPanel
-          selectable={false}
+          selectable={!batch}
+          selectionDisabled={props.disabled ?? props.running}
           id="ipv6"
           title="IPv6"
           help={TEST_HELP.ipv6}
@@ -274,12 +308,14 @@ export function TestPage(props: TestPageProps): ReactElement {
           status={props.ipv6 ? (props.ipv6.status === 'OK' ? 'ok' : 'error') : 'idle'}
           summary={props.ipv6?.summary ?? 'Not measured'}
         >
+          {controls('ipv6')}
           <Ipv6Results result={props.ipv6} />
         </TestPanel>
       )}
-      {selected.has('extip') && (
+      {visible('extip') && (
         <TestPanel
-          selectable={false}
+          selectable={!batch}
+          selectionDisabled={props.disabled ?? props.running}
           id="extip"
           title="External IP"
           help={TEST_HELP.extip}
@@ -290,9 +326,10 @@ export function TestPage(props: TestPageProps): ReactElement {
           <ExternalIpResults result={props.extip} />
         </TestPanel>
       )}
-      {selected.has('ping') && (
+      {visible('ping') && (
         <TestPanel
-          selectable={false}
+          selectable={!batch}
+          selectionDisabled={props.disabled ?? props.running}
           id="ping"
           title="Ping"
           help={TEST_HELP.ping}
@@ -300,6 +337,7 @@ export function TestPage(props: TestPageProps): ReactElement {
           status={props.ping ? (props.ping.status === 'OK' ? 'ok' : 'error') : 'idle'}
           summary={props.ping?.summary ?? 'Not measured'}
         >
+          {controls('ping')}
           <PingResults result={props.ping} />
         </TestPanel>
       )}

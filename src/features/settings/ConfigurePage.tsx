@@ -38,6 +38,7 @@ export function ConfigurePage({
   onNotice,
 }: ConfigurePageProps): ReactElement {
   const settings = app.toolSettings;
+  const batch = app.workflowMode === 'batch';
   const update = <Key extends keyof typeof settings>(
     key: Key,
     value: (typeof settings)[Key],
@@ -47,30 +48,38 @@ export function ConfigurePage({
       <PageHeader
         eyebrow="Test & report setup"
         title="Configure"
-        description="Configure once, then test and save each cable from the Test tab."
+        description={
+          batch
+            ? 'Configure batch tests and report defaults once, then work through your cables from Test.'
+            : 'Set cable and report defaults here. Choose tests and adjust network or BER controls on Test.'
+        }
       />
       <div className="settings-board">
-        <section className="settings-card">
-          <h2>Tests to run</h2>
-          <fieldset disabled={disabled} className="settings-test-selection">
-            <legend>Select measurements</legend>
-            {TESTS.map(([id, title]) => (
-              <label key={id}>
-                <input
-                  type="checkbox"
-                  checked={app.selected.has(id)}
-                  onChange={() => onToggle(id)}
-                />
-                {title}
-              </label>
-            ))}
-          </fieldset>
-          <p className="settings-hint">
-            Network tests enable Link automatically. Ping and External IP also enable IPv4. Use the
-            wiremap adapter for Wiremap, an active port for network tests, and the loopback adapter
-            for BER.
-          </p>
-        </section>
+        {batch && (
+          <>
+            <section className="settings-card">
+              <h2>Tests to run</h2>
+              <fieldset disabled={disabled} className="settings-test-selection">
+                <legend>Select measurements</legend>
+                {TESTS.map(([id, title]) => (
+                  <label key={id}>
+                    <input
+                      type="checkbox"
+                      checked={app.selected.has(id)}
+                      onChange={() => onToggle(id)}
+                    />
+                    {title}
+                  </label>
+                ))}
+              </fieldset>
+              <p className="settings-hint">
+                Network tests enable Link automatically. Ping and External IP also enable IPv4. Use
+                the wiremap adapter for Wiremap, an active port for network tests, and the loopback
+                adapter for BER.
+              </p>
+            </section>
+          </>
+        )}
         <section className="settings-card">
           <h2>Wiremap acceptance</h2>
           <fieldset disabled={disabled} className="settings-fields">
@@ -129,27 +138,31 @@ export function ConfigurePage({
             />
           </fieldset>
         </section>
-        <section className="settings-card">
-          <h2>Network & discovery</h2>
-          <fieldset disabled={disabled}>
-            <NetworkSettings
-              settings={app.measurementSettings}
-              onChange={app.setMeasurementSettings}
-              pingTargets={app.pingTargets}
-              onPingTargetsChange={app.setPingTargets}
-            />
-            <PingDefaultsPanel defaults={app.pingDefaults} onChange={app.changePingDefaults} />
-          </fieldset>
-        </section>
-        <section className="settings-card">
-          <h2>Error rate / BER</h2>
-          <fieldset disabled={disabled}>
-            <BerSettingsPanel
-              settings={app.measurementSettings}
-              onChange={app.setMeasurementSettings}
-            />
-          </fieldset>
-        </section>
+        {batch && (
+          <>
+            <section className="settings-card">
+              <h2>Network & discovery</h2>
+              <fieldset disabled={disabled}>
+                <NetworkSettings
+                  settings={app.measurementSettings}
+                  onChange={app.setMeasurementSettings}
+                  pingTargets={app.pingTargets}
+                  onPingTargetsChange={app.setPingTargets}
+                />
+                <PingDefaultsPanel defaults={app.pingDefaults} onChange={app.changePingDefaults} />
+              </fieldset>
+            </section>
+            <section className="settings-card">
+              <h2>Error rate / BER</h2>
+              <fieldset disabled={disabled}>
+                <BerSettingsPanel
+                  settings={app.measurementSettings}
+                  onChange={app.setMeasurementSettings}
+                />
+              </fieldset>
+            </section>
+          </>
+        )}
         <section className="settings-card">
           <h2>Project & workflow</h2>
           <fieldset disabled={disabled} className="settings-fields">
@@ -171,20 +184,24 @@ export function ConfigurePage({
                 }
               />
             ))}
-            <ToolControl
-              label="Auto increment Cable ID"
-              name="autoIncrement"
-              value={app.autoIncrement ? 'on' : 'off'}
-              options={[
-                ['off', 'Off'],
-                ['on', 'On'],
-              ]}
-              onChange={(_, value) => app.setAutoIncrement(value === 'on')}
-            />
-            <p className="settings-hint">
-              Save & next increases the final number, preserves leading zeros, and skips existing
-              cable IDs. Retrying a test keeps the same ID.
-            </p>
+            {batch && (
+              <>
+                <ToolControl
+                  label="Auto increment Cable ID"
+                  name="autoIncrement"
+                  value={app.autoIncrement ? 'on' : 'off'}
+                  options={[
+                    ['off', 'Off'],
+                    ['on', 'On'],
+                  ]}
+                  onChange={(_, value) => app.setAutoIncrement(value === 'on')}
+                />
+                <p className="settings-hint">
+                  Save & next increases the final number, preserves leading zeros, and skips
+                  existing cable IDs. Retrying a test keeps the same ID.
+                </p>
+              </>
+            )}
             <SelectField
               label="Decimal separator"
               value={settings.decimalSeparator ?? '.'}
