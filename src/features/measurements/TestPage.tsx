@@ -69,6 +69,7 @@ interface TestPageProps {
   ping: PingDisplayResult | null;
   children?: ReactNode;
   onOpenConfigure?: () => void;
+  workflowSelector?: ReactNode;
 }
 
 export function TestPage(props: TestPageProps): ReactElement {
@@ -134,7 +135,9 @@ export function TestPage(props: TestPageProps): ReactElement {
             </Button>
           </div>
         }
-      />
+      >
+        {props.workflowSelector}
+      </PageHeader>
       {props.children}
       {batch && selected.size === 0 && (
         <p className="batch-empty">

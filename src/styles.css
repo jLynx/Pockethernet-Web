@@ -5,6 +5,19 @@
   font-synthesis: none;
 }
 
+@media (min-width: 721px) {
+  @supports (scrollbar-gutter: stable both-edges) {
+    :root {
+      scrollbar-gutter: stable both-edges;
+    }
+  }
+  @supports not (scrollbar-gutter: stable both-edges) {
+    :root {
+      overflow-y: scroll;
+    }
+  }
+}
+
 * {
   box-sizing: border-box;
 }

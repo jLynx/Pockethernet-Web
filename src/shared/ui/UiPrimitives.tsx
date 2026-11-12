@@ -225,6 +225,7 @@ interface PageHeaderProps {
   title: string;
   description: string;
   action?: ReactNode;
+  children?: ReactNode;
   className?: string;
 }
 
@@ -233,6 +234,7 @@ export function PageHeader({
   title,
   description,
   action,
+  children,
   className = '',
 }: PageHeaderProps): ReactElement {
   return (
@@ -240,6 +242,7 @@ export function PageHeader({
       <div>
         <p className="eyebrow">{eyebrow}</p>
         <h1>{title}</h1>
+        {children}
       </div>
       <div className="page-header-actions">
         <p>{description}</p>

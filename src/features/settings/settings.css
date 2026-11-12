@@ -1,21 +1,6 @@
 .settings-page {
   padding: clamp(18px, 3vw, 34px);
 }
-.workflow-selector {
-  margin: 0;
-  padding: 14px clamp(18px, 3vw, 34px);
-  border: 0;
-  background: var(--surface, #fff);
-}
-.workflow-selector legend {
-  padding: 0;
-  color: var(--text-secondary, #5f6e80);
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-.workflow-selector .segmented-control {
-  max-width: 340px;
-}
 .single-test-controls {
   min-width: 0;
   margin: 0 0 18px;

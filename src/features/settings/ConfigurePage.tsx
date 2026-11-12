@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import type { TestId } from '@/app/types';
 import type { useAppSettings } from '@/app/useAppSettings';
 import { PageHeader, SelectField, TextField } from '@/shared/ui/UiPrimitives';
@@ -13,6 +13,7 @@ interface ConfigurePageProps {
   disabled: boolean;
   onToggle: (id: TestId) => void;
   onNotice: (message: string) => void;
+  workflowSelector?: ReactNode;
 }
 
 const TESTS: readonly [TestId, string][] = [
@@ -36,6 +37,7 @@ export function ConfigurePage({
   disabled,
   onToggle,
   onNotice,
+  workflowSelector,
 }: ConfigurePageProps): ReactElement {
   const settings = app.toolSettings;
   const batch = app.workflowMode === 'batch';
@@ -54,7 +56,9 @@ export function ConfigurePage({
             ? 'Configure batch tests and report defaults once, then work through your cables from Test.'
             : 'Set cable and report defaults here. Choose tests and adjust network or BER controls on Test.'
         }
-      />
+      >
+        {workflowSelector}
+      </PageHeader>
       <div className="settings-board">
         <div className="settings-column">
           {batch && (

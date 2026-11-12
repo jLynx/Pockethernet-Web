@@ -195,11 +195,6 @@ export default function App(): ReactElement {
           </div>
         </header>
         <MainNav tab={tab} onChange={setTab} />
-        <WorkflowSelector
-          mode={app.workflowMode}
-          disabled={testing.busy || deviceLocked || deviceTools.busy || library.busy}
-          onChange={changeWorkflow}
-        />
         <AppUpdate
           busy={
             measurement.running ||
@@ -233,6 +228,13 @@ export default function App(): ReactElement {
           onToggle={toggle}
           onReset={reset}
           onNotice={setNotice}
+          workflowSelector={
+            <WorkflowSelector
+              mode={app.workflowMode}
+              disabled={testing.busy || deviceLocked || deviceTools.busy || library.busy}
+              onChange={changeWorkflow}
+            />
+          }
         />
         {tab === 'test' && (
           <ActionDock

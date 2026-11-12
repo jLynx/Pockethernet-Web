@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import type { Tab, TestId } from './types';
 import type { useAppSettings } from './useAppSettings';
 import type { useMeasurementState } from './useMeasurementState';
@@ -28,6 +28,7 @@ interface AppPagesProps {
   onToggle: (id: TestId) => void;
   onReset: () => Promise<void>;
   onNotice: (message: string) => void;
+  workflowSelector?: ReactNode;
 }
 
 export function AppPages({
@@ -44,6 +45,7 @@ export function AppPages({
   onToggle,
   onReset,
   onNotice,
+  workflowSelector,
 }: AppPagesProps): ReactElement {
   const batch = app.workflowMode === 'batch';
   const displaySettings = batch
@@ -86,6 +88,7 @@ export function AppPages({
       pendingTests={measurement.pendingTests}
       toolSettings={displaySettings}
       onOpenConfigure={() => onTabChange('configure')}
+      workflowSelector={workflowSelector}
     >
       {library.error && (
         <p className="batch-storage-error" role="alert">
@@ -113,6 +116,7 @@ export function AppPages({
       disabled={measurement.running || deviceLocked}
       onToggle={onToggle}
       onNotice={onNotice}
+      workflowSelector={workflowSelector}
     />
   ) : tab === 'settings' ? (
     <SettingsPage

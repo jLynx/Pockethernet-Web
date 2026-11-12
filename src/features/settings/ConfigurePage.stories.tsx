@@ -4,6 +4,7 @@ import { useAppSettings } from '@/app/useAppSettings';
 import { toggleSelection } from '@/app/testSelection';
 import type { WorkflowMode } from '@/app/types';
 import { ConfigurePage } from './ConfigurePage';
+import { WorkflowSelector } from '@/shared/layout/WorkflowSelector';
 
 function ConfigurePreview({
   mode,
@@ -13,15 +14,20 @@ function ConfigurePreview({
   disabled: boolean;
 }): ReactElement {
   const app = useAppSettings();
-  const configuration = mode === 'single' ? app.singleConfiguration : app.batchConfiguration;
+  const [selectedMode, setSelectedMode] = useState(mode);
+  const configuration =
+    selectedMode === 'single' ? app.singleConfiguration : app.batchConfiguration;
   const [notice, setNotice] = useState('');
   return (
     <>
       <ConfigurePage
-        app={{ ...app, ...configuration, workflowMode: mode }}
+        app={{ ...app, ...configuration, workflowMode: selectedMode }}
         disabled={disabled}
         onToggle={(id) => configuration.setSelected((current) => toggleSelection(current, id))}
         onNotice={setNotice}
+        workflowSelector={
+          <WorkflowSelector mode={selectedMode} disabled={disabled} onChange={setSelectedMode} />
+        }
       />
       {notice && <p role="status">{notice}</p>}
     </>
@@ -33,6 +39,7 @@ const meta = {
   component: ConfigurePreview,
   args: { mode: 'single', disabled: false },
   parameters: { layout: 'fullscreen' },
+  render: (args) => <ConfigurePreview key={args.mode} {...args} />,
 } satisfies Meta<typeof ConfigurePreview>;
 
 export default meta;

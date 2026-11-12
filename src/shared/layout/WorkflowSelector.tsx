@@ -13,9 +13,7 @@ export function WorkflowSelector({
 }): ReactElement {
   return (
     <fieldset className="workflow-selector" disabled={disabled} aria-label="Testing workflow">
-      <legend>Workflow</legend>
       <SegmentedControl
-        className="tool-segmented"
         value={mode}
         options={[
           ['single', 'Single test'],
