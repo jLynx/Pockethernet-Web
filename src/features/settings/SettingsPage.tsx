@@ -53,8 +53,7 @@ export function SettingsPage({
             )}
             <FirmwareUpdatePanel updater={firmwareUpdater} deviceInfo={deviceInfo} />
           </ToolPanel>
-          <section className="settings-card settings-reset">
-            <h2>Reset Pocketweb</h2>
+          <ToolPanel title="Reset Pocketweb">
             <p className="settings-hint">
               Delete reports and restore application settings on this browser. Device firmware and
               browser permissions are unchanged.
@@ -62,7 +61,7 @@ export function SettingsPage({
             <Button disabled={resetDisabled} onClick={() => void onReset()}>
               Reset settings & delete reports
             </Button>
-          </section>
+          </ToolPanel>
         </div>
       </div>
     </main>

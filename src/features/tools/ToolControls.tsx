@@ -16,8 +16,8 @@ import {
 
 interface ToolPanelProps {
   title: string;
-  active: boolean;
-  summary: string;
+  active?: boolean;
+  summary?: string;
   children: ReactNode;
   className?: string;
   disabled?: boolean;
@@ -36,9 +36,9 @@ export function ToolPanel({
       <header className="tool-panel-header">
         <div>
           <h2>{title}</h2>
-          <p>{summary}</p>
+          {summary && <p>{summary}</p>}
         </div>
-        <span className="tool-status">{active ? 'Active' : 'Ready'}</span>
+        {active !== undefined && <span className="tool-status">{active ? 'Active' : 'Ready'}</span>}
       </header>
       <fieldset className="tool-controls" disabled={disabled} aria-label={title}>
         {children}

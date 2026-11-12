@@ -177,9 +177,15 @@
   color: var(--text-success, #159153);
 }
 .tool-controls {
+  min-width: 0;
+  margin: 0;
   padding: 14px 16px 16px;
+  border: 0;
   display: grid;
   gap: 11px;
+}
+.tool-controls:disabled {
+  opacity: 0.6;
 }
 .tool-defaults-help {
   margin: 0;

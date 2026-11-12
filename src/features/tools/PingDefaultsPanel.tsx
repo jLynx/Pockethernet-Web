@@ -3,15 +3,18 @@ import type { PingDefaults } from '@/app/types';
 import { ToolControl, ToolField, ToolPanel } from './ToolControls';
 
 export function PingDefaultsPanel({
+  disabled,
   defaults,
   onChange,
 }: {
+  disabled: boolean;
   defaults: PingDefaults;
   onChange: (defaults: PingDefaults) => void;
 }): ReactElement {
   const examples = ['8.8.8.8', '8.8.4.4', '1.1.1.1'];
   return (
     <ToolPanel
+      disabled={disabled}
       title="Ping defaults"
       active={defaults.enabled}
       summary="Saved servers for your Ping tests"

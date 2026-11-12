@@ -3,7 +3,7 @@ import type { TestId } from '@/app/types';
 import type { useAppSettings } from '@/app/useAppSettings';
 import { PageHeader, SelectField, TextField } from '@/shared/ui/UiPrimitives';
 import { PingDefaultsPanel } from '@/features/tools/PingDefaultsPanel';
-import { ToolControl } from '@/features/tools/ToolControls';
+import { ToolControl, ToolPanel } from '@/features/tools/ToolControls';
 import { GeneralSettings } from './GeneralSettings';
 import { NetworkSettings } from './NetworkSettings';
 import { BerSettingsPanel } from './BerSettingsPanel';
@@ -46,6 +46,7 @@ export function ConfigurePage({
   return (
     <main className="settings-page configure-page">
       <PageHeader
+        className="tools-header"
         eyebrow="Test & report setup"
         title="Configure"
         description={
@@ -57,33 +58,29 @@ export function ConfigurePage({
       <div className="settings-board">
         <div className="settings-column">
           {batch && (
-            <>
-              <section className="settings-card">
-                <h2>Tests to run</h2>
-                <fieldset disabled={disabled} className="settings-test-selection">
-                  <legend>Select measurements</legend>
-                  {TESTS.map(([id, title]) => (
-                    <label key={id}>
-                      <input
-                        type="checkbox"
-                        checked={app.selected.has(id)}
-                        onChange={() => onToggle(id)}
-                      />
-                      {title}
-                    </label>
-                  ))}
-                </fieldset>
-                <p className="settings-hint">
-                  Network tests enable Link automatically. Ping and External IP also enable IPv4.
-                  Use the wiremap adapter for Wiremap, an active port for network tests, and the
-                  loopback adapter for BER.
-                </p>
-              </section>
-            </>
+            <ToolPanel title="Tests to run" disabled={disabled}>
+              <fieldset className="settings-test-selection">
+                <legend>Select measurements</legend>
+                {TESTS.map(([id, title]) => (
+                  <label key={id}>
+                    <input
+                      type="checkbox"
+                      checked={app.selected.has(id)}
+                      onChange={() => onToggle(id)}
+                    />
+                    {title}
+                  </label>
+                ))}
+              </fieldset>
+              <p className="settings-hint">
+                Network tests enable Link automatically. Ping and External IP also enable IPv4. Use
+                the wiremap adapter for Wiremap, an active port for network tests, and the loopback
+                adapter for BER.
+              </p>
+            </ToolPanel>
           )}
-          <section className="settings-card">
-            <h2>Wiremap acceptance</h2>
-            <fieldset disabled={disabled} className="settings-fields">
+          <ToolPanel title="Wiremap acceptance" disabled={disabled}>
+            <div className="settings-fields">
               <ToolControl
                 label="Shield test"
                 name="shieldTest"
@@ -126,11 +123,10 @@ export function ConfigurePage({
                 These are wiring requirements. They do not qualify a cable for a specific Ethernet
                 speed.
               </p>
-            </fieldset>
-          </section>
-          <section className="settings-card">
-            <h2>Project & workflow</h2>
-            <fieldset disabled={disabled} className="settings-fields">
+            </div>
+          </ToolPanel>
+          <ToolPanel title="Project & workflow" disabled={disabled}>
+            <div className="settings-fields">
               {(
                 [
                   ['project', 'Project'],
@@ -177,8 +173,8 @@ export function ConfigurePage({
                 <option value=".">0.00</option>
                 <option value=",">0,00</option>
               </SelectField>
-            </fieldset>
-          </section>
+            </div>
+          </ToolPanel>
         </div>
         <div className="settings-column">
           <GeneralSettings
@@ -191,30 +187,25 @@ export function ConfigurePage({
           />
           {batch && (
             <>
-              <section className="settings-card">
-                <h2>Network & discovery</h2>
-                <fieldset disabled={disabled}>
-                  <NetworkSettings
-                    settings={app.measurementSettings}
-                    onChange={app.setMeasurementSettings}
-                    pingTargets={app.pingTargets}
-                    onPingTargetsChange={app.setPingTargets}
-                  />
-                  <PingDefaultsPanel
-                    defaults={app.pingDefaults}
-                    onChange={app.changePingDefaults}
-                  />
-                </fieldset>
-              </section>
-              <section className="settings-card">
-                <h2>Error rate / BER</h2>
-                <fieldset disabled={disabled}>
-                  <BerSettingsPanel
-                    settings={app.measurementSettings}
-                    onChange={app.setMeasurementSettings}
-                  />
-                </fieldset>
-              </section>
+              <ToolPanel title="Network & discovery" disabled={disabled}>
+                <NetworkSettings
+                  settings={app.measurementSettings}
+                  onChange={app.setMeasurementSettings}
+                  pingTargets={app.pingTargets}
+                  onPingTargetsChange={app.setPingTargets}
+                />
+              </ToolPanel>
+              <PingDefaultsPanel
+                disabled={disabled}
+                defaults={app.pingDefaults}
+                onChange={app.changePingDefaults}
+              />
+              <ToolPanel title="Error rate / BER" disabled={disabled}>
+                <BerSettingsPanel
+                  settings={app.measurementSettings}
+                  onChange={app.setMeasurementSettings}
+                />
+              </ToolPanel>
             </>
           )}
         </div>
