@@ -12,6 +12,7 @@ import { ReportsPage } from '@/features/reports/ReportsPage';
 import { ReportComposer } from '@/features/reports/ReportComposer';
 import { ToolsPage } from '@/features/tools/ToolsPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
+import { ConfigurePage } from '@/features/settings/ConfigurePage';
 
 interface AppPagesProps {
   tab: Tab;
@@ -57,7 +58,7 @@ export function AppPages({
       failures={measurement.failures}
       pendingTests={measurement.pendingTests}
       toolSettings={displaySettings}
-      onOpenSettings={() => onTabChange('settings')}
+      onOpenConfigure={() => onTabChange('configure')}
     >
       {library.error && (
         <p className="batch-storage-error" role="alert">
@@ -94,12 +95,17 @@ export function AppPages({
       onWifiSettingsChange={app.setWifiSettings}
       onWifiChange={deviceTools.applyWifi}
     />
+  ) : tab === 'configure' ? (
+    <ConfigurePage
+      app={app}
+      disabled={measurement.running || deviceLocked}
+      onToggle={onToggle}
+      onNotice={onNotice}
+    />
   ) : tab === 'settings' ? (
     <SettingsPage
-      app={app}
       deviceInfo={ble.info}
       firmwareUpdater={firmwareUpdater}
-      disabled={measurement.running || deviceLocked}
       resetDisabled={
         !library.ready ||
         measurement.running ||
@@ -109,9 +115,7 @@ export function AppPages({
         workflow.busy ||
         workflow.addingPhotos
       }
-      onToggle={onToggle}
       onReset={onReset}
-      onNotice={onNotice}
     />
   ) : (
     <ReportsPage

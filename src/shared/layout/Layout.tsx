@@ -1,4 +1,5 @@
 import { useState, type ReactElement, type ReactNode } from 'react';
+import { FiSettings } from 'react-icons/fi';
 import type { AppIconName, PanelStatus, Tab, TestId } from '@/app/types';
 import { Button, Card, SelectionSwitch } from '@/shared/ui/UiPrimitives';
 
@@ -16,7 +17,8 @@ export function AppIcon({ name }: { name: AppIconName }): ReactElement {
         <path d="M6 3h9l4 4v14H6zM15 3v5h4M9 12h7M9 16h7" />
       </svg>
     );
-  if (name === 'settings')
+  if (name === 'settings') return <FiSettings aria-hidden="true" />;
+  if (name === 'configure')
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M4 6h16M4 12h16M4 18h16" />
@@ -56,6 +58,12 @@ export function MainNav({
         onClick={() => {
           onChange('test');
         }}
+      />
+      <NavTile
+        icon="configure"
+        label="Configure"
+        active={tab === 'configure'}
+        onClick={() => onChange('configure')}
       />
       <NavTile
         icon="report"

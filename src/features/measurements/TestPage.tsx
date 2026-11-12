@@ -63,7 +63,7 @@ interface TestPageProps {
   extip: FieldsResult | null;
   ping: PingDisplayResult | null;
   children?: ReactNode;
-  onOpenSettings?: () => void;
+  onOpenConfigure?: () => void;
 }
 
 export function TestPage(props: TestPageProps): ReactElement {
@@ -83,7 +83,7 @@ export function TestPage(props: TestPageProps): ReactElement {
     testing: props.pendingTests ? props.pendingTests.has(id) : activeTest === id,
     failure: props.failures?.[id],
     onToggle: () => {
-      props.onOpenSettings?.();
+      props.onOpenConfigure?.();
     },
     onExpand: () => {
       onExpandedChange((current) => {
@@ -103,7 +103,7 @@ export function TestPage(props: TestPageProps): ReactElement {
         description="Run your configured tests, review the results, then save and move to the next cable."
         action={
           <div className="batch-save-actions">
-            <Button onClick={props.onOpenSettings}>Choose tests</Button>
+            <Button onClick={props.onOpenConfigure}>Choose tests</Button>
             <Button
               className="collapse-all-button"
               disabled={expanded.size === 0}
@@ -119,7 +119,7 @@ export function TestPage(props: TestPageProps): ReactElement {
       {props.children}
       {selected.size === 0 && (
         <p className="batch-empty">
-          Choose the tests to run in Settings, then connect Pockethernet.
+          Choose the tests to run in Configure, then connect Pockethernet.
         </p>
       )}
       {selected.has('wiremap') && (

@@ -158,10 +158,11 @@
   }
   .nav-tile {
     flex: 1;
+    flex-direction: column;
     min-width: 0;
     padding: 12px 5px;
     gap: 5px;
-    font-size: 0.8rem;
+    font-size: clamp(0.68rem, 3.2vw, 0.8rem);
   }
   .nav-icon {
     width: 18px;

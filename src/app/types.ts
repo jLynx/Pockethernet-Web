@@ -26,7 +26,7 @@ import type {
   WiremapResult,
 } from '@/pockethernetProtocol';
 
-export type Tab = 'test' | 'report' | 'tools' | 'settings';
+export type Tab = 'test' | 'configure' | 'report' | 'tools' | 'settings';
 export type TestId =
   | 'wiremap'
   | 'tdr'
@@ -47,7 +47,7 @@ export type TiaStandard = '568A' | '568B';
 export type OnOff = 'on' | 'off';
 export type StateSetter<T> = Dispatch<SetStateAction<T>>;
 export type PanelStatus = 'idle' | 'ok' | 'error';
-export type AppIconName = 'test' | 'report' | 'tools' | 'device' | 'settings';
+export type AppIconName = 'test' | 'configure' | 'report' | 'tools' | 'device' | 'settings';
 export type FirmwareCheck = FirmwareVersionResult | { error: string };
 
 export interface ToolSettings {

@@ -55,7 +55,7 @@ export const Icons: Story = {
   args: baseArgs,
   render: () => (
     <div style={{ display: 'flex', gap: 24 }}>
-      {(['test', 'report', 'tools', 'device'] as const).map((name) => (
+      {(['test', 'configure', 'report', 'tools', 'settings', 'device'] as const).map((name) => (
         <span className="nav-icon" key={name}>
           <AppIcon name={name} />
         </span>

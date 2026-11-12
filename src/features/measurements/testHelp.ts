@@ -32,7 +32,7 @@ export const TEST_HELP: Record<TestId, { description: string; note?: string }> =
   },
   cdplldp: {
     description:
-      'Pockethernet listens for CDP or LLDP announcements for the timeout chosen in Settings and reports details such as switch name, physical port ID, and management address.',
+      'Pockethernet listens for CDP or LLDP announcements for the timeout chosen in Configure and reports details such as switch name, physical port ID, and management address.',
   },
   vlan: {
     description:

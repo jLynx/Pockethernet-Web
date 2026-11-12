@@ -1,10 +1,10 @@
 # Batch testing workflow (issue #6)
 
-The navigation is **Test → Reports → Tools → Settings**. Configure the tests once in Settings, then enter the Cable ID, measure, review, add notes or photos, and save from Test. Reports manages the saved library and PDF exports. Tools contains Tone generator, WiFi bridge, and Blink port light.
+The navigation is **Test → Configure → Reports → Tools → Settings**. Choose tests and report defaults in Configure, then enter the Cable ID, measure, review, add notes or photos, and save from Test. Reports manages the saved library and PDF exports. Tools contains Tone generator, WiFi bridge, and Blink port light. Settings contains appearance, notifications, device information/firmware, and application reset.
 
 ## Implemented behavior
 
-- Settings groups test selection, wiremap acceptance, TIA/NVP/units, network configuration, Ping targets/defaults, discovery timeout, BER, project defaults, numbering, decimal formatting, branding, appearance, notifications, and firmware information/updates.
+- Configure groups test selection, wiremap acceptance, TIA/NVP/units, network configuration, Ping targets/defaults, discovery timeout, BER, project defaults, numbering, decimal formatting, and branding. General app/device controls are kept in Settings.
 - Static IPv4 fields stack vertically and use the available width. Discovery can be excluded from test selection or configured for 10, 30, or 60 seconds.
 - Each report captures only its own measurement run, including the selected tests, settings used, actual start/end timestamps, failures, and partial results. Failed or interrupted runs can be saved. Starting another measurement prompts before replacing unsaved results.
 - Cable IDs are required for new reports. With auto increment enabled, Save & next requires a numeric suffix, preserves padding (`CAB-009 → CAB-010`), and skips IDs already saved for the same project and site. Normal Save does not advance the ID. Save & next advances only after storage succeeds and clears cable-specific notes, photos, and Port ID.

@@ -124,7 +124,7 @@ export default function App(): ReactElement {
       return;
     }
     if (!SUPPORTED_TESTS.some((id) => app.selected.has(id))) {
-      setNotice('Choose at least one test in Settings.');
+      setNotice('Choose at least one test in Configure.');
       return;
     }
     if (!workflow.beforeMeasure()) return;
