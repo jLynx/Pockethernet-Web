@@ -1,3 +1,5 @@
+import { useDecimalSeparator } from '@/app/decimalPreference';
+import { formatDecimal } from '@/app/numberFormat';
 import { useState, type PointerEvent, type ReactElement } from 'react';
 import { tdrSampleDistance, type TdrResult } from '@/pockethernetProtocol';
 import { distanceForUnits, distanceUnitLabel, pairColorsForTia } from '@/app/format';
@@ -35,6 +37,7 @@ interface TdrLineChartProps {
 }
 
 function TdrLineChart({ title, traces, series, nvp, units }: TdrLineChartProps): ReactElement {
+  const separator = useDecimalSeparator();
   const [cursor, setCursor] = useState<number | null>(null);
   const width = 720;
   const height = 270;
@@ -128,7 +131,7 @@ function TdrLineChart({ title, traces, series, nvp, units }: TdrLineChartProps):
               className="tdr-chart-grid"
             />
             <text x={x(sample)} y={height - 25} className="tdr-chart-tick">
-              {distance(sample).toFixed(1)}
+              {formatDecimal(distance(sample), 1, separator)}
             </text>
           </g>
         ))}
@@ -163,7 +166,7 @@ function TdrLineChart({ title, traces, series, nvp, units }: TdrLineChartProps):
           <g className="tdr-chart-readout">
             <rect x={width - 244} y={top + 7} width="216" height={32 + series.length * 22} rx="4" />
             <text x={width - 232} y={top + 29}>
-              Distance = {distance(cursor).toFixed(1)} {distanceUnitLabel(units)}
+              Distance = {formatDecimal(distance(cursor), 1, separator)} {distanceUnitLabel(units)}
             </text>
             {series.map((item, index) => (
               <text
@@ -242,6 +245,7 @@ export function TdrResults({
   units: Units;
   tia: TiaStandard;
 }): ReactElement {
+  const separator = useDecimalSeparator();
   if (!result)
     return <div className="tdr-awaiting">Run a measurement to see cable length and status</div>;
   const pairLabels = ['2', '3', '1', '4'];
@@ -259,7 +263,7 @@ export function TdrResults({
           <span>{pair.status || '-'}</span>
           <span>
             {pair.status
-              ? `${distanceForUnits(pair.distance, units).toFixed(1)} ${distanceUnitLabel(units)}`
+              ? `${formatDecimal(distanceForUnits(pair.distance, units), 1, separator)} ${distanceUnitLabel(units)}`
               : '-'}
           </span>
         </div>

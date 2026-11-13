@@ -3,6 +3,36 @@
   align-items: center;
   gap: 10px;
 }
+.workflow-selector {
+  width: 320px;
+  max-width: 100%;
+  min-width: 0;
+  margin: 12px 0 0;
+  padding: 4px;
+  box-sizing: border-box;
+  border: 1px solid var(--border, #dfe6ed);
+  border-radius: 8px;
+  background: var(--surface, #fff);
+}
+.workflow-selector .segmented-control {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+}
+.workflow-selector .segmented-control button {
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 12px;
+  border-color: transparent;
+  background: transparent;
+  font-size: 0.78rem;
+}
+.workflow-selector .segmented-control button.selected {
+  color: #fff;
+  background: #0878ca;
+}
+.workflow-selector:disabled {
+  opacity: 0.6;
+}
 
 @media (max-width: 720px) {
   .original-app .original-header {

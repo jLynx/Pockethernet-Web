@@ -1,5 +1,7 @@
 import type { jsPDF } from 'jspdf';
-import type { SavedReport } from '@/app/types';
+import type { SavedReport, TestId } from '@/app/types';
+import { tdrSummary } from '@/app/format';
+import { formatScalar } from '@/app/numberFormat';
 import { drawTdrChart } from './reportPdfCharts';
 import { drawWiremap, formatDistance, pairColor } from './reportPdfPrimitives';
 
@@ -8,6 +10,37 @@ export interface ReportPdfSection {
   title: string;
   rows: ReportPdfRow[];
   graphic?: { height: number; draw: (doc: jsPDF, y: number) => void };
+}
+
+const TEST_NAMES: Record<TestId, string> = {
+  wiremap: 'Wiremap',
+  tdr: 'TDR',
+  'tdr-graph': 'TDR graph',
+  poe: 'PoE',
+  link: 'Link',
+  cdplldp: 'CDP/LLDP',
+  vlan: 'VLAN',
+  traffic: 'Traffic',
+  ipv4: 'IPv4',
+  ipv6: 'IPv6',
+  ping: 'Ping',
+  extip: 'External IP',
+  ber: 'Error rate / BER',
+};
+
+function runStatusRows(report: SavedReport): ReportPdfRow[] {
+  const rows: ReportPdfRow[] = [];
+  if (report.selectedTests?.length) {
+    rows.push(['Selected tests', report.selectedTests.map((id) => TEST_NAMES[id]).join(', ')]);
+    for (const id of report.selectedTests) {
+      const resultKey = id === 'tdr-graph' ? 'tdrGraph' : id;
+      if (report.failures?.[id] || !report.results[resultKey])
+        rows.push([TEST_NAMES[id], report.failures?.[id] || 'No result recorded']);
+    }
+  } else {
+    rows.push(...Object.entries(report.failures ?? {}));
+  }
+  return rows;
 }
 
 export function reportPdfSections(report: SavedReport): ReportPdfSection[] {
@@ -29,6 +62,21 @@ export function reportPdfSections(report: SavedReport): ReportPdfSection[] {
     });
   };
   const fields = (values: Record<string, string>): ReportPdfRow[] => Object.entries(values);
+  if (
+    report.selectedTests?.length ||
+    report.runError ||
+    Object.keys(report.failures ?? {}).length
+  ) {
+    add(
+      'Run status',
+      {
+        summary:
+          report.runError ||
+          (Object.keys(report.failures ?? {}).length ? 'Completed with test failures' : ''),
+      },
+      runStatusRows(report),
+    );
+  }
   add(
     'Wiremap',
     results.wiremap,
@@ -46,9 +94,9 @@ export function reportPdfSections(report: SavedReport): ReportPdfSection[] {
     poe,
     poe
       ? [
-          ['Open voltage', `${poe.openVoltage} V`],
+          ['Open voltage', formatScalar(`${poe.openVoltage} V`, settings.decimalSeparator)],
           ['Polarity', poe.polarity],
-          ['Load voltage', `${poe.loadVoltage} V`],
+          ['Load voltage', formatScalar(`${poe.loadVoltage} V`, settings.decimalSeparator)],
           ['PSE type', poe.poeType],
           ['Max. class', poe.maxClass ?? ''],
         ]
@@ -74,10 +122,14 @@ export function reportPdfSections(report: SavedReport): ReportPdfSection[] {
   );
   add(
     'TDR',
-    results.tdr,
+    results.tdr
+      ? { summary: tdrSummary(results.tdr, settings.units, settings.decimalSeparator) }
+      : null,
     results.tdr?.pairs.map((pair, index): ReportPdfRow => [
       `P${[2, 3, 1, 4][index]}`,
-      pair.status ? `${pair.status} @ ${formatDistance(pair.distance, settings.units)}` : '-',
+      pair.status
+        ? `${pair.status} @ ${formatDistance(pair.distance, settings.units, settings.decimalSeparator)}`
+        : '-',
       pairColor(settings.tia, index),
     ]) ?? [],
   );
@@ -101,6 +153,7 @@ export function reportPdfSections(report: SavedReport): ReportPdfSection[] {
               40,
               settings.units,
               settings.tia,
+              settings.decimalSeparator,
             );
         }
       },
@@ -117,20 +170,22 @@ export function reportPdfSections(report: SavedReport): ReportPdfSection[] {
     results.ping,
     results.ping?.servers.map((server, index): ReportPdfRow => [
       `Server ${index}`,
-      `${server.ip} / ${server.time}`,
+      `${server.ip} / ${formatScalar(server.time, settings.decimalSeparator)}`,
     ]) ?? [],
   );
   add('External IP', results.extip, results.extip ? fields(results.extip.fields) : []);
   const ber = results.ber;
   add(
     'Error rate',
-    ber,
+    ber
+      ? { summary: `Error rate: ${formatScalar(ber.errorRate, settings.decimalSeparator)}` }
+      : null,
     ber
       ? [
           ['Sent packets', String(ber.sent)],
           ['Received', String(ber.received)],
           ['Packets with error', String(ber.errors)],
-          ['Error ratio', ber.errorRate],
+          ['Error ratio', formatScalar(ber.errorRate, settings.decimalSeparator)],
         ]
       : [],
   );

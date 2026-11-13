@@ -41,21 +41,6 @@ const testPageArgs = {
   ipv6: null,
   extip: null,
   ping: null,
-  berSettings: {
-    speed: 1000 as const,
-    frameSize: 'both' as const,
-    payloadMode: 'random' as const,
-    total: 100000,
-  },
-  onBerSettingsChange: noop,
-  vlanSettings: { tagging: false, id: '' },
-  onVlanSettingsChange: noop,
-  ipv4Settings: { mode: 'dhcp' as const, ip: '', netmask: '', gateway: '', dns: '' },
-  onIpv4SettingsChange: noop,
-  ipv6Mode: 'slaac' as const,
-  onIpv6ModeChange: noop,
-  pingTargets: ['', '', ''],
-  onPingTargetsChange: noop,
 };
 
 export const Tests: Story = { args: testPageArgs };
@@ -70,41 +55,7 @@ export const Tools: Story = {
   args: testPageArgs,
   render: () => (
     <ToolsPage
-      deviceInfo={{
-        serial: 120034,
-        hardwareVersion: 2,
-        stmVersion: 7,
-        espVersion: 12,
-        mac: '00:11:22:33:44:55',
-      }}
       firmwareLocked={false}
-      firmwareUpdater={{
-        state: {
-          phase: 'idle',
-          check: null,
-          checking: false,
-          verifying: false,
-          message: '',
-          pending: null,
-          advanced: false,
-          selecting: false,
-          selection: null,
-        },
-        blockedReason: '',
-        check: () => Promise.resolve(),
-        confirm: noop,
-        cancel: noop,
-        start: () => Promise.resolve(),
-        verify: () => Promise.resolve(),
-        openAdvanced: () => {},
-        closeAdvanced: () => {},
-        chooseUrl: () => {},
-        chooseFile: () => Promise.resolve(),
-      }}
-      settings={{ tia: '568B', units: 'meters', nvp: '68', customMac: 'off', mac: '' }}
-      onSettingsChange={noop}
-      pingDefaults={{ enabled: false, targets: ['', '', ''] }}
-      onPingDefaultsChange={noop}
       blinkerSettings={{ speed: 'auto', duplex: 'auto', mdi: 'auto', link: 'off' }}
       onBlinkerSettingsChange={noop}
       onBlinkerChange={() => Promise.resolve(true)}
@@ -114,9 +65,6 @@ export const Tools: Story = {
       wifiSettings={{ name: 'Pockethernet', password: '', enabled: 'off' }}
       onWifiSettingsChange={noop}
       onWifiChange={() => Promise.resolve(true)}
-      reportPreferences={{ logoDataUrl: '', logoName: '', showFooterLogo: true }}
-      onReportPreferencesChange={noop}
-      onNotice={noop}
     />
   ),
 };

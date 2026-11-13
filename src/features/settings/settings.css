@@ -1,0 +1,144 @@
+.single-test-controls {
+  min-width: 0;
+  margin: 0 0 18px;
+  padding: 14px 16px 16px;
+  border: 0;
+  border-bottom: 1px solid var(--border, #dfe6ed);
+}
+.settings-board {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 18px;
+}
+.settings-column {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.batch-fields {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.settings-fields,
+.settings-static-ip {
+  display: grid;
+  gap: 14px;
+}
+.settings-fields .text-field,
+.settings-fields .select-field,
+.batch-fields > .text-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 7px;
+}
+.settings-fields input,
+.settings-fields select,
+.batch-fields input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.settings-hint,
+.batch-hint {
+  margin: 0;
+  color: var(--text-muted, #718096);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+.settings-test-selection {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.settings-test-selection legend {
+  margin-bottom: 12px;
+}
+.settings-test-selection label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.settings-test-selection input {
+  width: 18px;
+  height: 18px;
+}
+.batch-composer,
+.batch-empty,
+.batch-storage-error {
+  grid-column: 1 / -1;
+}
+.batch-composer {
+  margin-bottom: 0;
+}
+.batch-fields {
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+}
+.batch-save-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.test-status-dot {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 12px;
+  border-radius: 50%;
+  background: var(--text-muted, #718096);
+}
+.test-status-dot.ok {
+  background: #16a34a;
+}
+.test-status-dot.error {
+  background: #dc2626;
+}
+.batch-project-details summary {
+  padding: 8px 0;
+  cursor: pointer;
+  color: var(--accent, #0878ca);
+}
+.batch-project-details .report-fields {
+  padding: 14px 0;
+}
+.batch-project-details .report-photos {
+  margin: 0;
+}
+.batch-composer > .batch-hint {
+  padding: 0 18px 18px;
+}
+@media (max-width: 720px) {
+  .settings-board {
+    grid-template-columns: 1fr;
+  }
+  .main-nav {
+    padding: 0 8px;
+    gap: 0;
+  }
+  .nav-tile {
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    padding: 12px 5px;
+    gap: 5px;
+    font-size: clamp(0.68rem, 3.2vw, 0.8rem);
+  }
+  .nav-icon {
+    width: 18px;
+    height: 18px;
+  }
+  .batch-composer > header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

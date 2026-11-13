@@ -138,20 +138,6 @@ export function ToggleSwitch({
   );
 }
 
-export function SelectionSwitch({
-  selected,
-  status = 'idle',
-}: {
-  selected: boolean;
-  status?: 'idle' | 'ok' | 'error';
-}): ReactElement {
-  return (
-    <span className={`selection-switch switch ${selected ? status : 'off'}`} aria-hidden="true">
-      <i />
-    </span>
-  );
-}
-
 export function StatusIndicator({
   status,
   className = '',
@@ -234,11 +220,12 @@ export function SelectField({
   );
 }
 
-interface PageHeaderProps {
+export interface PageHeaderProps {
   eyebrow: string;
   title: string;
   description: string;
   action?: ReactNode;
+  children?: ReactNode;
   className?: string;
 }
 
@@ -247,17 +234,19 @@ export function PageHeader({
   title,
   description,
   action,
+  children,
   className = '',
 }: PageHeaderProps): ReactElement {
   return (
     <header className={`page-header ${className}`.trim()}>
-      <div>
+      <div className="page-header-heading">
         <p className="eyebrow">{eyebrow}</p>
         <h1>{title}</h1>
+        {children}
       </div>
       <div className="page-header-actions">
         <p>{description}</p>
-        {action}
+        {action && <div className="page-header-buttons">{action}</div>}
       </div>
     </header>
   );

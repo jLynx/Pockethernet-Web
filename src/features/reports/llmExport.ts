@@ -127,6 +127,12 @@ function exportReport(report: SavedReport): Record<string, unknown> {
   };
   return {
     created_at: report.createdAt,
+    completed_at: report.completedAt,
+    selected_tests: report.selectedTests,
+    test_failures: report.failures,
+    run_error: report.runError,
+    measurement_settings: report.measurementSettings,
+    ping_targets: report.pingTargets,
     metadata: report.details,
     settings: report.settings,
     attachment_present: report.photos.length > 0,

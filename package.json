@@ -39,6 +39,7 @@
     "eslint": "^10.10.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",
+    "fake-indexeddb": "^6.2.8",
     "globals": "^17.12.0",
     "miniflare": "^5.20260911.1-alpha",
     "prettier": "^3.9.6",

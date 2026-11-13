@@ -1,6 +1,6 @@
 # Browser firmware updates
 
-In **Tools → Device info**, connect Pockethernet and select **Check for upgrade → Update → Start update**. An available update appears as one banner with its version and Update action. Use an Internet-connected Ethernet switch with DHCP, keep the device powered on, and keep Pocketweb open. Turn off the toner, blinker and WiFi bridge first.
+In **Settings → About & firmware**, connect Pockethernet and select **Check for upgrade → Update → Start update**. An available update appears as one banner with its version and Update action. Use an Internet-connected Ethernet switch with DHCP, keep the device powered on, and keep Pocketweb open. Turn off the toner, blinker and WiFi bridge first.
 
 Pocketweb sends the official ESP update URL over Bluetooth. The device downloads and validates the firmware over Ethernet. It reports a final result, rather than download percentages. After success, unplug USB, turn the device off, wait five seconds and turn it on again. Select **I have restarted · verify firmware** and connect the same Pockethernet. Pocketweb checks the ESP version and confirms the STM version is unchanged.
 

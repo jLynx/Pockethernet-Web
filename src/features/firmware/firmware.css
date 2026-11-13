@@ -137,11 +137,6 @@
   color: var(--text, #15243a);
   font-size: 0.88rem;
 }
-fieldset.tool-controls {
-  min-width: 0;
-  margin: 0;
-  border: 0;
-}
 @media (max-width: 480px) {
   .firmware-status .ui-button {
     width: 100%;

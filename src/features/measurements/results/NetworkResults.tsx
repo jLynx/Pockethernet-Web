@@ -1,23 +1,15 @@
-import type { ChangeEvent, ReactElement } from 'react';
-import type { FieldsResult, Ipv6Mode } from '@/pockethernetProtocol';
+import { useDecimalSeparator } from '@/app/decimalPreference';
+import { formatScalar } from '@/app/numberFormat';
+import type { ReactElement } from 'react';
+import type { FieldsResult } from '@/pockethernetProtocol';
 import type {
   DiscoveryResult,
-  Ipv4UiSettings,
   Ipv6DisplayResult,
   PingDisplayResult,
-  StateSetter,
   TrafficDisplayResult,
   VlanDisplayResult,
-  VlanSettings,
 } from '@/app/types';
-import {
-  DataRow,
-  EmptyState,
-  SectionTitle,
-  SelectField,
-  TextField,
-  ToggleSwitch,
-} from '@/shared/ui/UiPrimitives';
+import { DataRow, EmptyState, SectionTitle } from '@/shared/ui/UiPrimitives';
 
 export function CdpLldpResults({ result }: { result: DiscoveryResult | null }): ReactElement {
   if (!result)
@@ -46,50 +38,10 @@ export function CdpLldpResults({ result }: { result: DiscoveryResult | null }): 
   );
 }
 
-interface VlanResultsProps {
-  result: VlanDisplayResult | null;
-  settings: VlanSettings;
-  onSettingsChange: StateSetter<VlanSettings>;
-  disabled: boolean;
-}
-
-export function VlanResults({
-  result,
-  settings,
-  onSettingsChange,
-  disabled,
-}: VlanResultsProps): ReactElement {
-  const updateTagging = (): void => {
-    onSettingsChange((current) => ({ ...current, tagging: !current.tagging }));
-  };
-  const updateId = (event: ChangeEvent<HTMLInputElement>): void => {
-    onSettingsChange((current) => ({
-      ...current,
-      id: event.target.value.replace(/\D/g, '').slice(0, 4),
-    }));
-  };
+export function VlanResults({ result }: { result: VlanDisplayResult | null }): ReactElement {
   const rows = result?.status === 'OK' ? result.tags : [];
   return (
     <div className="vlan-results">
-      <div className="vlan-settings">
-        <label>Outgoing VLAN tagging</label>
-        <ToggleSwitch
-          className="vlan-toggle"
-          checked={settings.tagging}
-          onChange={updateTagging}
-          disabled={disabled}
-          ariaLabel="Outgoing VLAN tagging"
-        />
-        <TextField
-          className="vlan-id-label"
-          label="Outgoing VLAN ID"
-          inputMode="numeric"
-          value={settings.id}
-          onChange={updateId}
-          disabled={disabled || !settings.tagging}
-          placeholder="1-4094"
-        />
-      </div>
       <div className="vlan-header">
         <span>Incoming</span>
         <span>Detected VLAN IDs</span>
@@ -174,43 +126,19 @@ export function TrafficResults({ result }: { result: TrafficDisplayResult | null
   );
 }
 
-interface PingResultsProps {
-  result: PingDisplayResult | null;
-  targets: string[];
-  onTargetsChange: StateSetter<string[]>;
-  disabled: boolean;
-}
-
-export function PingResults({
-  result,
-  targets,
-  onTargetsChange,
-  disabled,
-}: PingResultsProps): ReactElement {
-  const updateTarget = (index: number, value: string): void => {
-    onTargetsChange((current) =>
-      current.map((target, targetIndex) => (targetIndex === index ? value.slice(0, 127) : target)),
-    );
-  };
+export function PingResults({ result }: { result: PingDisplayResult | null }): ReactElement {
+  const separator = useDecimalSeparator();
+  if (!result) return <EmptyState>Run a measurement to ping the configured targets</EmptyState>;
   return (
     <div className="ping-results">
-      {targets.map((target, index) => (
+      {result.servers.map((server, index) => (
         <div className="ping-server" key={index}>
-          <TextField
-            label={`Server ${index}`}
-            value={target}
-            onChange={(event) => {
-              updateTarget(index, event.target.value);
-            }}
-            disabled={disabled}
-            placeholder="Enter IP/domain"
-            maxLength={127}
-          />
-          <DataRow className="ping-row" label="IP" value={result?.servers[index]?.ip ?? ''} />
+          <SectionTitle>Server {index}</SectionTitle>
+          <DataRow className="ping-row" label="IP" value={server.ip} />
           <DataRow
             className="ping-row"
             label="Avg time"
-            value={result?.servers[index]?.time ?? ''}
+            value={formatScalar(server.time, separator)}
           />
         </div>
       ))}
@@ -218,29 +146,7 @@ export function PingResults({
   );
 }
 
-interface Ipv4ResultsProps {
-  result: FieldsResult | null;
-  settings: Ipv4UiSettings;
-  onSettingsChange: StateSetter<Ipv4UiSettings>;
-  disabled: boolean;
-}
-
-export function Ipv4Results({
-  result,
-  settings,
-  onSettingsChange,
-  disabled,
-}: Ipv4ResultsProps): ReactElement {
-  const update = (event: ChangeEvent<HTMLSelectElement | HTMLInputElement>): void => {
-    const { name, value } = event.target;
-    onSettingsChange((current) =>
-      name === 'mode'
-        ? { ...current, mode: value === 'static' ? 'static' : 'dhcp' }
-        : name === 'ip' || name === 'netmask' || name === 'gateway' || name === 'dns'
-          ? { ...current, [name]: value }
-          : current,
-    );
-  };
+export function Ipv4Results({ result }: { result: FieldsResult | null }): ReactElement {
   const labels: readonly (readonly [string, string])[] = [
     ['Your IP', 'Your IP'],
     ['Subnet Mask', 'Subnet Mask'],
@@ -258,38 +164,8 @@ export function Ipv4Results({
     ['Server name', 'Server name'],
     ['Other options', 'Other options'],
   ];
-  const staticFields: readonly (readonly [Exclude<keyof Ipv4UiSettings, 'mode'>, string])[] = [
-    ['ip', 'Static IP'],
-    ['netmask', 'Netmask'],
-    ['gateway', 'Gateway'],
-    ['dns', 'DNS'],
-  ];
   return (
     <div className="ipv4-results">
-      <div className="ipv4-settings">
-        <SelectField
-          label="IPv4 mode"
-          name="mode"
-          value={settings.mode}
-          onChange={update}
-          disabled={disabled}
-        >
-          <option value="static">Static</option>
-          <option value="dhcp">DHCPv4</option>
-        </SelectField>
-        {settings.mode === 'static' &&
-          staticFields.map(([name, label]) => (
-            <TextField
-              key={name}
-              label={label}
-              name={name}
-              value={settings[name]}
-              onChange={update}
-              disabled={disabled}
-              placeholder="Enter IP"
-            />
-          ))}
-      </div>
       {!result && (
         <EmptyState className="ipv4-awaiting">
           Run a measurement to obtain an IPv4 address
@@ -314,44 +190,10 @@ export function Ipv4Results({
   );
 }
 
-interface Ipv6ResultsProps {
-  result: Ipv6DisplayResult | null;
-  mode: Ipv6Mode;
-  onModeChange: StateSetter<Ipv6Mode>;
-  disabled: boolean;
-}
-
-export function Ipv6Results({
-  result,
-  mode,
-  onModeChange,
-  disabled,
-}: Ipv6ResultsProps): ReactElement {
-  const modeControl = (className = ''): ReactElement => (
-    <SelectField
-      className={className}
-      label="IPv6 mode"
-      value={mode}
-      onChange={(event) => {
-        onModeChange(
-          event.target.value === 'dhcpv6'
-            ? 'dhcpv6'
-            : event.target.value === 'both'
-              ? 'both'
-              : 'slaac',
-        );
-      }}
-      disabled={disabled}
-    >
-      <option value="slaac">SLAAC</option>
-      <option value="dhcpv6">DHCPv6</option>
-      <option value="both">SLAAC + DHCPv6</option>
-    </SelectField>
-  );
+export function Ipv6Results({ result }: { result: Ipv6DisplayResult | null }): ReactElement {
   if (!result)
     return (
       <div className="ipv6-awaiting">
-        {modeControl()}
         <span>Run a measurement to discover IPv6 configuration</span>
       </div>
     );
@@ -363,7 +205,6 @@ export function Ipv6Results({
     );
   return (
     <div className="ipv6-results">
-      {modeControl('ipv6-mode-label')}
       {result.results.map((item) => (
         <div className="ipv6-group" key={item.protocol}>
           <SectionTitle className="ipv6-section-title">{item.protocol}</SectionTitle>
