@@ -35,6 +35,15 @@
 }
 
 @media (max-width: 720px) {
+  main.test-page,
+  main.tools-page,
+  main.settings-page,
+  main.reports-page {
+    padding: 18px 12px;
+  }
+  .page-header {
+    padding: 0 4px 5px;
+  }
   .original-app .original-header {
     flex-wrap: nowrap;
     gap: 8px;

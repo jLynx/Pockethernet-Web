@@ -364,13 +364,11 @@
   }
   .test-page,
   .tools-page {
-    padding: 18px 12px;
     grid-template-columns: 1fr;
     gap: 10px;
   }
   .test-intro {
     display: block;
-    padding: 0 4px 5px;
   }
   .test-intro .page-header-actions {
     justify-content: flex-start;
@@ -382,7 +380,6 @@
   .tools-header {
     display: block;
     margin-bottom: 16px;
-    padding: 0 4px 5px;
   }
   .tools-header .page-header-actions {
     align-items: flex-start;
