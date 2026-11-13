@@ -96,6 +96,7 @@ export function ReportsPage({
       {children}
       {!ready && !error && <p role="status">Loading saved reports…</p>}
       <SelectField
+        className="reports-filter"
         label="Filter by project"
         value={project}
         onChange={(event) => {

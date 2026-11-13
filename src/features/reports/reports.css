@@ -2,6 +2,16 @@
   flex: 1 0 auto;
   min-height: 60vh;
 }
+.reports-filter {
+  margin-bottom: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+}
+.reports-filter select {
+  max-width: 100%;
+}
 .report-composer,
 .report-library {
   margin-bottom: 18px;
