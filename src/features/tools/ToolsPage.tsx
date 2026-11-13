@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import type { BlinkerSettings, StateSetter, TonerSettings, WifiSettings } from '@/app/types';
 import { ToolControl, ToolField, ToolPanel } from './ToolControls';
-import { PageHeader } from '@/shared/ui/UiPrimitives';
+import { PageLayout } from '@/shared/layout/PageLayout';
 
 interface ToolsPageProps {
   firmwareLocked: boolean;
@@ -57,23 +57,22 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
     onWifiSettingsChange(next);
   };
   return (
-    <main className="tools-page">
-      <PageHeader
-        className="tools-header"
-        eyebrow="Device tools"
-        title="Tools"
-        description="Trace a cable, identify a port, or enable the WiFi bridge."
-        action={
-          <a
-            className="tools-manual-link"
-            href="https://pockethernet.com/manual"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Manual
-          </a>
-        }
-      />
+    <PageLayout
+      className="tools-page"
+      eyebrow="Device tools"
+      title="Tools"
+      description="Trace a cable, identify a port, or enable the WiFi bridge."
+      action={
+        <a
+          className="tools-manual-link"
+          href="https://pockethernet.com/manual"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Manual
+        </a>
+      }
+    >
       <div className="tools-board">
         <div className="tools-column">
           <ToolPanel
@@ -236,6 +235,6 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
           </ToolPanel>
         </div>
       </div>
-    </main>
+    </PageLayout>
   );
 }

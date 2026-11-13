@@ -220,7 +220,7 @@ export function SelectField({
   );
 }
 
-interface PageHeaderProps {
+export interface PageHeaderProps {
   eyebrow: string;
   title: string;
   description: string;
@@ -239,14 +239,14 @@ export function PageHeader({
 }: PageHeaderProps): ReactElement {
   return (
     <header className={`page-header ${className}`.trim()}>
-      <div>
+      <div className="page-header-heading">
         <p className="eyebrow">{eyebrow}</p>
         <h1>{title}</h1>
         {children}
       </div>
       <div className="page-header-actions">
         <p>{description}</p>
-        {action}
+        {action && <div className="page-header-buttons">{action}</div>}
       </div>
     </header>
   );

@@ -1,15 +1,6 @@
 .reports-page {
   flex: 1 0 auto;
   min-height: 60vh;
-  padding: clamp(20px, 3vw, 34px);
-}
-.reports-header {
-  margin-bottom: 20px;
-}
-.reports-header h1 {
-  margin: 2px 0 0;
-  color: var(--text, #15243a);
-  font-size: clamp(1.45rem, 3vw, 2rem);
 }
 .report-composer,
 .report-library {

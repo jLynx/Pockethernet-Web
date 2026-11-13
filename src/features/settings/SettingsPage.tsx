@@ -1,7 +1,8 @@
 import type { ReactElement } from 'react';
 import type { DeviceInfo } from '@/pockethernetProtocol';
 import { APP_VERSION } from '@/app/buildInfo';
-import { Button, PageHeader } from '@/shared/ui/UiPrimitives';
+import { Button } from '@/shared/ui/UiPrimitives';
+import { PageLayout } from '@/shared/layout/PageLayout';
 import { ThemeSettings } from '@/shared/layout/ThemeSelector';
 import { NotificationSettings } from '@/features/notifications/NotificationSettings';
 import { ToolInfoRow, ToolPanel } from '@/features/tools/ToolControls';
@@ -22,13 +23,12 @@ export function SettingsPage({
   onReset,
 }: SettingsPageProps): ReactElement {
   return (
-    <main className="tools-page app-settings-page">
-      <PageHeader
-        className="tools-header"
-        eyebrow="App & device"
-        title="Settings"
-        description="Appearance, notifications, and device information."
-      />
+    <PageLayout
+      className="tools-page app-settings-page"
+      eyebrow="App & device"
+      title="Settings"
+      description="Appearance, notifications, and device information."
+    >
       <ThemeSettings />
       <div className="tools-board">
         <div className="tools-column">
@@ -64,6 +64,6 @@ export function SettingsPage({
           </ToolPanel>
         </div>
       </div>
-    </main>
+    </PageLayout>
   );
 }

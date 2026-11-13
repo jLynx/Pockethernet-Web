@@ -39,7 +39,8 @@ import { WiremapDiagram } from './results/WiremapDiagram';
 import { TEST_HELP } from './testHelp';
 import type { useTestConfiguration } from '@/app/useTestConfiguration';
 import { MeasurementControls } from './MeasurementControls';
-import { Button, PageHeader } from '@/shared/ui/UiPrimitives';
+import { Button } from '@/shared/ui/UiPrimitives';
+import { PageLayout } from '@/shared/layout/PageLayout';
 
 interface TestPageProps {
   batch?: boolean;
@@ -111,33 +112,32 @@ export function TestPage(props: TestPageProps): ReactElement {
     },
   });
   return (
-    <main className="test-page">
-      <PageHeader
-        className="test-intro"
-        eyebrow="Cable diagnostics"
-        title={batch ? 'Test cable' : 'Choose your tests'}
-        description={
-          batch
-            ? 'Run your configured tests, review the results, then save and move to the next cable.'
-            : 'Select one or more tests, adjust their controls, then measure. Save the latest run from Reports.'
-        }
-        action={
-          <div className="batch-save-actions">
-            {batch && <Button onClick={props.onOpenConfigure}>Choose tests</Button>}
-            <Button
-              className="collapse-all-button"
-              disabled={expanded.size === 0}
-              onClick={() => onExpandedChange(new Set())}
-              aria-label="Collapse all tests"
-              title="Collapse all tests"
-            >
-              <span className="collapse-all-icon" aria-hidden="true" />
-            </Button>
-          </div>
-        }
-      >
-        {props.workflowSelector}
-      </PageHeader>
+    <PageLayout
+      className="test-page"
+      contentLayout="grid"
+      eyebrow="Cable diagnostics"
+      title={batch ? 'Test cable' : 'Choose your tests'}
+      description={
+        batch
+          ? 'Run your configured tests, review the results, then save and move to the next cable.'
+          : 'Select one or more tests, adjust their controls, then measure. Save the latest run from Reports.'
+      }
+      action={
+        <div className="batch-save-actions">
+          {batch && <Button onClick={props.onOpenConfigure}>Choose tests</Button>}
+          <Button
+            className="collapse-all-button"
+            disabled={expanded.size === 0}
+            onClick={() => onExpandedChange(new Set())}
+            aria-label="Collapse all tests"
+            title="Collapse all tests"
+          >
+            <span className="collapse-all-icon" aria-hidden="true" />
+          </Button>
+        </div>
+      }
+      headerChildren={props.workflowSelector}
+    >
       {props.children}
       {batch && selected.size === 0 && (
         <p className="batch-empty">
@@ -344,6 +344,6 @@ export function TestPage(props: TestPageProps): ReactElement {
           <PingResults result={props.ping} />
         </TestPanel>
       )}
-    </main>
+    </PageLayout>
   );
 }

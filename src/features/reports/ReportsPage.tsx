@@ -1,6 +1,7 @@
 import { useState, type ReactElement, type ReactNode } from 'react';
 import type { ReportPreferences, ReportResults, SavedReport } from '@/app/types';
-import { Button, EmptyState, PageHeader, SelectField } from '@/shared/ui/UiPrimitives';
+import { Button, EmptyState, SelectField } from '@/shared/ui/UiPrimitives';
+import { PageLayout } from '@/shared/layout/PageLayout';
 import { createLlmExport } from './llmExport';
 import { downloadReportsPdf, previewReportPdf, shareReportPdf } from './pdf';
 
@@ -85,13 +86,12 @@ export function ReportsPage({
   };
 
   return (
-    <main className="reports-page">
-      <PageHeader
-        className="reports-header"
-        eyebrow="Measurement history"
-        title="Reports"
-        description="View, export, and share your saved measurement reports."
-      />
+    <PageLayout
+      className="reports-page"
+      eyebrow="Measurement history"
+      title="Reports"
+      description="View, export, and share your saved measurement reports."
+    >
       {error && <p role="alert">{error}</p>}
       {children}
       {!ready && !error && <p role="status">Loading saved reports…</p>}
@@ -218,6 +218,6 @@ export function ReportsPage({
           </div>
         )}
       </section>
-    </main>
+    </PageLayout>
   );
 }

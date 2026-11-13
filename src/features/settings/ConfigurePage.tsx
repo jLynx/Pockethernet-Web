@@ -1,7 +1,8 @@
 import type { ReactElement, ReactNode } from 'react';
 import type { TestId } from '@/app/types';
 import type { useAppSettings } from '@/app/useAppSettings';
-import { PageHeader, SelectField, TextField } from '@/shared/ui/UiPrimitives';
+import { SelectField, TextField } from '@/shared/ui/UiPrimitives';
+import { PageLayout } from '@/shared/layout/PageLayout';
 import { PingDefaultsPanel } from '@/features/tools/PingDefaultsPanel';
 import { ToolControl, ToolPanel } from '@/features/tools/ToolControls';
 import { GeneralSettings } from './GeneralSettings';
@@ -46,19 +47,17 @@ export function ConfigurePage({
     value: (typeof settings)[Key],
   ): void => app.setToolSettings((current) => ({ ...current, [key]: value }));
   return (
-    <main className="settings-page configure-page">
-      <PageHeader
-        className="tools-header"
-        eyebrow="Test & report setup"
-        title="Configure"
-        description={
-          batch
-            ? 'Configure batch tests and report defaults once, then work through your cables from Test.'
-            : 'Set cable and report defaults here. Choose tests and adjust network or BER controls on Test.'
-        }
-      >
-        {workflowSelector}
-      </PageHeader>
+    <PageLayout
+      className="settings-page configure-page"
+      eyebrow="Test & report setup"
+      title="Configure"
+      description={
+        batch
+          ? 'Configure batch tests and report defaults once, then work through your cables from Test.'
+          : 'Set cable and report defaults here. Choose tests and adjust network or BER controls on Test.'
+      }
+      headerChildren={workflowSelector}
+    >
       <div className="settings-board">
         <div className="settings-column">
           {batch && (
@@ -214,6 +213,6 @@ export function ConfigurePage({
           )}
         </div>
       </div>
-    </main>
+    </PageLayout>
   );
 }

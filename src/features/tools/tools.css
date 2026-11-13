@@ -88,25 +88,6 @@
 }
 .tools-page {
   min-height: 60vh;
-  padding: clamp(20px, 3vw, 34px);
-}
-.tools-header {
-  margin-bottom: 20px;
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 28px;
-}
-.tools-header h1 {
-  margin: 2px 0 0;
-  color: var(--text, #15243a);
-  font-size: clamp(1.45rem, 3vw, 2rem);
-  letter-spacing: -0.03em;
-}
-.tools-header .page-header-actions p {
-  max-width: 380px;
-  margin: 0;
-  font-size: 0.86rem;
 }
 .tools-manual-link {
   flex: 0 0 auto;
@@ -361,34 +342,6 @@
   .nav-icon {
     width: 20px;
     height: 20px;
-  }
-  .test-page,
-  .tools-page {
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-  .test-intro {
-    display: block;
-  }
-  .test-intro .page-header-actions {
-    justify-content: flex-start;
-    margin-top: 8px;
-  }
-  .test-intro .page-header-actions p {
-    font-size: 0.86rem;
-  }
-  .tools-header {
-    display: block;
-    margin-bottom: 16px;
-  }
-  .tools-header .page-header-actions {
-    align-items: flex-start;
-    justify-content: space-between;
-    margin-top: 8px;
-    gap: 12px;
-  }
-  .tools-header .page-header-actions p {
-    font-size: 0.82rem;
   }
   .tools-board {
     grid-template-columns: 1fr;

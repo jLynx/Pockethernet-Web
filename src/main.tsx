@@ -6,6 +6,7 @@ import './theme.css';
 import './shared/ui/primitives.css';
 import './styles.css';
 import './shared/layout/layout.css';
+import './shared/layout/page-layout.css';
 import './shared/layout/app-update.css';
 import './features/measurements/results/results.css';
 import './features/tools/tools.css';

@@ -282,39 +282,6 @@ button:focus-visible {
   height: 23px;
 }
 
-.test-page {
-  padding: clamp(18px, 3vw, 34px);
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: start;
-  gap: 14px;
-}
-.test-intro {
-  grid-column: 1 / -1;
-  margin-bottom: 4px;
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 28px;
-}
-.test-intro h1 {
-  margin: 2px 0 0;
-  color: var(--text, #15243a);
-  font-size: clamp(1.55rem, 3vw, 2.15rem);
-  letter-spacing: -0.03em;
-}
-.page-header-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 18px;
-}
-.page-header-actions p {
-  max-width: 430px;
-  margin: 0 0 4px;
-  color: var(--text-muted, #68768a);
-  line-height: 1.5;
-}
 .collapse-all-button {
   width: 36px;
   flex: 0 0 36px;
