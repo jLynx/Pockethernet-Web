@@ -152,34 +152,59 @@ export function TestPanel({
   const [helpOpen, setHelpOpen] = useState(false);
   const fallback =
     id === 'wiremap' || id === 'tdr' || id === 'tdr-graph' ? 'Not measured' : 'Coming later';
+  const labelContent = (
+    <>
+      {selectable ? (
+        <SelectionSwitch selected={selected} status={failure ? 'error' : status} />
+      ) : (
+        <span className={`test-status-dot ${failure ? 'error' : status}`} aria-hidden="true" />
+      )}
+      <span>{title}</span>
+    </>
+  );
+  const summaryContent = (
+    <>
+      {testing ? (
+        <span className="testing-status" role="status" aria-live="polite">
+          <i aria-hidden="true" />
+          Testing
+        </span>
+      ) : (
+        <span>{failure || summary || fallback}</span>
+      )}
+      <b aria-hidden="true" />
+    </>
+  );
   return (
     <Card className={`test-panel ${id} ${expanded ? 'expanded' : ''} ${testing ? 'testing' : ''}`}>
-      <div className="test-panel-header">
-        <Button
-          unstyled
-          className="test-label"
-          onClick={selectable ? onToggle : onExpand}
-          disabled={selectable && selectionDisabled}
-          aria-pressed={selectable ? selected : undefined}
-        >
-          {selectable ? (
-            <SelectionSwitch selected={selected} status={failure ? 'error' : status} />
-          ) : (
-            <span className={`test-status-dot ${failure ? 'error' : status}`} aria-hidden="true" />
-          )}
-          <span>{title}</span>
-        </Button>
-        <Button unstyled className="test-summary" onClick={onExpand}>
-          {testing ? (
-            <span className="testing-status" role="status" aria-live="polite">
-              <i aria-hidden="true" />
-              Testing
-            </span>
-          ) : (
-            <span>{failure || summary || fallback}</span>
-          )}
-          <b aria-hidden="true" />
-        </Button>
+      <div className={`test-panel-header ${selectable ? '' : 'test-panel-header-unified'}`}>
+        {selectable ? (
+          <>
+            <Button
+              unstyled
+              className="test-label"
+              onClick={onToggle}
+              disabled={selectionDisabled}
+              aria-pressed={selected}
+            >
+              {labelContent}
+            </Button>
+            <Button unstyled className="test-summary" onClick={onExpand}>
+              {summaryContent}
+            </Button>
+          </>
+        ) : (
+          <Button
+            unstyled
+            className="test-panel-toggle"
+            onClick={onExpand}
+            aria-expanded={expanded}
+            aria-controls={`${id}-results`}
+          >
+            <span className="test-label">{labelContent}</span>
+            <span className="test-summary">{summaryContent}</span>
+          </Button>
+        )}
         {expanded && (
           <Button
             unstyled
@@ -195,7 +220,7 @@ export function TestPanel({
         )}
       </div>
       {expanded && (
-        <div className="test-result">
+        <div className="test-result" id={`${id}-results`}>
           {helpOpen && (
             <aside className="test-help" id={`${id}-help`} aria-label={`${title} test help`}>
               <p>{help.description}</p>

@@ -128,7 +128,14 @@ export function TrafficResults({ result }: { result: TrafficDisplayResult | null
 
 export function PingResults({ result }: { result: PingDisplayResult | null }): ReactElement {
   const separator = useDecimalSeparator();
-  if (!result) return <EmptyState>Run a measurement to ping the configured targets</EmptyState>;
+  if (!result)
+    return (
+      <div className="ping-results">
+        <EmptyState className="ping-awaiting">
+          Run a measurement to ping the configured targets
+        </EmptyState>
+      </div>
+    );
   return (
     <div className="ping-results">
       {result.servers.map((server, index) => (

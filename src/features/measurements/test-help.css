@@ -68,3 +68,40 @@
   align-self: center;
   justify-self: center;
 }
+
+.test-panel .test-panel-header-unified {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.test-panel.expanded .test-panel-header-unified {
+  grid-template-columns: minmax(0, 1fr) 40px;
+}
+
+.test-panel-toggle {
+  min-width: 0;
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(140px, 0.8fr) minmax(0, 1.2fr);
+  align-items: stretch;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.test-panel-toggle:hover {
+  background: var(--surface-hover, #f5f9fc);
+}
+
+.test-panel-toggle:hover .test-summary {
+  color: var(--accent, #0878ca);
+}
+
+.test-panel-toggle .test-label:hover,
+.test-panel-toggle .test-summary:hover {
+  background: transparent;
+}
+
+.test-panel-toggle:focus-visible {
+  outline-offset: -3px;
+}
