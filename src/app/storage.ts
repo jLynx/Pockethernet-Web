@@ -15,6 +15,10 @@ export const DEFAULT_TOOL_SETTINGS: ToolSettings = {
   nvp: '71',
   customMac: 'off',
   mac: '',
+  shieldTest: false,
+  allowCrossover: true,
+  requiredPairs: 'any',
+  decimalSeparator: '.',
 };
 export const DEFAULT_BLINKER_SETTINGS: BlinkerSettings = {
   speed: 'auto',
@@ -41,6 +45,7 @@ export const DEFAULT_REPORT_DETAILS: ReportDetails = {
   location: '',
   comment: '',
   portId: '',
+  project: '',
 };
 export const DEFAULT_REPORT_PREFERENCES: ReportPreferences = {
   logoDataUrl: '',
@@ -52,7 +57,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function storedRecord(key: string): Record<string, unknown> {
+export function storedRecord(key: string): Record<string, unknown> {
   try {
     const parsed: unknown = JSON.parse(localStorage.getItem(key) ?? 'null');
     return isRecord(parsed) ? parsed : {};
@@ -61,14 +66,19 @@ function storedRecord(key: string): Record<string, unknown> {
   }
 }
 
-export function loadToolSettings(): ToolSettings {
-  const saved = storedRecord('pockethernet.toolSettings');
+export function loadToolSettings(key = 'pockethernet.toolSettings'): ToolSettings {
+  const saved = storedRecord(key);
   return {
     tia: saved.tia === '568A' ? '568A' : DEFAULT_TOOL_SETTINGS.tia,
     units: saved.units === 'feet' ? 'feet' : DEFAULT_TOOL_SETTINGS.units,
     nvp: typeof saved.nvp === 'string' ? saved.nvp : DEFAULT_TOOL_SETTINGS.nvp,
     customMac: saved.customMac === 'on' ? 'on' : DEFAULT_TOOL_SETTINGS.customMac,
     mac: typeof saved.mac === 'string' ? saved.mac : DEFAULT_TOOL_SETTINGS.mac,
+    shieldTest: saved.shieldTest === true,
+    allowCrossover: saved.allowCrossover !== false,
+    requiredPairs:
+      saved.requiredPairs === '2' || saved.requiredPairs === '4' ? saved.requiredPairs : 'any',
+    decimalSeparator: saved.decimalSeparator === ',' ? ',' : '.',
   };
 }
 
@@ -115,8 +125,8 @@ export function loadWifiSettings(): WifiSettings {
   };
 }
 
-export function loadReportDetails(): ReportDetails {
-  const saved = storedRecord('pockethernet.reportDetails');
+export function loadReportDetails(key = 'pockethernet.reportDetails'): ReportDetails {
+  const saved = storedRecord(key);
   return {
     address: typeof saved.address === 'string' ? saved.address : '',
     tag: typeof saved.tag === 'string' ? saved.tag : '',
@@ -124,11 +134,12 @@ export function loadReportDetails(): ReportDetails {
     location: typeof saved.location === 'string' ? saved.location : '',
     comment: typeof saved.comment === 'string' ? saved.comment : '',
     portId: typeof saved.portId === 'string' ? saved.portId : '',
+    project: typeof saved.project === 'string' ? saved.project : '',
   };
 }
 
-export function loadPingDefaults(): PingDefaults {
-  const saved = storedRecord('pockethernet.pingDefaults');
+export function loadPingDefaults(key = 'pockethernet.pingDefaults'): PingDefaults {
+  const saved = storedRecord(key);
   const targets: unknown[] = Array.isArray(saved.targets) ? saved.targets : [];
   const target = (index: number): string =>
     typeof targets[index] === 'string' ? targets[index].trim().slice(0, 127) : '';
@@ -158,6 +169,9 @@ export function loadReports(): SavedReport[] {
           (typeof photoDataUrl === 'string' ? (photoDataUrl ? [photoDataUrl] : []) : undefined);
         return {
           ...report,
+          details: isRecord(report.details)
+            ? { ...report.details, project: report.details.project ?? '' }
+            : report.details,
           photos: Array.isArray(attachments)
             ? attachments.map((photo: unknown) =>
                 typeof photo === 'string'
@@ -175,7 +189,7 @@ export function loadReports(): SavedReport[] {
   }
 }
 
-function isSavedReport(value: unknown): value is SavedReport {
+export function isSavedReport(value: unknown): value is SavedReport {
   if (
     !isRecord(value) ||
     !isRecord(value.details) ||

@@ -1,8 +1,9 @@
 import type { jsPDF } from 'jspdf';
-import { distanceForUnits, distanceUnitLabel } from '@/app/format';
+import { distanceForUnits, distanceUnitLabel, pairColorsForTia } from '@/app/format';
 import type { TdrGraphResult, Units } from '@/app/types';
+import { formatDecimal, type DecimalSeparator } from '@/app/numberFormat';
 import { tdrSampleDistance } from '@/pockethernetProtocol';
-import { pairColor } from './reportPdfPrimitives';
+import { tdrChartRange } from '@/app/tdrChartRange';
 
 const CROSSTALK_COLORS = ['#000000', '#0000ff', '#00b8c8', '#d000d0', '#e32323', '#12a52b'];
 
@@ -16,6 +17,7 @@ export function drawTdrChart(
   height: number,
   units: Units,
   tia: '568A' | '568B',
+  separator: DecimalSeparator = '.',
 ): void {
   const traces = graph?.[kind] ?? [];
   const left = x + 8;
@@ -32,16 +34,18 @@ export function drawTdrChart(
     align: 'center',
   });
   doc.text('Distance', left + (right - left) / 2, y + height - 1, { align: 'center' });
-  if (!graph || traces.length === 0) return;
-  const first = Math.min(32, Math.max(0, traces[0].length - 2));
-  const count = Math.min(...traces.map((trace) => trace.length));
-  const last = Math.max(first + 1, count - 1);
-  const values = traces.flatMap((trace) => trace.slice(first, count));
+  if (!graph || traces.length === 0 || traces.some((trace) => trace.length < 2)) return;
+  const { firstSample: first, lastSample: last } = tdrChartRange(traces);
+  const values = traces.flatMap((trace) => trace.slice(first, last + 1));
   const min = Math.min(0, ...values);
   const max = kind === 'impedance' ? Math.max(100, ...values) : Math.max(1, ...values);
   const range = Math.max(1, max - min);
+  const distance = (sample: number): number =>
+    distanceForUnits(tdrSampleDistance(sample, graph.nvp), units);
+  const xMin = distance(first);
+  const xMax = distance(last);
   const xFor = (sample: number): number =>
-    left + ((sample - first) / (last - first)) * (right - left);
+    left + ((distance(sample) - xMin) / Math.max(1, xMax - xMin)) * (right - left);
   const yFor = (value: number): number => bottom - ((value - min) / range) * (bottom - top);
   doc.setDrawColor(205, 205, 205);
   doc.setLineWidth(0.15);
@@ -51,14 +55,15 @@ export function drawTdrChart(
     doc.line(gridX, top, gridX, bottom);
     doc.line(left, gridY, right, gridY);
   }
+  const pairColors = pairColorsForTia(tia);
   traces.forEach((trace, traceIndex) => {
     doc.setDrawColor(
       kind === 'impedance'
-        ? pairColor(tia, traceIndex)
+        ? (pairColors[traceIndex] ?? '#000000')
         : (CROSSTALK_COLORS[traceIndex] ?? '#000000'),
     );
     doc.setLineWidth(0.35);
-    for (let sample = first + 1; sample < count; sample += 1) {
+    for (let sample = first + 1; sample <= last; sample += 1) {
       doc.line(
         xFor(sample - 1),
         yFor(trace[sample - 1] ?? 0),
@@ -69,12 +74,21 @@ export function drawTdrChart(
   });
   doc.setFontSize(4.8);
   doc.setTextColor(0, 0, 0);
-  const distance = distanceForUnits(tdrSampleDistance(last, graph.nvp), units);
-  doc.text('0', left, bottom + 2.5, { align: 'center' });
-  doc.text(`${(distance / 2).toFixed(1)}`, left + (right - left) / 2, bottom + 2.5, {
-    align: 'center',
-  });
-  doc.text(`${distance.toFixed(1)} ${distanceUnitLabel(units)}`, right, bottom + 2.5, {
-    align: 'center',
-  });
+  doc.text(formatDecimal(xMin, 1, separator), left, bottom + 2.5, { align: 'center' });
+  doc.text(
+    formatDecimal((xMin + xMax) / 2, 1, separator),
+    left + (right - left) / 2,
+    bottom + 2.5,
+    {
+      align: 'center',
+    },
+  );
+  doc.text(
+    `${formatDecimal(xMax, 1, separator)} ${distanceUnitLabel(units)}`,
+    right,
+    bottom + 2.5,
+    {
+      align: 'center',
+    },
+  );
 }

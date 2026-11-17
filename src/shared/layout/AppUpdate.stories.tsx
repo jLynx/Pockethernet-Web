@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState, type ComponentProps, type ReactElement } from 'react';
 import logo from '@/assets/logo.png';
 import type { TestId } from '@/app/types';
-import { PageHeader } from '@/shared/ui/UiPrimitives';
+import { PageLayout } from './PageLayout';
 import { ActionDock, ConnectionButton, GitHubLink } from './AppControls';
 import { AppUpdateBanner } from './AppUpdate';
 import { MainNav, TestPanel } from './Layout';
@@ -48,13 +48,13 @@ const meta = {
           </div>
         </header>
         <MainNav tab="test" onChange={() => undefined} />
-        <main className="test-page">
-          <PageHeader
-            className="test-intro"
-            eyebrow="Cable diagnostics"
-            title="Choose your tests"
-            description="Select one or more tests, connect your Pockethernet, then measure."
-          />
+        <PageLayout
+          className="test-page"
+          contentLayout="grid"
+          eyebrow="Cable diagnostics"
+          title="Choose your tests"
+          description="Select one or more tests, connect your Pockethernet, then measure."
+        >
           {previewTests.map(({ id, title }) => (
             <TestPanel
               key={id}
@@ -70,7 +70,7 @@ const meta = {
               {null}
             </TestPanel>
           ))}
-        </main>
+        </PageLayout>
         <ActionDock
           status="connected"
           selectedCount={1}

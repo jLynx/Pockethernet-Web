@@ -13,6 +13,7 @@ function drawMetadata(doc: jsPDF, report: SavedReport, newPage: () => void): num
   if (report.details.user) leftEnd = textLine(doc, 'User: ', report.details.user, 12, leftEnd, 58);
   let middleEnd = 24;
   for (const [label, value] of [
+    ['Project: ', report.details.project ?? ''],
     ['Address: ', report.details.address],
     ['Location: ', report.details.location],
     ['Port ID: ', report.details.portId],
@@ -20,7 +21,7 @@ function drawMetadata(doc: jsPDF, report: SavedReport, newPage: () => void): num
     if (value) middleEnd = textLine(doc, label, value, 75, middleEnd, 58);
   }
   const rightEnd = report.details.tag
-    ? textLine(doc, 'Tag: ', report.details.tag, 140, 24, 58)
+    ? textLine(doc, 'Cable ID: ', report.details.tag, 140, 24, 58)
     : 24;
   let cursor = Math.max(leftEnd, middleEnd, rightEnd);
   const drawBorder = (): void => {

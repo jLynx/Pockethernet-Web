@@ -35,6 +35,7 @@ import type { PockethernetClient } from '@/device/usePockethernet';
 import { DeviceRejectedError, DeviceTimeoutError } from '@/device/packetInbox';
 import { errorMessage } from './format';
 import { deferredStart, runNetworkMeasurements } from './runNetworkMeasurements';
+import { assessWiremap } from './wiremapAcceptance';
 import type {
   BerDisplayResult,
   BerSettings,
@@ -63,6 +64,7 @@ export interface MeasurementContext {
   ipv4Settings: Ipv4UiSettings;
   ipv6Mode: 'slaac' | 'dhcpv6' | 'both';
   pingTargets: string[];
+  discoveryTimeout?: 10000 | 30000 | 60000;
   setRunning: Setter<boolean>;
   setActiveTest: Setter<TestId | null>;
   setNotice: Setter<string>;
@@ -163,7 +165,7 @@ export async function runMeasurements(context: MeasurementContext): Promise<void
         ble.request(wiremapCommand(), PACKET.WIREMAP, 5000),
       );
       if (response) {
-        context.setWiremap(parseWiremapPacket(response.payload));
+        context.setWiremap(assessWiremap(parseWiremapPacket(response.payload), toolSettings));
         expand('wiremap');
       }
     }

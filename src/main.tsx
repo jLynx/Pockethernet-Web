@@ -6,12 +6,14 @@ import './theme.css';
 import './shared/ui/primitives.css';
 import './styles.css';
 import './shared/layout/layout.css';
+import './shared/layout/page-layout.css';
 import './shared/layout/app-update.css';
 import './features/measurements/results/results.css';
 import './features/tools/tools.css';
 import './features/firmware/firmware.css';
 import './features/measurements/test-help.css';
 import './features/reports/reports.css';
+import './features/settings/settings.css';
 import './features/measurements/results/wiremap.css';
 import './features/measurements/results/tdr.css';
 

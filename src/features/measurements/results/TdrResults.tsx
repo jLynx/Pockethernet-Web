@@ -1,7 +1,10 @@
+import { useDecimalSeparator } from '@/app/decimalPreference';
+import { formatDecimal } from '@/app/numberFormat';
 import { useState, type PointerEvent, type ReactElement } from 'react';
 import { tdrSampleDistance, type TdrResult } from '@/pockethernetProtocol';
 import { distanceForUnits, distanceUnitLabel, pairColorsForTia } from '@/app/format';
 import type { ChartSeries, TdrGraphResult, TiaStandard, Units } from '@/app/types';
+import { tdrChartRange } from '@/app/tdrChartRange';
 
 const impedanceSeries: ChartSeries[] = [
   { label: 'Pair 2', color: '#ff941e' },
@@ -35,6 +38,7 @@ interface TdrLineChartProps {
 }
 
 function TdrLineChart({ title, traces, series, nvp, units }: TdrLineChartProps): ReactElement {
+  const separator = useDecimalSeparator();
   const [cursor, setCursor] = useState<number | null>(null);
   const width = 720;
   const height = 270;
@@ -42,23 +46,7 @@ function TdrLineChart({ title, traces, series, nvp, units }: TdrLineChartProps):
   const right = 16;
   const top = 18;
   const bottom = 48;
-  const firstSample = 32;
-  const count = Math.min(...traces.map((trace) => trace.length));
-  const fullValues = traces.flatMap((trace) => trace.slice(firstSample, count));
-  const fullRange = Math.max(0, ...fullValues) - Math.min(0, ...fullValues);
-  const tolerance = Math.max(2, fullRange * 0.06);
-  let signalEnd = firstSample;
-  traces.forEach((trace) => {
-    const tailValue = trace[count - 1] ?? 0;
-    for (let index = count - 1; index >= firstSample; index -= 1) {
-      if (Math.abs(trace[index] - tailValue) > tolerance) {
-        signalEnd = Math.max(signalEnd, index);
-        break;
-      }
-    }
-  });
-  const margin = Math.max(10, Math.round((count - firstSample) * 0.08));
-  const lastSample = Math.max(firstSample + 20, Math.min(count - 1, signalEnd + margin));
+  const { firstSample, lastSample } = tdrChartRange(traces);
   const distance = (sample: number): number =>
     distanceForUnits(tdrSampleDistance(sample, nvp), units);
   const xMin = distance(firstSample);
@@ -128,7 +116,7 @@ function TdrLineChart({ title, traces, series, nvp, units }: TdrLineChartProps):
               className="tdr-chart-grid"
             />
             <text x={x(sample)} y={height - 25} className="tdr-chart-tick">
-              {distance(sample).toFixed(1)}
+              {formatDecimal(distance(sample), 1, separator)}
             </text>
           </g>
         ))}
@@ -163,7 +151,7 @@ function TdrLineChart({ title, traces, series, nvp, units }: TdrLineChartProps):
           <g className="tdr-chart-readout">
             <rect x={width - 244} y={top + 7} width="216" height={32 + series.length * 22} rx="4" />
             <text x={width - 232} y={top + 29}>
-              Distance = {distance(cursor).toFixed(1)} {distanceUnitLabel(units)}
+              Distance = {formatDecimal(distance(cursor), 1, separator)} {distanceUnitLabel(units)}
             </text>
             {series.map((item, index) => (
               <text
@@ -242,6 +230,7 @@ export function TdrResults({
   units: Units;
   tia: TiaStandard;
 }): ReactElement {
+  const separator = useDecimalSeparator();
   if (!result)
     return <div className="tdr-awaiting">Run a measurement to see cable length and status</div>;
   const pairLabels = ['2', '3', '1', '4'];
@@ -259,7 +248,7 @@ export function TdrResults({
           <span>{pair.status || '-'}</span>
           <span>
             {pair.status
-              ? `${distanceForUnits(pair.distance, units).toFixed(1)} ${distanceUnitLabel(units)}`
+              ? `${formatDecimal(distanceForUnits(pair.distance, units), 1, separator)} ${distanceUnitLabel(units)}`
               : '-'}
           </span>
         </div>

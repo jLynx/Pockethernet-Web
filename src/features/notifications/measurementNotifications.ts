@@ -1,4 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
+import { formatScalar } from '@/app/numberFormat';
 import { tdrSummary } from '@/app/format';
 import { runMeasurements, type MeasurementContext } from '@/app/runMeasurements';
 import type { ReportResults, ToolSettings } from '@/app/types';
@@ -70,7 +71,8 @@ export function notificationSummary(snapshot: RunSnapshot, settings: ToolSetting
   }
   add('Link', results.link);
   add('PoE', results.poe);
-  if (results.tdr) lines.push(`TDR: ${tdrSummary(results.tdr, settings.units)}`);
+  if (results.tdr)
+    lines.push(`TDR: ${tdrSummary(results.tdr, settings.units, settings.decimalSeparator)}`);
   if (results.tdrGraph) lines.push('TDR graph: traces ready');
   add('CDP/LLDP', results.cdplldp);
   add('VLAN', results.vlan);
@@ -80,18 +82,22 @@ export function notificationSummary(snapshot: RunSnapshot, settings: ToolSetting
   add('Ping', results.ping);
   add('External IP', results.extip);
   if (results.ber) {
-    const { completedBatches, batchCount, summary } = results.ber;
+    const { completedBatches, batchCount, errorRate } = results.ber;
     lines.push(
-      `Error rate: ${summary}${completedBatches < batchCount ? ` (${completedBatches}/${batchCount} batches)` : ''}`,
+      `Error rate: ${formatScalar(errorRate, settings.decimalSeparator)}${completedBatches < batchCount ? ` (${completedBatches}/${batchCount} batches)` : ''}`,
     );
   }
   return lines.join('\n') || 'Measurement run finished.';
 }
 
-export async function runMeasurementsWithNotifications(context: MeasurementContext): Promise<void> {
+export async function runMeasurementsWithNotifications(
+  context: MeasurementContext,
+  onComplete?: (snapshot: RunSnapshot) => void,
+): Promise<void> {
   const preferences = loadNotificationPreferences();
   const snapshot: RunSnapshot = { results: {}, error: '' };
   await runMeasurements(captureRun(context, snapshot));
+  onComplete?.(snapshot);
   if (
     !preferences.enabled ||
     !loadNotificationPreferences().enabled ||
@@ -104,7 +110,11 @@ export async function runMeasurementsWithNotifications(context: MeasurementConte
     if (preferences.images && snapshot.results.wiremap) {
       try {
         const { wiremapNotificationImage } = await import('./wiremapImage');
-        image = wiremapNotificationImage(snapshot.results.wiremap, context.toolSettings.tia);
+        image = wiremapNotificationImage(
+          snapshot.results.wiremap,
+          context.toolSettings.tia,
+          context.toolSettings.shieldTest !== false,
+        );
       } catch {
         // Always deliver the text summary if optional image generation fails.
       }

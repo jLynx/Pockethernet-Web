@@ -5,12 +5,14 @@ import type { TiaStandard } from '@/app/types';
 export function WiremapDiagram({
   result,
   tia = '568B',
+  showShield = true,
 }: {
   result: WiremapResult | null;
   tia?: TiaStandard;
+  showShield?: boolean;
 }): ReactElement {
   if (!result) return <div className="wiremap-awaiting">Run a measurement to see the wiremap</div>;
-  const pins = [1, 2, 3, 6, 4, 5, 7, 8, 9];
+  const pins = showShield ? [1, 2, 3, 6, 4, 5, 7, 8, 9] : [1, 2, 3, 6, 4, 5, 7, 8];
   const colors: Record<number, string> =
     tia === '568A'
       ? {
@@ -60,7 +62,7 @@ export function WiremapDiagram({
   const seenShorts = new Set<string>();
   for (let wire = 1; wire <= 9; wire += 1) {
     const other = result.shorts[wire];
-    if (!(other > 0 && other < 10)) continue;
+    if (!(other > 0 && other < 10) || !pins.includes(wire) || !pins.includes(other)) continue;
     const low = Math.min(wire, other);
     const high = Math.max(wire, other);
     const key = `${low}-${high}`;
@@ -94,7 +96,7 @@ export function WiremapDiagram({
         })}
         {pins.map((wire) => {
           const destination = result.connections[wire];
-          if (destination > 0 && destination < 10)
+          if (destination > 0 && destination < 10 && pins.includes(destination))
             return line(wire, 245, yFor(wire), 715, yFor(destination), `${wire}-connection`);
           if (destination === 255)
             return (

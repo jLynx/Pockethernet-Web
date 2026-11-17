@@ -6,6 +6,7 @@ import type { WiremapResult } from '@/pockethernetProtocol';
 export function wiremapNotificationImage(
   result: WiremapResult,
   tia: TiaStandard,
+  showShield = true,
 ): string | undefined {
   const canvas = document.createElement('canvas');
   canvas.width = 640;
@@ -19,7 +20,7 @@ export function wiremapNotificationImage(
   ctx.fillText(`Wiremap · ${tia}${result.id > 0 ? ` · ID ${result.id}` : ''}`, 20, 30);
   ctx.font = '18px Arial';
   ctx.fillText(result.summary, 20, 58, 600);
-  const pins = [1, 2, 3, 6, 4, 5, 7, 8, 9];
+  const pins = showShield ? [1, 2, 3, 6, 4, 5, 7, 8, 9] : [1, 2, 3, 6, 4, 5, 7, 8];
   const colors = pairColorsForTia(tia);
   const yFor = (pin: number): number => 90 + pins.indexOf(pin) * 33;
   const line = (x1: number, y1: number, x2: number, y2: number, color: string): void => {
@@ -41,7 +42,8 @@ export function wiremapNotificationImage(
     ctx.setLineDash([1, 3, 5, 7].includes(pin) ? [12, 7] : []);
     line(50, y, 155, y, color);
     line(485, y, 585, y, color);
-    if (destination > 0 && destination < 10) line(155, y, 485, yFor(destination), color);
+    if (destination > 0 && destination < 10 && pins.includes(destination))
+      line(155, y, 485, yFor(destination), color);
     else {
       ctx.fillStyle = '#b91c1c';
       ctx.font = '16px Arial';
@@ -53,7 +55,7 @@ export function wiremapNotificationImage(
   const seen = new Set<string>();
   pins.forEach((pin) => {
     const other = result.shorts[pin];
-    if (!(other > 0 && other < 10)) return;
+    if (!(other > 0 && other < 10) || !pins.includes(other)) return;
     const key = [pin, other].sort((a, b) => a - b).join('-');
     if (seen.has(key)) return;
     seen.add(key);

@@ -26,7 +26,8 @@ import type {
   WiremapResult,
 } from '@/pockethernetProtocol';
 
-export type Tab = 'test' | 'report' | 'tools';
+export type Tab = 'test' | 'configure' | 'report' | 'tools' | 'settings';
+export type WorkflowMode = 'single' | 'batch';
 export type TestId =
   | 'wiremap'
   | 'tdr'
@@ -47,7 +48,7 @@ export type TiaStandard = '568A' | '568B';
 export type OnOff = 'on' | 'off';
 export type StateSetter<T> = Dispatch<SetStateAction<T>>;
 export type PanelStatus = 'idle' | 'ok' | 'error';
-export type AppIconName = 'test' | 'report' | 'tools' | 'device';
+export type AppIconName = 'test' | 'configure' | 'report' | 'tools' | 'device' | 'settings';
 export type FirmwareCheck = FirmwareVersionResult | { error: string };
 
 export interface ToolSettings {
@@ -56,6 +57,10 @@ export interface ToolSettings {
   nvp: string;
   customMac: OnOff;
   mac: string;
+  shieldTest?: boolean;
+  allowCrossover?: boolean;
+  requiredPairs?: 'any' | '2' | '4';
+  decimalSeparator?: '.' | ',';
 }
 
 export interface PingDefaults {
@@ -70,6 +75,7 @@ export interface ReportDetails {
   location: string;
   comment: string;
   portId: string;
+  project?: string;
 }
 
 export interface ReportPreferences {
@@ -103,9 +109,46 @@ export interface SavedReport {
   id: string;
   createdAt: string;
   details: ReportDetails;
-  settings: Pick<ToolSettings, 'tia' | 'units' | 'nvp'>;
+  settings:
+    | ToolSettings
+    | Pick<
+        ToolSettings,
+        | 'tia'
+        | 'units'
+        | 'nvp'
+        | 'shieldTest'
+        | 'allowCrossover'
+        | 'requiredPairs'
+        | 'decimalSeparator'
+      >;
   results: ReportResults;
   photos: ReportPhoto[];
+  selectedTests?: TestId[];
+  failures?: MeasurementFailures;
+  runError?: string;
+  completedAt?: string;
+  measurementSettings?: MeasurementSettings;
+  pingTargets?: string[];
+}
+
+export interface MeasurementSettings {
+  berSettings: BerSettings;
+  vlanSettings: VlanSettings;
+  ipv4Settings: Ipv4UiSettings;
+  ipv6Mode: 'slaac' | 'dhcpv6' | 'both';
+  discoveryTimeout: 10000 | 30000 | 60000;
+}
+
+export interface ReportDraft {
+  createdAt: string;
+  completedAt: string;
+  settings: ToolSettings;
+  results: ReportResults;
+  selectedTests: TestId[];
+  failures: MeasurementFailures;
+  runError: string;
+  measurementSettings: MeasurementSettings;
+  pingTargets: string[];
 }
 
 export interface BlinkerSettings {

@@ -1,0 +1,84 @@
+.page-layout {
+  padding: clamp(18px, 3vw, 34px);
+}
+.page-layout > .page-header {
+  margin-bottom: 20px;
+}
+.page-layout-content,
+.page-header-heading,
+.page-header-actions {
+  min-width: 0;
+}
+.page-layout-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 14px;
+}
+.page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 28px;
+}
+.page-header h1 {
+  margin: 2px 0 0;
+  color: var(--text, #15243a);
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  letter-spacing: -0.03em;
+}
+.page-header .eyebrow {
+  color: var(--accent, #0772c0);
+}
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18px;
+}
+.page-header-actions p {
+  max-width: 380px;
+  margin: 0;
+  color: var(--text-muted, #5f6e80);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+.page-header-buttons {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+.page-header-buttons .ui-button.secondary,
+.page-header-buttons a {
+  color: var(--accent, #0772c0);
+}
+
+@media (max-width: 720px) {
+  .page-layout {
+    padding: 18px 12px;
+  }
+  .page-layout-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .page-header {
+    display: block;
+    padding: 0 4px 5px;
+  }
+  .page-header-actions {
+    margin-top: 8px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .page-header-actions p {
+    flex: 1 1 240px;
+    max-width: none;
+    font-size: 0.82rem;
+  }
+  .page-header-buttons .ui-button {
+    white-space: nowrap;
+  }
+}

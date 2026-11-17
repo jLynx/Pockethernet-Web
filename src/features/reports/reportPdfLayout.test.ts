@@ -385,3 +385,24 @@ pageStreams(described).forEach((data, pageIndex) => {
 console.log(
   'Compact report sections, long fields, multiline photo descriptions and page continuation passed.',
 );
+
+const partialRun = createReportsPdf(
+  [
+    {
+      ...report('Partial run'),
+      selectedTests: ['wiremap', 'poe', 'traffic'],
+      failures: { poe: 'The device did not respond in time' },
+      runError: 'Bluetooth connection lost',
+    },
+  ],
+  '',
+  false,
+);
+const partialText = textPages(partialRun)
+  .flat()
+  .map((item) => item.text)
+  .join('\n');
+assert.match(partialText, /Wiremap, PoE, Traffic/);
+assert.match(partialText, /The device did not respond in time/);
+assert.match(partialText, /No result recorded/);
+assert.match(partialText, /Bluetooth connection lost/);

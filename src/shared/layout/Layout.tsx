@@ -1,6 +1,8 @@
 import { useState, type ReactElement, type ReactNode } from 'react';
+import { FiSettings } from 'react-icons/fi';
 import type { AppIconName, PanelStatus, Tab, TestId } from '@/app/types';
-import { Button, Card, SelectionSwitch } from '@/shared/ui/UiPrimitives';
+import { Button, Card } from '@/shared/ui/UiPrimitives';
+import { SelectionSwitch } from '@/shared/ui/SelectionSwitch';
 
 export function AppIcon({ name }: { name: AppIconName }): ReactElement {
   if (name === 'test')
@@ -14,6 +16,16 @@ export function AppIcon({ name }: { name: AppIconName }): ReactElement {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M6 3h9l4 4v14H6zM15 3v5h4M9 12h7M9 16h7" />
+      </svg>
+    );
+  if (name === 'settings') return <FiSettings aria-hidden="true" />;
+  if (name === 'configure')
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 6h16M4 12h16M4 18h16" />
+        <circle cx="9" cy="6" r="2" />
+        <circle cx="15" cy="12" r="2" />
+        <circle cx="9" cy="18" r="2" />
       </svg>
     );
   if (name === 'tools')
@@ -49,6 +61,12 @@ export function MainNav({
         }}
       />
       <NavTile
+        icon="configure"
+        label="Configure"
+        active={tab === 'configure'}
+        onClick={() => onChange('configure')}
+      />
+      <NavTile
         icon="report"
         label="Reports"
         active={tab === 'report'}
@@ -63,6 +81,12 @@ export function MainNav({
         onClick={() => {
           onChange('tools');
         }}
+      />
+      <NavTile
+        icon="settings"
+        label="Settings"
+        active={tab === 'settings'}
+        onClick={() => onChange('settings')}
       />
     </nav>
   );
@@ -90,6 +114,8 @@ function NavTile({
 }
 
 interface TestPanelProps {
+  selectionDisabled?: boolean;
+  selectable?: boolean;
   id: TestId;
   title: string;
   selected: boolean;
@@ -117,6 +143,8 @@ export function TestPanel({
   testing = false,
   status = 'idle',
   summary,
+  selectable = true,
+  selectionDisabled = false,
   failure,
   help,
   children,
@@ -124,24 +152,59 @@ export function TestPanel({
   const [helpOpen, setHelpOpen] = useState(false);
   const fallback =
     id === 'wiremap' || id === 'tdr' || id === 'tdr-graph' ? 'Not measured' : 'Coming later';
+  const labelContent = (
+    <>
+      {selectable ? (
+        <SelectionSwitch selected={selected} status={failure ? 'error' : status} />
+      ) : (
+        <span className={`test-status-dot ${failure ? 'error' : status}`} aria-hidden="true" />
+      )}
+      <span>{title}</span>
+    </>
+  );
+  const summaryContent = (
+    <>
+      {testing ? (
+        <span className="testing-status" role="status" aria-live="polite">
+          <i aria-hidden="true" />
+          Testing
+        </span>
+      ) : (
+        <span>{failure || summary || fallback}</span>
+      )}
+      <b aria-hidden="true" />
+    </>
+  );
   return (
     <Card className={`test-panel ${id} ${expanded ? 'expanded' : ''} ${testing ? 'testing' : ''}`}>
-      <div className="test-panel-header">
-        <Button unstyled className="test-label" onClick={onToggle}>
-          <SelectionSwitch selected={selected} status={failure ? 'error' : status} />
-          <span>{title}</span>
-        </Button>
-        <Button unstyled className="test-summary" onClick={onExpand}>
-          {testing ? (
-            <span className="testing-status" role="status" aria-live="polite">
-              <i aria-hidden="true" />
-              Testing
-            </span>
-          ) : (
-            <span>{failure || summary || fallback}</span>
-          )}
-          <b aria-hidden="true" />
-        </Button>
+      <div className={`test-panel-header ${selectable ? '' : 'test-panel-header-unified'}`}>
+        {selectable ? (
+          <>
+            <Button
+              unstyled
+              className="test-label"
+              onClick={onToggle}
+              disabled={selectionDisabled}
+              aria-pressed={selected}
+            >
+              {labelContent}
+            </Button>
+            <Button unstyled className="test-summary" onClick={onExpand}>
+              {summaryContent}
+            </Button>
+          </>
+        ) : (
+          <Button
+            unstyled
+            className="test-panel-toggle"
+            onClick={onExpand}
+            aria-expanded={expanded}
+            aria-controls={`${id}-results`}
+          >
+            <span className="test-label">{labelContent}</span>
+            <span className="test-summary">{summaryContent}</span>
+          </Button>
+        )}
         {expanded && (
           <Button
             unstyled
@@ -157,7 +220,7 @@ export function TestPanel({
         )}
       </div>
       {expanded && (
-        <div className="test-result">
+        <div className="test-result" id={`${id}-results`}>
           {helpOpen && (
             <aside className="test-help" id={`${id}-help`} aria-label={`${title} test help`}>
               <p>{help.description}</p>
