@@ -17,20 +17,30 @@ interface ConfigurePageProps {
   workflowSelector?: ReactNode;
 }
 
-const TESTS: readonly [TestId, string][] = [
-  ['wiremap', 'Wiremap'],
-  ['tdr', 'TDR length & faults'],
-  ['tdr-graph', 'TDR graph'],
-  ['poe', 'PoE'],
-  ['link', 'Link'],
-  ['cdplldp', 'CDP / LLDP'],
-  ['vlan', 'Incoming VLANs'],
-  ['traffic', 'Observe traffic'],
-  ['ipv4', 'IPv4'],
-  ['ipv6', 'IPv6'],
-  ['ping', 'Ping'],
-  ['extip', 'External IP'],
-  ['ber', 'Error rate / BER'],
+const TEST_GROUPS: readonly { title: string; tests: readonly [TestId, string][] }[] = [
+  {
+    title: 'Cable tests',
+    tests: [
+      ['wiremap', 'Wiremap'],
+      ['tdr', 'TDR length & faults'],
+      ['tdr-graph', 'TDR graph'],
+      ['ber', 'Error rate / BER'],
+    ],
+  },
+  {
+    title: 'Network tests',
+    tests: [
+      ['poe', 'PoE'],
+      ['link', 'Link'],
+      ['cdplldp', 'CDP / LLDP'],
+      ['vlan', 'Incoming VLANs'],
+      ['traffic', 'Observe traffic'],
+      ['ipv4', 'IPv4'],
+      ['ipv6', 'IPv6'],
+      ['extip', 'External IP'],
+      ['ping', 'Ping'],
+    ],
+  },
 ];
 
 export function ConfigurePage({
@@ -62,19 +72,23 @@ export function ConfigurePage({
         <div className="settings-column">
           {batch && (
             <ToolPanel title="Tests to run" disabled={disabled}>
-              <fieldset className="settings-test-selection">
-                <legend>Select measurements</legend>
-                {TESTS.map(([id, title]) => (
-                  <label key={id}>
-                    <input
-                      type="checkbox"
-                      checked={app.selected.has(id)}
-                      onChange={() => onToggle(id)}
-                    />
-                    {title}
-                  </label>
+              <div className="settings-test-groups">
+                {TEST_GROUPS.map((group) => (
+                  <fieldset className="settings-test-selection" key={group.title}>
+                    <legend className="test-group-heading">{group.title}</legend>
+                    {group.tests.map(([id, title]) => (
+                      <label key={id}>
+                        <input
+                          type="checkbox"
+                          checked={app.selected.has(id)}
+                          onChange={() => onToggle(id)}
+                        />
+                        {title}
+                      </label>
+                    ))}
+                  </fieldset>
                 ))}
-              </fieldset>
+              </div>
               <p className="settings-hint">
                 Network tests enable Link automatically. Ping and External IP also enable IPv4. Use
                 the wiremap adapter for Wiremap, an active port for network tests, and the loopback

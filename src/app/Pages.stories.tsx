@@ -44,6 +44,12 @@ const testPageArgs = {
 };
 
 export const Tests: Story = { args: testPageArgs };
+export const SingleTests: Story = {
+  args: { ...testPageArgs, batch: false },
+};
+export const SingleTestsExpanded: Story = {
+  args: { ...testPageArgs, batch: false, expanded: new Set(['wiremap', 'link'] as const) },
+};
 export const Measuring: Story = {
   args: { ...testPageArgs, running: true, activeTest: 'link' },
 };

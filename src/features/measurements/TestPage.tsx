@@ -144,6 +144,7 @@ export function TestPage(props: TestPageProps): ReactElement {
           Choose the tests to run in Configure, then connect Pockethernet.
         </p>
       )}
+      {!batch && <h2 className="test-group-heading">Cable tests</h2>}
       {visible('wiremap') && (
         <TestPanel
           selectable={!batch}
@@ -213,6 +214,7 @@ export function TestPage(props: TestPageProps): ReactElement {
           <BerResults result={props.ber} />
         </TestPanel>
       )}
+      {!batch && <h2 className="test-group-heading test-group-heading-network">Network tests</h2>}
       {visible('poe') && (
         <TestPanel
           selectable={!batch}
