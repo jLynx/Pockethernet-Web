@@ -4,6 +4,7 @@ import { useState, type PointerEvent, type ReactElement } from 'react';
 import { tdrSampleDistance, type TdrResult } from '@/pockethernetProtocol';
 import { distanceForUnits, distanceUnitLabel, pairColorsForTia } from '@/app/format';
 import type { ChartSeries, TdrGraphResult, TiaStandard, Units } from '@/app/types';
+import { tdrChartRange } from '@/app/tdrChartRange';
 
 const impedanceSeries: ChartSeries[] = [
   { label: 'Pair 2', color: '#ff941e' },
@@ -45,23 +46,7 @@ function TdrLineChart({ title, traces, series, nvp, units }: TdrLineChartProps):
   const right = 16;
   const top = 18;
   const bottom = 48;
-  const firstSample = 32;
-  const count = Math.min(...traces.map((trace) => trace.length));
-  const fullValues = traces.flatMap((trace) => trace.slice(firstSample, count));
-  const fullRange = Math.max(0, ...fullValues) - Math.min(0, ...fullValues);
-  const tolerance = Math.max(2, fullRange * 0.06);
-  let signalEnd = firstSample;
-  traces.forEach((trace) => {
-    const tailValue = trace[count - 1] ?? 0;
-    for (let index = count - 1; index >= firstSample; index -= 1) {
-      if (Math.abs(trace[index] - tailValue) > tolerance) {
-        signalEnd = Math.max(signalEnd, index);
-        break;
-      }
-    }
-  });
-  const margin = Math.max(10, Math.round((count - firstSample) * 0.08));
-  const lastSample = Math.max(firstSample + 20, Math.min(count - 1, signalEnd + margin));
+  const { firstSample, lastSample } = tdrChartRange(traces);
   const distance = (sample: number): number =>
     distanceForUnits(tdrSampleDistance(sample, nvp), units);
   const xMin = distance(firstSample);
