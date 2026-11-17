@@ -20,8 +20,6 @@ Pocketweb for Pockethernet is a modern, installable browser application built sp
 - Opt-in measurement result notifications with optional wiremap images and watch mirroring
 - Reusable typed protocol, device, UI, and feature modules
 
-The batch testing workflow, automatic IndexedDB report migration, and remaining decisions from issue #6 are documented in [WORKFLOW_REQUEST.md](docs/WORKFLOW_REQUEST.md).
-
 ## Compatibility approach
 
 This is an original React/TypeScript application with its own interface, architecture, state management, reporting system, and browser-focused workflows. Pockethernet 2 compatibility was developed from device testing, observed behavior, public networking standards, and technical analysis of the original software where needed to understand the device protocol.
