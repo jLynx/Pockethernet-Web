@@ -15,6 +15,7 @@ Pocketweb for Pockethernet is a modern, installable browser application built sp
 - Interactive TDR impedance and crosstalk charts
 - Saved measurement history with multiple photos, optional multiline image descriptions, site metadata, and custom branding
 - PDF preview, download, multi-report export, and native sharing
+- Consecutive PDF page numbers and report/export sorting by Cable ID/Tag or Date/Time
 - Installable PWA support with an offline application shell
 - Persistent cable, network, and reporting preferences
 - Opt-in measurement result notifications with optional wiremap images and watch mirroring
