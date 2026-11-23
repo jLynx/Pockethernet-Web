@@ -4,8 +4,9 @@ import { SelectField, TextField } from '@/shared/ui/UiPrimitives';
 import { ToolControl } from '@/features/tools/ToolControls';
 
 interface NetworkSettingsProps {
-  section?: 'all' | 'ipv4' | 'ipv6' | 'cdplldp' | 'vlan' | 'ping';
+  section?: 'all' | 'ipv4' | 'ipv6' | 'cdplldp' | 'network-discovery' | 'vlan' | 'ping';
   settings: MeasurementSettings;
+  discoveryUnavailable?: boolean;
   onChange: StateSetter<MeasurementSettings>;
   pingTargets: string[];
   onPingTargetsChange: StateSetter<string[]>;
@@ -14,11 +15,13 @@ interface NetworkSettingsProps {
 export function NetworkSettings({
   section = 'all',
   settings,
+  discoveryUnavailable,
   onChange,
   pingTargets,
   onPingTargetsChange,
 }: NetworkSettingsProps): ReactElement {
   const show = (name: typeof section): boolean => section === 'all' || section === name;
+  const showDiscovery = show('network-discovery') && !discoveryUnavailable;
   const ipv4 = settings.ipv4Settings;
   const staticFields: readonly [Exclude<keyof Ipv4UiSettings, 'mode'>, string][] = [
     ['ip', 'Static IP'],
@@ -44,6 +47,20 @@ export function NetworkSettings({
             <option value="dhcp">DHCPv4</option>
             <option value="static">Static</option>
           </SelectField>
+          {ipv4.mode === 'dhcp' && (
+            <TextField
+              label="DHCP vendor class"
+              value={ipv4.vendorClass ?? ''}
+              placeholder="Optional · firmware V18+"
+              maxLength={64}
+              onChange={(event) =>
+                onChange((current) => ({
+                  ...current,
+                  ipv4Settings: { ...current.ipv4Settings, vendorClass: event.target.value },
+                }))
+              }
+            />
+          )}
           {ipv4.mode === 'static' && (
             <div className="settings-static-ip">
               {staticFields.map(([name, label]) => (
@@ -86,10 +103,23 @@ export function NetworkSettings({
           </SelectField>
         </>
       )}
-      {show('cdplldp') && (
+      {showDiscovery && (
+        <SelectField
+          label="Network Discovery mode"
+          value={settings.discoveryMode ?? 'active'}
+          onChange={(event) => {
+            const discoveryMode = event.target.value === 'passive' ? 'passive' : 'active';
+            onChange((current) => ({ ...current, discoveryMode }));
+          }}
+        >
+          <option value="active">Scan the attached IPv4 subnet and listen</option>
+          <option value="passive">Listen only</option>
+        </SelectField>
+      )}
+      {(show('cdplldp') || showDiscovery) && (
         <>
           <SelectField
-            label="CDP / LLDP observation time"
+            label={showDiscovery ? 'Discovery observation time' : 'CDP / LLDP observation time'}
             value={settings.discoveryTimeout}
             onChange={(event) => {
               const discoveryTimeout =
@@ -105,10 +135,12 @@ export function NetworkSettings({
             <option value="30000">30 seconds</option>
             <option value="60000">1 minute</option>
           </SelectField>
-          <p className="settings-hint">
-            Shorter observation times can miss switch advertisements. Disable CDP / LLDP in the test
-            selection to skip discovery.
-          </p>
+          {showDiscovery && (
+            <p className="settings-hint">
+              Active Discovery uses the configured IPv4 settings and listens only if an address is
+              unavailable.
+            </p>
+          )}
         </>
       )}
       {show('vlan') && (

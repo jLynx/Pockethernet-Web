@@ -1,5 +1,6 @@
 import { useEffect, type ReactElement } from 'react';
 import { FaGithub } from 'react-icons/fa';
+import { FiZap } from 'react-icons/fi';
 import type { PockethernetState } from '@/device/usePockethernet';
 import { AppIcon } from './Layout';
 import { Button, StatusIndicator } from '@/shared/ui/UiPrimitives';
@@ -43,30 +44,39 @@ export function AppFooter(): ReactElement {
 export function ConnectionButton({
   status,
   batteryPercent = null,
+  batteryCharging = false,
   disabled = false,
   onClick,
 }: {
   status: ConnectionStatus;
   batteryPercent?: number | null;
+  batteryCharging?: boolean;
   disabled?: boolean;
   onClick: () => void;
 }): ReactElement {
   const label =
     status === 'connecting' ? 'Connecting...' : status === 'connected' ? 'Connected' : 'Connect';
-  const hasBattery = status === 'connected' && batteryPercent !== null;
+  const charging = status === 'connected' && batteryCharging;
+  const hasBattery = status === 'connected' && (batteryPercent !== null || charging);
+  const batteryLabel = batteryPercent === null ? 'Battery' : `Battery ${batteryPercent}%`;
   return (
     <Button
       unstyled
       className={`connection-button ${status}${hasBattery ? ' has-battery' : ''}`}
       disabled={disabled}
-      aria-label={hasBattery ? `Connected. Battery ${batteryPercent}%. Disconnect` : label}
+      aria-label={
+        hasBattery ? `Connected. ${batteryLabel}${charging ? ' charging' : ''}. Disconnect` : label
+      }
       onClick={onClick}
     >
       <span className="connection-symbol">
         <AppIcon name="device" />
       </span>
       <span className="connection-copy">
-        <small>{hasBattery ? `Battery ${batteryPercent}%` : 'Device'}</small>
+        <small title={charging ? 'Battery charging' : undefined}>
+          {charging && <FiZap aria-hidden="true" size={11} />}
+          {hasBattery ? (batteryPercent === null ? 'Charging' : batteryLabel) : 'Device'}
+        </small>
         <strong>{label}</strong>
       </span>
       <span className="connection-dot" />

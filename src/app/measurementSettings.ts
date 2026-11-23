@@ -7,6 +7,7 @@ export const DEFAULT_MEASUREMENT_SETTINGS: MeasurementSettings = {
   ipv4Settings: { mode: 'dhcp', ip: '', netmask: '', gateway: '', dns: '' },
   ipv6Mode: 'slaac',
   discoveryTimeout: 30000,
+  discoveryMode: 'active',
 };
 
 export function loadMeasurementSettings(
@@ -32,12 +33,14 @@ export function loadMeasurementSettings(
       netmask: text(ipv4.netmask),
       gateway: text(ipv4.gateway),
       dns: text(ipv4.dns),
+      vendorClass: text(ipv4.vendorClass),
     },
     ipv6Mode: saved.ipv6Mode === 'both' || saved.ipv6Mode === 'dhcpv6' ? saved.ipv6Mode : 'slaac',
     discoveryTimeout:
       saved.discoveryTimeout === 10000 || saved.discoveryTimeout === 60000
         ? saved.discoveryTimeout
         : 30000,
+    discoveryMode: saved.discoveryMode === 'passive' ? 'passive' : 'active',
   };
 }
 

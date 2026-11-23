@@ -380,3 +380,18 @@
   align-items: center;
   color: var(--text, #111);
 }
+.network-discovery-results details {
+  border-bottom: 1px solid var(--border, #dfe6ed);
+  padding: 0.5rem 0;
+  overflow-wrap: anywhere;
+}
+
+.network-discovery-results summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0.25rem 0;
+}
+
+.network-discovery-observation + .network-discovery-observation {
+  margin-top: 0.75rem;
+}

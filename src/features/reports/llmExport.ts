@@ -118,6 +118,7 @@ function exportReport(report: SavedReport): Record<string, unknown> {
     poe: report.results.poe,
     link: report.results.link,
     discovery: report.results.cdplldp,
+    network_discovery: report.results.networkDiscovery,
     vlan: report.results.vlan,
     traffic: report.results.traffic,
     ipv4: report.results.ipv4,

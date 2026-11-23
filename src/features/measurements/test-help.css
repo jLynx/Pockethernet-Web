@@ -64,6 +64,17 @@
   max-width: none;
 }
 
+.test-panel:is(.network-discovery, .ber) .test-summary span {
+  max-width: none;
+  white-space: normal;
+}
+
+.test-panel:is(.network-discovery, .ber) .test-label:disabled {
+  cursor: default;
+  color: var(--text-muted, #6a788a);
+  background: transparent;
+}
+
 .test-panel.expanded .test-help-button {
   align-self: center;
   justify-self: center;

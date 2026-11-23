@@ -1,5 +1,5 @@
 import type { ReactElement, ReactNode } from 'react';
-import type { Tab, TestId } from './types';
+import type { Tab, TestId, UnavailableTests } from './types';
 import type { useAppSettings } from './useAppSettings';
 import type { useMeasurementState } from './useMeasurementState';
 import type { useReportWorkflow } from './useReportWorkflow';
@@ -24,6 +24,7 @@ interface AppPagesProps {
   deviceTools: ReturnType<typeof useDeviceTools>;
   firmwareUpdater: FirmwareUpdaterActions;
   deviceLocked: boolean;
+  unavailableTests: UnavailableTests;
   onTabChange: (tab: Tab) => void;
   onToggle: (id: TestId) => void;
   onReset: () => Promise<void>;
@@ -41,6 +42,7 @@ export function AppPages({
   deviceTools,
   firmwareUpdater,
   deviceLocked,
+  unavailableTests,
   onTabChange,
   onToggle,
   onReset,
@@ -68,6 +70,9 @@ export function AppPages({
       autoIncrement={batch && app.autoIncrement}
       onSave={workflow.save}
       onNotice={onNotice}
+      jobs={app.jobs}
+      jobId={app.jobId}
+      onJobChange={(id) => app.selectReportJob(app.jobs.find((job) => job.id === id))}
     />
   );
   return tab === 'test' ? (
@@ -75,6 +80,7 @@ export function AppPages({
       batch={batch}
       configuration={app}
       disabled={measurement.running || deviceLocked}
+      unavailableTests={unavailableTests}
       {...measurement.results}
       selected={
         batch && measurement.draft ? new Set(measurement.draft.selectedTests) : app.selected
@@ -107,6 +113,7 @@ export function AppPages({
       onTonerSettingsChange={app.setTonerSettings}
       onTonerChange={deviceTools.applyToner}
       wifiSettings={app.wifiSettings}
+      bridgeSpeed={deviceTools.bridgeSpeed}
       onWifiSettingsChange={app.setWifiSettings}
       onWifiChange={deviceTools.applyWifi}
     />
@@ -114,6 +121,7 @@ export function AppPages({
     <ConfigurePage
       app={app}
       disabled={measurement.running || deviceLocked}
+      unavailableTests={unavailableTests}
       onToggle={onToggle}
       onNotice={onNotice}
       workflowSelector={workflowSelector}

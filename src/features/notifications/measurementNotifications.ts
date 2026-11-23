@@ -38,6 +38,7 @@ export function captureRun(context: MeasurementContext, snapshot: RunSnapshot): 
     setTdrGraph: capture('tdrGraph', context.setTdrGraph),
     setPoe: capture('poe', context.setPoe),
     setLink: capture('link', context.setLink),
+    setNetworkDiscovery: capture('networkDiscovery', context.setNetworkDiscovery),
     setCdplldp: capture('cdplldp', context.setCdplldp),
     setVlan: capture('vlan', context.setVlan),
     setTraffic: capture('traffic', context.setTraffic),
@@ -70,6 +71,7 @@ export function notificationSummary(snapshot: RunSnapshot, settings: ToolSetting
     if (results.wiremap.id > 0) lines.push(`Adapter ID: ${results.wiremap.id}`);
   }
   add('Link', results.link);
+  add('Network Discovery', results.networkDiscovery);
   add('PoE', results.poe);
   if (results.tdr)
     lines.push(`TDR: ${tdrSummary(results.tdr, settings.units, settings.decimalSeparator)}`);

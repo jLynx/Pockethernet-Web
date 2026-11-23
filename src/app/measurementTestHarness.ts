@@ -156,6 +156,7 @@ export function measurementHarness(selected: TestId[]): {
       setBer: noop,
       setPoe: noop,
       setLink: noop,
+      setNetworkDiscovery: noop,
       setCdplldp: noop,
       setVlan: noop,
       setTraffic: noop,

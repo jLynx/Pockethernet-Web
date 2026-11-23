@@ -10,6 +10,7 @@ export function emptyResults(): ReportResults {
     ber: null,
     poe: null,
     link: null,
+    networkDiscovery: null,
     cdplldp: null,
     vlan: null,
     traffic: null,
@@ -43,6 +44,7 @@ function useMeasurementStateInternal() {
     | 'setBer'
     | 'setPoe'
     | 'setLink'
+    | 'setNetworkDiscovery'
     | 'setCdplldp'
     | 'setVlan'
     | 'setTraffic'
@@ -62,6 +64,7 @@ function useMeasurementStateInternal() {
     setBer: setter('ber'),
     setPoe: setter('poe'),
     setLink: setter('link'),
+    setNetworkDiscovery: setter('networkDiscovery'),
     setCdplldp: setter('cdplldp'),
     setVlan: setter('vlan'),
     setTraffic: setter('traffic'),

@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { fileURLToPath, URL } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
@@ -26,6 +27,8 @@ function getBuildRevision(): { hash: string; modified: boolean } {
 }
 
 const buildRevision = getBuildRevision();
+const vendorModule = 'virtual:discovery-oui';
+const require = createRequire(import.meta.url);
 
 export default defineConfig({
   define: {
@@ -34,10 +37,29 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    {
+      name: 'discovery-vendor-data',
+      resolveId(id) {
+        if (id === vendorModule) return '\0' + vendorModule;
+      },
+      load(id) {
+        if (id !== '\0' + vendorModule) return;
+        const data: Record<string, string> = JSON.parse(
+          readFileSync(require.resolve('oui-data'), 'utf8'),
+        );
+        for (const id of Object.keys(data)) data[id] = data[id].split('\n', 1)[0].trim();
+        return `export default JSON.parse(${JSON.stringify(JSON.stringify(data))});`;
+      },
+    },
     VitePWA({
       registerType: 'prompt',
       injectRegister: null,
-      includeAssets: ['logo-192.png', 'logo-512.png', 'notification-events.js'],
+      includeAssets: [
+        'logo-192.png',
+        'logo-512.png',
+        'notification-events.js',
+        'discovery-vendor-data-license.txt',
+      ],
       manifest: {
         name: 'Pocketweb for Pockethernet',
         short_name: 'Pocketweb',

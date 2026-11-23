@@ -40,6 +40,16 @@ export interface FieldsResult extends BasicResult {
   fields: FieldMap;
 }
 
+export interface DhcpRoute {
+  destination: string;
+  prefix: number;
+  router: string;
+}
+
+export interface Ipv4Result extends FieldsResult {
+  classlessRoutes?: DhcpRoute[];
+}
+
 export interface TrafficPacketResult {
   source: string;
   destination: string;
@@ -70,6 +80,9 @@ export interface LinkResultOk extends BasicResult {
   polarity: string[];
   skewDelay: number[];
   lengthEstimate: number | null;
+  /** Missing on replies and saved reports without extended PHY diagnostics. */
+  eeePartnerMbps?: (100 | 1000)[];
+  mse?: number[];
 }
 
 export interface LinkResultDown extends BasicResult {

@@ -17,6 +17,7 @@ export function MeasurementControls({
     id !== 'ber' &&
     id !== 'ipv4' &&
     id !== 'ipv6' &&
+    id !== 'network-discovery' &&
     id !== 'cdplldp' &&
     id !== 'vlan' &&
     id !== 'ping'

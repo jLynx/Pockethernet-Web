@@ -1,4 +1,5 @@
-import { SUPPORTED_TESTS, type TestId } from './types';
+import { SUPPORTED_TESTS, type TestId, type UnavailableTests } from './types';
+import { firmwareUnavailableReason } from '@/protocol/firmwareFeatures';
 
 const NETWORK_TESTS: readonly TestId[] = [
   'cdplldp',
@@ -24,6 +25,26 @@ export function toggleSelection(current: Set<TestId>, id: TestId): Set<TestId> {
   if (next.has(id)) next.delete(id);
   else next.add(id);
   return normalizeSelection([...next]);
+}
+
+export function testSelectionForDevice(
+  selected: Set<TestId>,
+  connected: boolean,
+  espVersion: number | undefined,
+): { runnableTests: Set<TestId>; unavailableTests: UnavailableTests } {
+  const unavailableTests: UnavailableTests = {};
+  if (!connected) return { runnableTests: selected, unavailableTests };
+  const runnableTests = new Set(selected);
+  for (const [id, feature] of [
+    ['network-discovery', 'discovery'],
+    ['ber', 'ber'],
+  ] as const) {
+    const reason = firmwareUnavailableReason(espVersion, feature);
+    if (!reason) continue;
+    unavailableTests[id] = reason;
+    runnableTests.delete(id);
+  }
+  return { runnableTests, unavailableTests };
 }
 
 export function loadSelection(key = 'pockethernet.selectedTests'): Set<TestId> {

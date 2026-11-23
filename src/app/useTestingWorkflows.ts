@@ -16,6 +16,7 @@ function useTestingWorkflowsInternal(
     details: app.singleConfiguration.reportDetails,
     setDetails: app.singleConfiguration.setReportDetails,
     autoIncrement: false,
+    job: app.jobs.find((job) => job.id === app.singleConfiguration.jobId),
     singleTest: true,
     onNext: () => undefined,
     onNotice,
@@ -26,6 +27,7 @@ function useTestingWorkflowsInternal(
     details: app.batchConfiguration.reportDetails,
     setDetails: app.batchConfiguration.setReportDetails,
     autoIncrement: app.autoIncrement,
+    job: app.jobs.find((job) => job.id === app.batchConfiguration.jobId),
     onNext: () => {
       batchMeasurement.setDraft(null);
       batchMeasurement.setResults(emptyResults());

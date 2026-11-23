@@ -1,6 +1,7 @@
 import type { ReactElement, ReactNode } from 'react';
-import type { TestId } from '@/app/types';
+import type { TestId, UnavailableTests } from '@/app/types';
 import type { useAppSettings } from '@/app/useAppSettings';
+import { MIN_ESP_FIRMWARE } from '@/protocol/firmwareFeatures';
 import { SelectField, TextField } from '@/shared/ui/UiPrimitives';
 import { PageLayout } from '@/shared/layout/PageLayout';
 import { PingDefaultsPanel } from '@/features/tools/PingDefaultsPanel';
@@ -8,10 +9,12 @@ import { ToolControl, ToolPanel } from '@/features/tools/ToolControls';
 import { GeneralSettings } from './GeneralSettings';
 import { NetworkSettings } from './NetworkSettings';
 import { BerSettingsPanel } from './BerSettingsPanel';
+import { JobSettings, PresetSettings } from './SavedConfigurations';
 
 interface ConfigurePageProps {
   app: ReturnType<typeof useAppSettings>;
   disabled: boolean;
+  unavailableTests?: UnavailableTests;
   onToggle: (id: TestId) => void;
   onNotice: (message: string) => void;
   workflowSelector?: ReactNode;
@@ -32,6 +35,7 @@ const TEST_GROUPS: readonly { title: string; tests: readonly [TestId, string][] 
     tests: [
       ['poe', 'PoE'],
       ['link', 'Link'],
+      ['network-discovery', 'Network Discovery'],
       ['cdplldp', 'CDP / LLDP'],
       ['vlan', 'Incoming VLANs'],
       ['traffic', 'Observe traffic'],
@@ -46,6 +50,7 @@ const TEST_GROUPS: readonly { title: string; tests: readonly [TestId, string][] 
 export function ConfigurePage({
   app,
   disabled,
+  unavailableTests = {},
   onToggle,
   onNotice,
   workflowSelector,
@@ -76,23 +81,30 @@ export function ConfigurePage({
                 {TEST_GROUPS.map((group) => (
                   <fieldset className="settings-test-selection" key={group.title}>
                     <legend className="test-group-heading">{group.title}</legend>
-                    {group.tests.map(([id, title]) => (
-                      <label key={id}>
-                        <input
-                          type="checkbox"
-                          checked={app.selected.has(id)}
-                          onChange={() => onToggle(id)}
-                        />
-                        {title}
-                      </label>
-                    ))}
+                    {group.tests.map(([id, title]) => {
+                      const requirement =
+                        unavailableTests[id] ??
+                        (id === 'network-discovery'
+                          ? `Firmware V${MIN_ESP_FIRMWARE.discovery}+`
+                          : '');
+                      return (
+                        <label key={id}>
+                          <input
+                            type="checkbox"
+                            checked={!unavailableTests[id] && app.selected.has(id)}
+                            disabled={Boolean(unavailableTests[id])}
+                            onChange={() => onToggle(id)}
+                          />
+                          {requirement ? `${title} · ${requirement}` : title}
+                        </label>
+                      );
+                    })}
                   </fieldset>
                 ))}
               </div>
               <p className="settings-hint">
-                Network tests enable Link automatically. Ping and External IP also enable IPv4. Use
-                the wiremap adapter for Wiremap, an active port for network tests, and the loopback
-                adapter for BER.
+                Ping and External IP also enable IPv4. Use the wiremap adapter for Wiremap, an
+                active port for network tests, and the loopback adapter for BER.
               </p>
             </ToolPanel>
           )}
@@ -194,6 +206,13 @@ export function ConfigurePage({
           </ToolPanel>
         </div>
         <div className="settings-column">
+          <PresetSettings
+            key={app.workflowMode}
+            app={app}
+            disabled={disabled}
+            onNotice={onNotice}
+          />
+          <JobSettings app={app} disabled={disabled} onNotice={onNotice} />
           <GeneralSettings
             disabled={disabled}
             settings={settings}
@@ -207,6 +226,7 @@ export function ConfigurePage({
               <ToolPanel title="Network & discovery" disabled={disabled}>
                 <NetworkSettings
                   settings={app.measurementSettings}
+                  discoveryUnavailable={Boolean(unavailableTests['network-discovery'])}
                   onChange={app.setMeasurementSettings}
                   pingTargets={app.pingTargets}
                   onPingTargetsChange={app.setPingTargets}
@@ -217,7 +237,11 @@ export function ConfigurePage({
                 defaults={app.pingDefaults}
                 onChange={app.changePingDefaults}
               />
-              <ToolPanel title="Error rate / BER" disabled={disabled}>
+              <ToolPanel
+                title="Error rate / BER"
+                disabled={disabled || Boolean(unavailableTests.ber)}
+                summary={unavailableTests.ber}
+              >
                 <BerSettingsPanel
                   settings={app.measurementSettings}
                   onChange={app.setMeasurementSettings}

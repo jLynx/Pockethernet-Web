@@ -77,7 +77,7 @@ export function ExternalIpResults({ result }: { result: FieldsResult | null }): 
         Run a measurement to detect the public IP address
       </EmptyState>
     );
-  if (result.status !== 'OK')
+  if (result.status !== 'OK' && Object.keys(result.fields).length === 0)
     return (
       <EmptyState className="extip-no-result" tone="error">
         {result.summary}
@@ -85,6 +85,7 @@ export function ExternalIpResults({ result }: { result: FieldsResult | null }): 
     );
   return (
     <div className="extip-results">
+      {result.status !== 'OK' && <p>{result.summary}</p>}
       {Object.entries(result.fields).map(([label, value]) => (
         <DataRow className="extip-row" key={label} label={label} value={value || '---'} />
       ))}
@@ -169,7 +170,11 @@ export function Ipv4Results({ result }: { result: FieldsResult | null }): ReactE
     ['Broadcast', 'Broadcast'],
     ['Filename', 'Filename'],
     ['Server name', 'Server name'],
+    ['Vendor class', 'Vendor class'],
+    ['Captive portal URL', 'Captive portal URL'],
+    ['Classless routes', 'Classless routes'],
     ['Other options', 'Other options'],
+    ['Extended DHCP options', 'Extended DHCP options'],
   ];
   return (
     <div className="ipv4-results">
@@ -204,7 +209,7 @@ export function Ipv6Results({ result }: { result: Ipv6DisplayResult | null }): R
         <span>Run a measurement to discover IPv6 configuration</span>
       </div>
     );
-  if (result.status !== 'OK')
+  if (result.status !== 'OK' && result.results.length === 0)
     return (
       <EmptyState className="ipv6-no-result" tone="error">
         {result.summary}
@@ -212,6 +217,7 @@ export function Ipv6Results({ result }: { result: Ipv6DisplayResult | null }): R
     );
   return (
     <div className="ipv6-results">
+      {result.status !== 'OK' && <p role="status">{result.summary}</p>}
       {result.results.map((item) => (
         <div className="ipv6-group" key={item.protocol}>
           <SectionTitle className="ipv6-section-title">{item.protocol}</SectionTitle>

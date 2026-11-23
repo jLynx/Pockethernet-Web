@@ -226,7 +226,9 @@ button:focus-visible {
   font-size: 0.7rem;
 }
 .connection-button.has-battery .connection-copy small {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 3px;
   white-space: nowrap;
 }
 .connection-copy strong {

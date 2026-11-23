@@ -7,6 +7,10 @@ import {
 import { useStoredState } from './useStoredState';
 import { useTestConfiguration } from './useTestConfiguration';
 import { loadWorkflowMode } from './workflowMode';
+import { loadNamedItems, type MeasurementPreset, type ReportJob } from './savedConfigurations';
+
+const PRESETS = 'pockethernet.measurementPresets';
+const JOBS = 'pockethernet.reportJobs';
 
 function useAppSettingsInternal() {
   const [workflowMode, setWorkflowMode] = useStoredState(
@@ -15,6 +19,23 @@ function useAppSettingsInternal() {
   );
   const singleConfiguration = useTestConfiguration('pockethernet.single.');
   const batchConfiguration = useTestConfiguration('pockethernet.');
+  const [presets, setPresets] = useStoredState(PRESETS, () =>
+    loadNamedItems<MeasurementPreset>(
+      PRESETS,
+      (item) =>
+        (item.mode === 'single' || item.mode === 'batch') &&
+        Array.isArray(item.selected) &&
+        !!item.toolSettings &&
+        !!item.measurementSettings &&
+        Array.isArray(item.pingTargets),
+    ),
+  );
+  const [jobs, setJobs] = useStoredState(JOBS, () =>
+    loadNamedItems<ReportJob>(
+      JOBS,
+      (item) => typeof item.site === 'string' && typeof item.numberPattern === 'string',
+    ),
+  );
   const [blinkerSettings, setBlinkerSettings] = useStoredState(
     'pockethernet.blinkerSettings',
     loadBlinkerSettings,
@@ -38,12 +59,28 @@ function useAppSettingsInternal() {
       return false;
     }
   });
+  const configuration = workflowMode === 'single' ? singleConfiguration : batchConfiguration;
+  const selectReportJob = (job?: ReportJob): void => {
+    configuration.setJobId(job?.id ?? '');
+    if (job) {
+      configuration.setReportDetails((current) => ({
+        ...current,
+        project: job.name,
+        address: job.site,
+      }));
+    }
+  };
   return {
-    ...(workflowMode === 'single' ? singleConfiguration : batchConfiguration),
+    ...configuration,
     workflowMode,
     setWorkflowMode,
     singleConfiguration,
     batchConfiguration,
+    presets,
+    setPresets,
+    jobs,
+    setJobs,
+    selectReportJob,
     blinkerSettings,
     setBlinkerSettings,
     tonerSettings,

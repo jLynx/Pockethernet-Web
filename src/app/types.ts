@@ -1,5 +1,11 @@
 import type { Dispatch, SetStateAction } from 'react';
 import type {
+  DiscoveryDone,
+  DiscoveryHost,
+  DiscoveryProgress,
+  SegmentObservation,
+} from '@/protocol/networkDiscovery';
+import type {
   BerFrameSize,
   BerPayloadMode,
   BerResult,
@@ -12,6 +18,7 @@ import type {
   FieldsResult,
   FirmwareVersionResult,
   Ipv4Mode,
+  Ipv4Result,
   LinkResult,
   PingPacketResult,
   PoeResult,
@@ -35,6 +42,7 @@ export type TestId =
   | 'ber'
   | 'poe'
   | 'link'
+  | 'network-discovery'
   | 'cdplldp'
   | 'vlan'
   | 'traffic'
@@ -44,6 +52,7 @@ export type TestId =
   | 'extip';
 export type Units = 'meters' | 'feet';
 export type MeasurementFailures = Partial<Record<TestId, string>>;
+export type UnavailableTests = Partial<Record<TestId, string>>;
 export type TiaStandard = '568A' | '568B';
 export type OnOff = 'on' | 'off';
 export type StateSetter<T> = Dispatch<SetStateAction<T>>;
@@ -91,10 +100,11 @@ export interface ReportResults {
   ber: BerDisplayResult | null;
   poe: PoeResult | null;
   link: LinkResult | null;
+  networkDiscovery?: NetworkDiscoveryResult | null;
   cdplldp: DiscoveryResult | null;
   vlan: VlanDisplayResult | null;
   traffic: TrafficDisplayResult | null;
-  ipv4: FieldsResult | null;
+  ipv4: Ipv4Result | null;
   ipv6: Ipv6DisplayResult | null;
   ping: PingDisplayResult | null;
   extip: FieldsResult | null;
@@ -129,6 +139,7 @@ export interface SavedReport {
   completedAt?: string;
   measurementSettings?: MeasurementSettings;
   pingTargets?: string[];
+  job?: { id: string; name: string; number?: number };
 }
 
 export interface MeasurementSettings {
@@ -137,6 +148,7 @@ export interface MeasurementSettings {
   ipv4Settings: Ipv4UiSettings;
   ipv6Mode: 'slaac' | 'dhcpv6' | 'both';
   discoveryTimeout: 10000 | 30000 | 60000;
+  discoveryMode?: 'active' | 'passive';
 }
 
 export interface ReportDraft {
@@ -190,6 +202,7 @@ export interface Ipv4UiSettings {
   netmask: string;
   gateway: string;
   dns: string;
+  vendorClass?: string;
 }
 
 export interface TdrGraphResult {
@@ -233,6 +246,20 @@ export interface DiscoveryFailure extends FieldsResult {
 
 export type DiscoveryResult = CdpLldpResult | DiscoveryFailure;
 
+export interface NetworkDiscoveryResult {
+  status: ResultStatus;
+  summary: string;
+  state: 'listening' | 'scanning' | 'completed' | 'capped' | 'aborted' | 'timed-out' | 'error';
+  mode: 'active' | 'passive';
+  passiveFallback?: boolean;
+  hosts: DiscoveryHost[];
+  observations: SegmentObservation[];
+  listenMs?: number;
+  progress?: DiscoveryProgress;
+  completion?: DiscoveryDone;
+  malformedPackets?: number;
+}
+
 export interface ChartSeries {
   label: string;
   color: string;
@@ -245,6 +272,7 @@ export const SUPPORTED_TESTS: readonly TestId[] = [
   'ber',
   'poe',
   'link',
+  'network-discovery',
   'cdplldp',
   'vlan',
   'traffic',

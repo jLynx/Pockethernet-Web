@@ -7,6 +7,14 @@ import { useStoredState } from './useStoredState';
 import { configurationKey } from './workflowMode';
 
 function useTestConfigurationInternal(prefix: string) {
+  const [jobId, setJobId] = useStoredState(`${prefix}activeJobId`, () => {
+    try {
+      const value: unknown = JSON.parse(localStorage.getItem(`${prefix}activeJobId`) ?? 'null');
+      return typeof value === 'string' ? value : '';
+    } catch {
+      return '';
+    }
+  });
   const [toolSettings, setToolSettings] = useStoredState(`${prefix}toolSettings`, () =>
     loadToolSettings(configurationKey(prefix, 'toolSettings')),
   );
@@ -51,6 +59,8 @@ function useTestConfigurationInternal(prefix: string) {
     setPingDefaults(next);
   };
   return {
+    jobId,
+    setJobId,
     toolSettings,
     setToolSettings,
     reportDetails,

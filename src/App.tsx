@@ -4,13 +4,13 @@ import logo from '@/assets/logo.png';
 import { errorMessage } from '@/app/format';
 import { NumberFormatProvider } from '@/app/NumberFormatContext';
 import { runReportMeasurement } from '@/app/runReportMeasurement';
-import { SUPPORTED_TESTS, type Tab, type TestId, type WorkflowMode } from '@/app/types';
+import type { Tab, TestId, WorkflowMode } from '@/app/types';
 import { useAppSettings } from '@/app/useAppSettings';
 import { emptyResults } from '@/app/useMeasurementState';
 import { useReports } from '@/app/useReports';
 import { useTestingWorkflows } from '@/app/useTestingWorkflows';
 import { WorkflowSelector } from '@/shared/layout/WorkflowSelector';
-import { toggleSelection } from '@/app/testSelection';
+import { testSelectionForDevice, toggleSelection } from '@/app/testSelection';
 import { clearReportDatabase } from '@/app/reportDatabase';
 import {
   ActionDock,
@@ -39,10 +39,17 @@ export default function App(): ReactElement {
     () => !!readPendingUpdate(window.localStorage),
   );
   const ble = usePockethernet({ pollBattery: !measurement.running && !firmwareLocked });
+  const { runnableTests, unavailableTests } = testSelectionForDevice(
+    app.selected,
+    ble.status === 'connected',
+    ble.info?.espVersion,
+  );
   const deviceTools = useDeviceTools({
     client: ble,
     running: measurement.running,
     firmwareLocked,
+    wifiEnabled: app.wifiSettings.enabled === 'on',
+    otherToolActive: app.tonerSettings.power === 'on' || app.blinkerSettings.link !== 'off',
     onNotice: setNotice,
   });
   const firmwareUpdater = useFirmwareUpdater({
@@ -94,6 +101,7 @@ export default function App(): ReactElement {
   }, [clearError]);
   const toggle = (id: TestId): void => {
     if (measurement.running || deviceLocked) return;
+    if (unavailableTests[id]) return;
     app.setSelected((current) => toggleSelection(current, id));
   };
   const connect = async (): Promise<void> => {
@@ -116,11 +124,16 @@ export default function App(): ReactElement {
       setNotice('Connect Pockethernet first.');
       return;
     }
-    if (!SUPPORTED_TESTS.some((id) => app.selected.has(id))) {
+    if (app.wifiSettings.enabled === 'on') {
+      setNotice('Turn off the WiFi bridge before measuring.');
+      return;
+    }
+    if (!runnableTests.size) {
       setNotice(
-        app.workflowMode === 'single'
-          ? 'Choose at least one test.'
-          : 'Choose at least one test in Configure.',
+        [...app.selected].map((id) => unavailableTests[id]).find(Boolean) ??
+          (app.workflowMode === 'single'
+            ? 'Choose at least one test.'
+            : 'Choose at least one test in Configure.'),
       );
       return;
     }
@@ -134,7 +147,7 @@ export default function App(): ReactElement {
         {
           ...measurement.setters,
           ble,
-          selected: app.selected,
+          selected: runnableTests,
           toolSettings: app.toolSettings,
           ...app.measurementSettings,
           pingTargets: app.pingTargets,
@@ -189,6 +202,7 @@ export default function App(): ReactElement {
             <ConnectionButton
               status={ble.status}
               batteryPercent={ble.batteryPercent}
+              batteryCharging={ble.batteryCharging}
               disabled={updateWorking(firmwareUpdater.state)}
               onClick={() => void connect()}
             />
@@ -224,6 +238,7 @@ export default function App(): ReactElement {
           deviceTools={deviceTools}
           firmwareUpdater={firmwareUpdater}
           deviceLocked={deviceLocked}
+          unavailableTests={unavailableTests}
           onTabChange={setTab}
           onToggle={toggle}
           onReset={reset}
@@ -239,13 +254,10 @@ export default function App(): ReactElement {
         {tab === 'test' && (
           <ActionDock
             status={ble.status}
-            selectedCount={app.selected.size}
+            selectedCount={runnableTests.size}
             running={measurement.running}
             canMeasure={
-              !deviceLocked &&
-              !workflow.busy &&
-              !workflow.addingPhotos &&
-              SUPPORTED_TESTS.some((id) => app.selected.has(id))
+              !deviceLocked && !workflow.busy && !workflow.addingPhotos && runnableTests.size > 0
             }
             onMeasure={() => void measure()}
           />

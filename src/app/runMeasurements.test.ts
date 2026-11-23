@@ -9,6 +9,29 @@ const ids = (run: ReturnType<typeof measurementHarness>): number[] =>
   run.sent.map((command) => command.type);
 const cableSelection: TestId[] = ['wiremap', 'tdr', 'tdr-graph', 'poe'];
 
+const legacy = measurementHarness(['ber', 'wiremap', 'extip']);
+legacy.context.ble.info = {
+  espVersion: 14,
+  stmVersion: 14,
+  serial: 1,
+  hardwareVersion: 2,
+  mac: '00:00:00:00:00:01',
+};
+await runMeasurements(legacy.context);
+assert.equal(legacy.failures.ber, 'Requires firmware V15+');
+assert.ok(!ids(legacy).includes(PACKET.BER));
+assert.ok(legacy.snapshot.results.wiremap);
+assert.equal(legacy.snapshot.results.ipv4?.status, 'OK');
+assert.equal(legacy.snapshot.results.extip?.status, 'OK');
+assert.equal(
+  legacy.snapshot.results.ipv4.fields['Extended DHCP options'],
+  'Requires firmware V18+',
+);
+assert.equal(
+  legacy.snapshot.results.extip.fields['Captive portal check'],
+  'Requires firmware V18+',
+);
+
 // Video's exact selection: same-pair and cross-pair TDR must complete before PoE starts.
 const cable = measurementHarness(cableSelection);
 await runMeasurements(cable.context);
@@ -16,13 +39,14 @@ assert.deepEqual(ids(cable), [
   PACKET.WIREMAP,
   PACKET.ETH_CONFIG,
   PACKET.TDR_SAME,
+  PACKET.TDR_SAME,
   PACKET.TDR_CROSS,
   PACKET.POE,
   PACKET.ETH_STOP,
 ]);
 assert.deepEqual(
   cable.requests.map((request) => request.timeout),
-  [5000, 3000, 5000, 8000, 15000, 5000],
+  [5000, 3000, 5000, 5000, 8000, 15000, 5000],
 );
 assert.ok(cable.snapshot.results.tdr);
 assert.ok(cable.snapshot.results.tdrGraph);
@@ -40,7 +64,7 @@ for (let mask = 0; mask < 16; mask += 1) {
   const expected: number[] = [];
   if (selected.includes('wiremap')) expected.push(PACKET.WIREMAP);
   if (selected.includes('tdr') || selected.includes('tdr-graph'))
-    expected.push(PACKET.ETH_CONFIG, PACKET.TDR_SAME);
+    expected.push(PACKET.ETH_CONFIG, PACKET.TDR_SAME, PACKET.TDR_SAME);
   if (selected.includes('tdr-graph')) expected.push(PACKET.TDR_CROSS);
   if (selected.includes('poe')) expected.push(PACKET.POE);
   if (expected.includes(PACKET.ETH_CONFIG)) expected.push(PACKET.ETH_STOP);

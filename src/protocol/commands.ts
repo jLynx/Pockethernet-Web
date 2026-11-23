@@ -81,16 +81,23 @@ export function measurementEthernetCommand(settings: {
   customMac?: string;
   outgoingVlanId?: number;
   discovery: boolean;
+  listenForSegment?: boolean;
   collectVlans: boolean;
   ipv4: boolean;
   ipv4Settings: Ipv4Settings;
+  dhcpVendorClass?: string;
   ipv6: Ipv6Mode | null;
 }): Packet {
   const vlan = settings.outgoingVlanId ?? 0;
   if (!Number.isInteger(vlan) || vlan < 0 || vlan > 4094)
     throw new Error('Outgoing VLAN ID must be between 1 and 4094');
   // Interface up + keep link; optional CDP/LLDP filters and native VLAN collection.
-  const flags = 1 | 8 | (settings.discovery ? 32 | 64 : 0) | (settings.collectVlans ? 256 : 0);
+  const flags =
+    1 |
+    8 |
+    (settings.discovery ? 32 | 64 : 0) |
+    (settings.collectVlans ? 256 : 0) |
+    (settings.listenForSegment ? 512 : 0);
   const command = ethernetCommand(flags, 1773, settings.customMac);
   const view = new DataView(command.payload.buffer);
   let ipFlags = 1; // IP stack up, even for discovery-only runs, as in the APK.
@@ -111,7 +118,19 @@ export function measurementEthernetCommand(settings: {
     ] as const)
       view.setUint32(offset, ipv4ToUint32(address), true);
   }
-  return command;
+  const vendor =
+    settings.ipv4 && settings.ipv4Settings.mode !== 'static'
+      ? settings.dhcpVendorClass?.trim()
+      : '';
+  if (!vendor) return command;
+  const bytes = new TextEncoder().encode(vendor);
+  if (bytes.length > 64) throw new Error('DHCP vendor class must fit within 64 UTF-8 bytes');
+  const payload = new Uint8Array(command.payload.length + 2 + bytes.length);
+  payload.set(command.payload);
+  payload[52] = bytes.length + 2;
+  payload.set([60, bytes.length], 53);
+  payload.set(bytes, 55);
+  return { ...command, payload };
 }
 
 export function linkCommand(customMac = ''): Packet {
@@ -264,13 +283,14 @@ export function pingCommand(target: string): Packet {
   return { type: PACKET.PING, payload };
 }
 
-export function externalIpCommand(): Packet {
+export function externalIpCommand(responseWithHeaders = false): Packet {
   const url =
     'http://pro.ip-api.com/json?key=2NT4TLwAVDyCwHk&fields=country,region,city,isp,as,status,message,query';
   const payload = new Uint8Array(url.length + 37);
   payload.set(new TextEncoder().encode('PE'), 3);
   payload.set(new TextEncoder().encode(url), 36);
   new DataView(payload.buffer).setUint16(0, 10000, true);
+  if (responseWithHeaders) payload[2] = 1;
   return { type: PACKET.HTTP_RESPONSE, payload };
 }
 

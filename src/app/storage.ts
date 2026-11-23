@@ -35,7 +35,7 @@ export const DEFAULT_TONER_SETTINGS: TonerSettings = {
 };
 export const DEFAULT_WIFI_SETTINGS: WifiSettings = {
   name: 'Pockethernet',
-  password: 'Pockethernet',
+  password: '',
   enabled: 'off',
 };
 export const DEFAULT_REPORT_DETAILS: ReportDetails = {

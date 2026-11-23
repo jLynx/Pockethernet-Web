@@ -14,6 +14,8 @@ import {
 import type { PacketWaitOptions } from '@/device/packetInbox';
 import type { MeasurementContext } from './runMeasurements';
 import type { TestId } from './types';
+import { firmwareRequirement, firmwareSupports } from '@/protocol/firmwareFeatures';
+import { runNetworkDiscovery } from './runNetworkDiscovery';
 
 export function deferredStart(): { promise: Promise<void>; start: () => void } {
   let start!: () => void;
@@ -35,17 +37,41 @@ export async function runNetworkMeasurements(
   expand: (id: TestId) => void,
 ): Promise<FieldsResult | null> {
   const { ble, selected, ipv4Settings, ipv6Mode, vlanSettings, toolSettings } = context;
-  const needsIpv4 = (['ipv4', 'ping', 'extip'] as const).some((id) => selected.has(id));
-  const networkIds = ['cdplldp', 'vlan', 'traffic', 'ipv4', 'ipv6', 'ping', 'extip'] as const;
-  if (!networkIds.some((id) => selected.has(id))) return null;
+  const wantsDiscovery = selected.has('network-discovery');
+  const discovery = wantsDiscovery && firmwareSupports(ble.info?.espVersion, 'discovery');
+  const activeDiscovery = discovery && context.discoveryMode !== 'passive';
+  const showIpv4 = (['ipv4', 'ping', 'extip'] as const).some((id) => selected.has(id));
+  const needsIpv4 = showIpv4 || activeDiscovery;
+  const networkIds = [
+    'network-discovery',
+    'cdplldp',
+    'vlan',
+    'traffic',
+    'ipv4',
+    'ipv6',
+    'ping',
+    'extip',
+  ] as const;
+  const enabled = networkIds.filter(
+    (id) => selected.has(id) && (id !== 'network-discovery' || discovery),
+  );
+  if (wantsDiscovery && !discovery) {
+    fail(['network-discovery'], new Error('Network Discovery requires firmware V18 or newer.'));
+    expand('network-discovery');
+  }
+  if (!enabled.length) return null;
 
   const command = measurementEthernetCommand({
     customMac: toolSettings.customMac === 'on' ? toolSettings.mac.trim() : '',
     outgoingVlanId: vlanSettings.tagging ? Number(vlanSettings.id) : 0,
     discovery: selected.has('cdplldp'),
+    listenForSegment: discovery,
     collectVlans: selected.has('vlan'),
     ipv4: needsIpv4,
     ipv4Settings,
+    dhcpVendorClass: firmwareSupports(ble.info?.espVersion, 'dhcpVendorClass')
+      ? ipv4Settings.vendorClass
+      : undefined,
     ipv6: selected.has('ipv6') ? ipv6Mode : null,
   });
   if (vlanSettings.tagging && Number(vlanSettings.id) === 0)
@@ -59,9 +85,7 @@ export async function runNetworkMeasurements(
     startAfter: ready.promise,
   };
   const jobs: Promise<void>[] = [];
-  context.setPendingTests?.(
-    new Set(networkIds.filter((id) => selected.has(id) && id !== 'ping' && id !== 'extip')),
-  );
+  context.setPendingTests?.(new Set(enabled.filter((id) => id !== 'ping' && id !== 'extip')));
   const finish = (id: TestId): void =>
     context.setPendingTests?.((current) => {
       const next = new Set(current);
@@ -69,6 +93,7 @@ export async function runNetworkMeasurements(
       return next;
     });
   let ipv4: FieldsResult | null = null;
+  let ipv4Ready: Promise<void> | undefined;
   // Register every listener before ETH_CONFIG: firmware may notify before its ACK.
   if (selected.has('cdplldp')) {
     context.setCdplldp(null);
@@ -149,27 +174,33 @@ export async function runNetworkMeasurements(
     );
   }
   if (needsIpv4) {
-    context.setIpv4(null);
+    if (showIpv4) context.setIpv4(null);
     if (ipv4Settings.mode === 'dhcp') {
-      jobs.push(
-        ble
-          .waitFor(PACKET.DHCPV4_ACK, 48000, options)
-          .then((packet) => {
-            ipv4 = parseIpv4Packet(packet.payload);
+      ipv4Ready = ble
+        .waitFor(PACKET.DHCPV4_ACK, 48000, options)
+        .then((packet) => {
+          ipv4 = parseIpv4Packet(packet.payload, {
+            classlessRoutes: firmwareSupports(ble.info?.espVersion, 'dhcpClasslessRoutes'),
+          });
+          if (ble.info && !firmwareSupports(ble.info.espVersion, 'dhcpVendorClass'))
+            ipv4.fields['Extended DHCP options'] = firmwareRequirement('dhcpVendorClass');
+          if (showIpv4) {
             context.setIpv4(ipv4);
             expand('ipv4');
-          })
-          .catch((error: unknown) => {
-            if (scope.signal.aborted) throw error;
-            context.setIpv4({
-              status: 'not_OK',
-              summary: 'No DHCPv4 response received',
-              fields: {},
-            });
-            fail(['ipv4'], error);
-          })
-          .finally(() => finish('ipv4')),
-      );
+          }
+        })
+        .catch((error: unknown) => {
+          if (scope.signal.aborted) throw error;
+          if (!showIpv4) return;
+          context.setIpv4({
+            status: 'not_OK',
+            summary: 'No DHCPv4 response received',
+            fields: {},
+          });
+          fail(['ipv4'], error);
+        })
+        .finally(() => finish('ipv4'));
+      jobs.push(ipv4Ready);
     }
   }
   if (selected.has('ipv6')) {
@@ -218,7 +249,8 @@ export async function runNetworkMeasurements(
     ),
   );
   void completed.catch(() => undefined);
-  context.setActiveTest(networkIds.find((id) => selected.has(id)) ?? null);
+  context.setActiveTest(enabled[0]);
+  let discover: Promise<void> | undefined;
   try {
     await linkUp(() => configure(command, 2000));
     if (selected.has('traffic')) await ble.request(trafficFilterCommand(), PACKET.ACK, 2000);
@@ -233,22 +265,60 @@ export async function runNetworkMeasurements(
           'DNS Servers': ipv4Settings.dns,
         },
       };
-      context.setIpv4(ipv4);
-      finish('ipv4');
-      expand('ipv4');
+      if (showIpv4) {
+        context.setIpv4(ipv4);
+        finish('ipv4');
+        expand('ipv4');
+      }
     }
     ready.start(); // APK's 30/48 second async timers begin after link/filter setup.
-    await completed;
+    if (discovery) {
+      const listenMs = context.discoveryTimeout ?? 30000;
+      context.setNetworkDiscovery({
+        status: 'OK',
+        state: 'listening',
+        mode: activeDiscovery ? 'active' : 'passive',
+        summary: `Listening to the segment for ${listenMs / 1000} seconds`,
+        hosts: [],
+        observations: [],
+      });
+      expand('network-discovery');
+      discover = (async () => {
+        // Collect the passive segment window before requesting the firmware's scan results.
+        await Promise.all([
+          ble.collectFor(PACKET.DISCOVERY_SEGMENT, listenMs, { ...options, accept: () => false }),
+          ipv4Ready,
+        ]);
+        const active =
+          activeDiscovery &&
+          ipv4?.status === 'OK' &&
+          Boolean(ipv4.fields['Your IP']) &&
+          ipv4.fields['Your IP'] !== '0.0.0.0';
+        const result = await runNetworkDiscovery(
+          ble,
+          { active, passiveFallback: activeDiscovery && !active, signal: scope.signal },
+          context.setNetworkDiscovery,
+        );
+        context.setNetworkDiscovery(result);
+        if (result.status !== 'OK') fail(['network-discovery'], new Error(result.summary));
+      })().finally(() => finish('network-discovery'));
+    }
+    await Promise.all([completed, discover]);
     return ipv4;
   } catch (error) {
-    fail(
-      networkIds.filter((id) => selected.has(id)),
-      error,
-    );
+    if (discovery) {
+      context.setNetworkDiscovery((result) =>
+        result?.state === 'listening' || result?.state === 'scanning'
+          ? { ...result, status: 'not_OK', state: 'error', summary: 'Discovery interrupted' }
+          : result,
+      );
+    }
+    fail(enabled, error);
     throw error;
   } finally {
     scope.abort();
     context.setPendingTests?.(new Set());
     await completed.catch(() => undefined);
+    await discover?.catch(() => undefined);
   }
 }

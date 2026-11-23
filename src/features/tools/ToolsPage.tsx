@@ -14,6 +14,7 @@ interface ToolsPageProps {
   wifiSettings: WifiSettings;
   onWifiSettingsChange: StateSetter<WifiSettings>;
   onWifiChange: (settings: WifiSettings) => Promise<boolean>;
+  bridgeSpeed?: number | null;
 }
 
 export function ToolsPage(props: ToolsPageProps): ReactElement {
@@ -147,10 +148,19 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
             disabled={firmwareLocked}
             title="WiFi bridge"
             active={wifiSettings.enabled === 'on'}
-            summary={wifiSettings.enabled === 'on' ? 'Bridge enabled' : 'Bridge disabled'}
+            summary={
+              wifiSettings.enabled !== 'on'
+                ? 'Bridge disabled'
+                : props.bridgeSpeed === 0
+                  ? 'Ethernet link down'
+                  : props.bridgeSpeed
+                    ? `Ethernet link up · ${props.bridgeSpeed} Mbit/s`
+                    : 'Bridge enabled · Ethernet link unknown'
+            }
           >
             <ToolField
               label="WiFi name"
+              disabled={wifiSettings.enabled === 'on'}
               value={wifiSettings.name}
               onChange={(event) => {
                 void updateWifi('name', event.target.value.slice(0, 32));
@@ -158,6 +168,7 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
             />
             <ToolField
               label="WiFi password"
+              disabled={wifiSettings.enabled === 'on'}
               value={wifiSettings.password}
               onChange={(event) => {
                 void updateWifi('password', event.target.value.slice(0, 63));

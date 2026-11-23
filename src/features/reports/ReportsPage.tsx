@@ -3,6 +3,7 @@ import type { ReportPreferences, ReportResults, SavedReport } from '@/app/types'
 import { Button, EmptyState, SelectField } from '@/shared/ui/UiPrimitives';
 import { PageLayout } from '@/shared/layout/PageLayout';
 import { createLlmExport } from './llmExport';
+import { createReportCsv, createReportJson } from './reportDataExport';
 import {
   downloadCombinedReportsPdf,
   downloadReportsPdf,
@@ -43,6 +44,18 @@ const EXPORT_OPTIONS = [
     label: 'PDFs to a folder',
     action: 'Save to folder',
     description: 'A separate PDF for each selected report, saved to your chosen folder.',
+  },
+  {
+    mode: 'csv',
+    label: 'CSV',
+    action: 'Download CSV',
+    description: 'A spreadsheet-friendly table of report details and measurement fields.',
+  },
+  {
+    mode: 'json',
+    label: 'JSON',
+    action: 'Download JSON',
+    description: 'Complete saved report records, including measurements and attachments.',
   },
 ] as const;
 type ExportMode = (typeof EXPORT_OPTIONS)[number]['mode'];
@@ -99,13 +112,17 @@ export function ReportsPage({
 }: ReportsPageProps): ReactElement {
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [project, setProject] = useState('');
+  const [jobId, setJobId] = useState('');
   const [sort, setSort] = useState<ReportSort>('date-desc');
   const [exporting, setExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState('');
   const [exportMode, setExportMode] = useState<ExportMode>('individual');
   const folderSupported = supportsReportFolder();
   const visibleReports = sortReports(
-    reports.filter((report) => !project || report.details.project === project),
+    reports.filter(
+      (report) =>
+        (!project || report.details.project === project) && (!jobId || report.job?.id === jobId),
+    ),
     sort,
   );
   const selectedReports = visibleReports.filter((report) => selected.has(report.id));
@@ -115,6 +132,9 @@ export function ReportsPage({
   const projects = [...new Set(reports.map((report) => report.details.project ?? ''))]
     .filter(Boolean)
     .sort();
+  const jobNames = new Map<string, string>();
+  for (const report of reports)
+    if (report.job && !jobNames.has(report.job.id)) jobNames.set(report.job.id, report.job.name);
   const exportSelected = async (mode: ExportMode): Promise<void> => {
     if (exporting || selectedReports.length === 0) return;
     setExporting(true);
@@ -127,7 +147,18 @@ export function ReportsPage({
       );
     };
     try {
-      if (mode === 'combined' || mode === 'individual') {
+      if (mode === 'csv' || mode === 'json') {
+        const csv = mode === 'csv';
+        const content = csv
+          ? '\uFEFF' + createReportCsv(selectedReports)
+          : createReportJson(selectedReports);
+        const type = csv ? 'text/csv;charset=utf-8' : 'application/json';
+        downloadReportBlob(
+          new Blob([content], { type }),
+          `Pocketweb reports ${new Date().toISOString().slice(0, 10)}.${mode}`,
+        );
+        setExportStatus(`${mode.toUpperCase()} download requested.`);
+      } else if (mode === 'combined' || mode === 'individual') {
         const download = mode === 'combined' ? downloadCombinedReportsPdf : downloadReportsPdf;
         download(selectedReports, preferences.logoDataUrl, preferences.showFooterLogo);
         setExportStatus(
@@ -227,6 +258,24 @@ export function ReportsPage({
                 </option>
               ))}
             </SelectField>
+            {(jobNames.size > 0 || jobId) && (
+              <SelectField
+                className="reports-filter"
+                label="Job"
+                value={jobId}
+                onChange={(event) => {
+                  setJobId(event.target.value);
+                  setSelected(new Set());
+                }}
+              >
+                <option value="">All jobs</option>
+                {[...jobNames].map(([id, name]) => (
+                  <option key={id} value={id}>
+                    {name}
+                  </option>
+                ))}
+              </SelectField>
+            )}
             <SelectField
               className="reports-filter"
               label="Sort by"
@@ -351,6 +400,7 @@ export function ReportsPage({
                     {report.photos.length > 0 &&
                       ` · ${report.photos.length} image${report.photos.length === 1 ? '' : 's'}`}
                   </span>
+                  {report.job && <small>{report.job.name}</small>}
                   {(report.details.location || report.details.portId) && (
                     <small>
                       {[report.details.location, report.details.portId].filter(Boolean).join(' · ')}

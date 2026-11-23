@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import type { ReportDetails, ReportDraft, ReportPhoto, StateSetter } from '@/app/types';
-import { Button, TextField } from '@/shared/ui/UiPrimitives';
+import { Button, SelectField, TextField } from '@/shared/ui/UiPrimitives';
+import type { ReportJob } from '@/app/savedConfigurations';
 import { ReportPhotos } from './ReportPhotos';
 
 interface ReportComposerProps {
@@ -19,6 +20,9 @@ interface ReportComposerProps {
   autoIncrement: boolean;
   onSave: (advance: boolean) => Promise<void>;
   onNotice: (message: string) => void;
+  jobs?: readonly ReportJob[];
+  jobId?: string;
+  onJobChange?: (id: string) => void;
 }
 
 const FIELDS: readonly [keyof ReportDetails, string, string][] = [
@@ -43,6 +47,7 @@ export function ReportComposer(props: ReportComposerProps): ReactElement {
     autoIncrement,
   } = props;
   const disabled = busy || running || addingPhotos;
+  const job = props.jobs?.find((item) => item.id === props.jobId);
   return (
     <section className="report-composer batch-composer" aria-labelledby="cable-report-title">
       <header>
@@ -81,16 +86,34 @@ export function ReportComposer(props: ReportComposerProps): ReactElement {
         </div>
       </header>
       <fieldset className="batch-fields" disabled={disabled || saved}>
-        <TextField
-          label={batch ? 'Cable ID / Tag' : 'Tag (optional)'}
-          value={details.tag}
-          placeholder={batch ? 'CAB-001' : 'Cable or job tag'}
-          maxLength={160}
-          onChange={(event) =>
-            onDetailsChange((current) => ({ ...current, tag: event.target.value }))
-          }
-        />
-        {batch && autoIncrement && (
+        {!!props.jobs?.length && (
+          <SelectField
+            label="File under job"
+            value={job?.id ?? ''}
+            onChange={(event) => props.onJobChange?.(event.target.value)}
+          >
+            <option value="">No job</option>
+            {props.jobs.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+          </SelectField>
+        )}
+        {job?.numberPattern ? (
+          <p className="batch-hint">Report number is assigned when saved.</p>
+        ) : (
+          <TextField
+            label={batch ? 'Cable ID / Tag' : 'Tag (optional)'}
+            value={details.tag}
+            placeholder={batch ? 'CAB-001' : 'Cable or job tag'}
+            maxLength={160}
+            onChange={(event) =>
+              onDetailsChange((current) => ({ ...current, tag: event.target.value }))
+            }
+          />
+        )}
+        {batch && autoIncrement && !job?.numberPattern && (
           <p className="batch-hint">
             Save & next increases the trailing number and skips IDs already saved in this project
             and site.

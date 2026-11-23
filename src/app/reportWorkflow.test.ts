@@ -8,7 +8,7 @@ import {
 } from './reportWorkflow';
 import { workflowDraft, workflowReport } from './workflowFixtures';
 import { assessWiremap } from './wiremapAcceptance';
-import { normalizeSelection, toggleSelection } from './testSelection';
+import { normalizeSelection, testSelectionForDevice, toggleSelection } from './testSelection';
 import { formatDecimal, formatScalar } from './numberFormat';
 
 void test('increment preserves padding, prefix, and arbitrarily large numeric suffixes', () => {
@@ -92,6 +92,27 @@ void test('persisted selections and toggles keep required network tests enabled'
   assert.ok(toggleSelection(selected, 'link').has('link'));
   assert.ok(toggleSelection(selected, 'ipv4').has('ipv4'));
   assert.ok(!toggleSelection(selected, 'ping').has('ping'));
+});
+
+void test('firmware availability filters the runnable tests without changing saved selections', () => {
+  const preset = normalizeSelection(['network-discovery', 'ber', 'cdplldp']);
+  const old = testSelectionForDevice(preset, true, 14);
+  assert.deepEqual([...old.runnableTests], ['cdplldp', 'link']);
+  assert.equal(old.unavailableTests.ber, 'Requires firmware V15+');
+  assert.ok(testSelectionForDevice(preset, true, 15).runnableTests.has('ber'));
+  const legacy = testSelectionForDevice(preset, true, 17);
+  assert.deepEqual([...legacy.runnableTests], ['ber', 'cdplldp', 'link']);
+  assert.equal(legacy.unavailableTests['network-discovery'], 'Requires firmware V18+');
+  assert.ok(preset.has('network-discovery'));
+  const available = { runnableTests: preset, unavailableTests: {} };
+  assert.deepEqual(testSelectionForDevice(preset, true, 18), available);
+  assert.deepEqual(testSelectionForDevice(preset, true, 32), available);
+  assert.deepEqual(testSelectionForDevice(preset, false, undefined), available);
+  const connecting = testSelectionForDevice(preset, true, undefined);
+  assert.ok(!connecting.runnableTests.has('network-discovery'));
+  assert.equal(connecting.unavailableTests['network-discovery'], 'Checking firmware version…');
+  const discoveryOnly = normalizeSelection(['network-discovery']);
+  assert.equal(testSelectionForDevice(discoveryOnly, true, 17).runnableTests.size, 0);
 });
 
 void test('decimal formatting preserves addresses, versions and free text', () => {

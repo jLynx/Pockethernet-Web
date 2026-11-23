@@ -14,16 +14,19 @@ import type {
   DiscoveryFailure,
   Ipv6DisplayResult,
   MeasurementFailures,
+  NetworkDiscoveryResult,
   PingDisplayResult,
   StateSetter,
   TdrGraphResult,
   TestId,
   ToolSettings,
   TrafficDisplayResult,
+  UnavailableTests,
   VlanDisplayResult,
 } from '@/app/types';
 import { TestPanel } from '@/shared/layout/Layout';
 import { BerResults } from './results/BerResults';
+import { NetworkDiscoveryResults } from './results/NetworkDiscoveryResults';
 import { LinkResults, PoeResults } from './results/CableResults';
 import {
   CdpLldpResults,
@@ -46,6 +49,7 @@ interface TestPageProps {
   batch?: boolean;
   configuration?: ReturnType<typeof useTestConfiguration>;
   disabled?: boolean;
+  unavailableTests?: UnavailableTests;
   selected: Set<TestId>;
   expanded: Set<TestId>;
   onToggle: (id: TestId) => void;
@@ -61,6 +65,7 @@ interface TestPageProps {
   ber: BerDisplayResult | null;
   poe: PoeResult | null;
   link: LinkResult | null;
+  networkDiscovery?: NetworkDiscoveryResult | null;
   cdplldp: CdpLldpResult | DiscoveryFailure | null;
   vlan: VlanDisplayResult | null;
   traffic: TrafficDisplayResult | null;
@@ -75,9 +80,11 @@ interface TestPageProps {
 
 export function TestPage(props: TestPageProps): ReactElement {
   const { selected, expanded, onExpandedChange, activeTest, toolSettings, batch = true } = props;
+  const unavailable = props.unavailableTests ?? {};
+  const selectionDisabled = props.disabled ?? props.running;
   const visible = (id: TestId): boolean => !batch || selected.has(id);
   const controls = (id: TestId): ReactNode =>
-    !batch && props.configuration ? (
+    !batch && props.configuration && !unavailable[id] ? (
       <MeasurementControls
         id={id}
         configuration={props.configuration}
@@ -88,16 +95,18 @@ export function TestPage(props: TestPageProps): ReactElement {
     id: TestId,
   ): {
     selected: boolean;
+    selectionDisabled: boolean;
     expanded: boolean;
     testing: boolean;
     failure?: string;
     onToggle: () => void;
     onExpand: () => void;
   } => ({
-    selected: selected.has(id),
+    selected: selected.has(id) && !unavailable[id],
+    selectionDisabled: selectionDisabled || Boolean(unavailable[id]),
     expanded: expanded.has(id),
     testing: props.pendingTests ? props.pendingTests.has(id) : activeTest === id,
-    failure: props.failures?.[id],
+    failure: unavailable[id] ? undefined : props.failures?.[id],
     onToggle: () => {
       if (!batch) props.onToggle(id);
       else props.onOpenConfigure?.();
@@ -148,7 +157,6 @@ export function TestPage(props: TestPageProps): ReactElement {
       {visible('wiremap') && (
         <TestPanel
           selectable={!batch}
-          selectionDisabled={props.disabled ?? props.running}
           id="wiremap"
           title="Wiremap"
           help={TEST_HELP.wiremap}
@@ -166,7 +174,6 @@ export function TestPage(props: TestPageProps): ReactElement {
       {visible('tdr') && (
         <TestPanel
           selectable={!batch}
-          selectionDisabled={props.disabled ?? props.running}
           id="tdr"
           title="TDR"
           help={TEST_HELP.tdr}
@@ -184,7 +191,6 @@ export function TestPage(props: TestPageProps): ReactElement {
       {visible('tdr-graph') && (
         <TestPanel
           selectable={!batch}
-          selectionDisabled={props.disabled ?? props.running}
           id="tdr-graph"
           title="TDR Graph"
           help={TEST_HELP['tdr-graph']}
@@ -198,16 +204,16 @@ export function TestPage(props: TestPageProps): ReactElement {
       {visible('ber') && (
         <TestPanel
           selectable={!batch}
-          selectionDisabled={props.disabled ?? props.running}
           id="ber"
           title="Error rate"
           help={TEST_HELP.ber}
           {...panel('ber')}
           status={props.ber ? 'ok' : 'idle'}
           summary={
-            props.ber
+            unavailable.ber ??
+            (props.ber
               ? `Error rate: ${formatScalar(props.ber.errorRate, toolSettings.decimalSeparator)}`
-              : 'Not measured'
+              : 'Not measured')
           }
         >
           {controls('ber')}
@@ -218,7 +224,6 @@ export function TestPage(props: TestPageProps): ReactElement {
       {visible('poe') && (
         <TestPanel
           selectable={!batch}
-          selectionDisabled={props.disabled ?? props.running}
           id="poe"
           title="PoE"
           help={TEST_HELP.poe}
@@ -232,7 +237,6 @@ export function TestPage(props: TestPageProps): ReactElement {
       {visible('link') && (
         <TestPanel
           selectable={!batch}
-          selectionDisabled={props.disabled ?? props.running}
           id="link"
           title="Link"
           help={TEST_HELP.link}
@@ -243,10 +247,31 @@ export function TestPage(props: TestPageProps): ReactElement {
           <LinkResults result={props.link} tia={toolSettings.tia} />
         </TestPanel>
       )}
+      {visible('network-discovery') && (
+        <TestPanel
+          selectable={!batch}
+          id="network-discovery"
+          title="Network Discovery"
+          help={TEST_HELP['network-discovery']}
+          {...panel('network-discovery')}
+          status={
+            props.networkDiscovery
+              ? props.networkDiscovery.status === 'OK'
+                ? 'ok'
+                : 'error'
+              : 'idle'
+          }
+          summary={
+            unavailable['network-discovery'] ?? props.networkDiscovery?.summary ?? 'Not measured'
+          }
+        >
+          {controls('network-discovery')}
+          <NetworkDiscoveryResults result={props.networkDiscovery} />
+        </TestPanel>
+      )}
       {visible('cdplldp') && (
         <TestPanel
           selectable={!batch}
-          selectionDisabled={props.disabled ?? props.running}
           id="cdplldp"
           title="CDP/LLDP"
           help={TEST_HELP.cdplldp}
@@ -261,7 +286,6 @@ export function TestPage(props: TestPageProps): ReactElement {
       {visible('vlan') && (
         <TestPanel
           selectable={!batch}
-          selectionDisabled={props.disabled ?? props.running}
           id="vlan"
           title="VLAN"
           help={TEST_HELP.vlan}
@@ -276,7 +300,6 @@ export function TestPage(props: TestPageProps): ReactElement {
       {visible('traffic') && (
         <TestPanel
           selectable={!batch}
-          selectionDisabled={props.disabled ?? props.running}
           id="traffic"
           title="Traffic"
           help={TEST_HELP.traffic}
@@ -290,7 +313,6 @@ export function TestPage(props: TestPageProps): ReactElement {
       {visible('ipv4') && (
         <TestPanel
           selectable={!batch}
-          selectionDisabled={props.disabled ?? props.running}
           id="ipv4"
           title="IPv4"
           help={TEST_HELP.ipv4}
@@ -305,7 +327,6 @@ export function TestPage(props: TestPageProps): ReactElement {
       {visible('ipv6') && (
         <TestPanel
           selectable={!batch}
-          selectionDisabled={props.disabled ?? props.running}
           id="ipv6"
           title="IPv6"
           help={TEST_HELP.ipv6}
@@ -320,7 +341,6 @@ export function TestPage(props: TestPageProps): ReactElement {
       {visible('extip') && (
         <TestPanel
           selectable={!batch}
-          selectionDisabled={props.disabled ?? props.running}
           id="extip"
           title="External IP"
           help={TEST_HELP.extip}
@@ -334,7 +354,6 @@ export function TestPage(props: TestPageProps): ReactElement {
       {visible('ping') && (
         <TestPanel
           selectable={!batch}
-          selectionDisabled={props.disabled ?? props.running}
           id="ping"
           title="Ping"
           help={TEST_HELP.ping}

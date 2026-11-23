@@ -2,7 +2,7 @@ import { useDecimalSeparator } from '@/app/decimalPreference';
 import { formatScalar } from '@/app/numberFormat';
 import type { ReactElement } from 'react';
 import { MdPowerOff } from 'react-icons/md';
-import type { LinkResult, PoeResult } from '@/pockethernetProtocol';
+import { linkEeeText, linkSnrText, type LinkResult, type PoeResult } from '@/pockethernetProtocol';
 import { pairColorsForTia } from '@/app/format';
 import type { TiaStandard } from '@/app/types';
 import { DataRow, EmptyState, SectionTitle } from '@/shared/ui/UiPrimitives';
@@ -90,12 +90,27 @@ export function LinkResults({
     ['100 Mbit', result.partnerCapabilities['100M']],
     ['10 Mbit', result.partnerCapabilities['10M']],
   ];
+  const eee = linkEeeText(result.eeePartnerMbps);
+  if (eee !== undefined) capabilityRows.push(['EEE advertised by partner', eee]);
   return (
     <div className="link-results">
       <SectionTitle className="link-section-title">Link partner capabilities</SectionTitle>
       {capabilityRows.map(([label, value]) => (
         <DataRow className="link-row" key={label} label={label} value={value} />
       ))}
+      {!!result.mse?.length && (
+        <>
+          <SectionTitle className="link-section-title">Receive signal quality</SectionTitle>
+          {result.mse.map((mse, index) => (
+            <DataRow
+              className="link-row"
+              key={index}
+              label={`Pair ${[2, 3, 1, 4][index]} RX-SNR`}
+              value={linkSnrText(mse)}
+            />
+          ))}
+        </>
+      )}
       <SectionTitle className="link-section-title">Gigabit info</SectionTitle>
       {result.polarity.map((value, index) => (
         <DataRow

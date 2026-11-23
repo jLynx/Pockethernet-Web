@@ -1,7 +1,9 @@
 import type { jsPDF } from 'jspdf';
 import type { SavedReport, TestId } from '@/app/types';
 import { tdrSummary } from '@/app/format';
+import { discoveryHostFields, discoveryHostName, discoveryNotes } from '@/app/discoveryDisplay';
 import { formatScalar } from '@/app/numberFormat';
+import { linkEeeText, linkSnrText } from '@/pockethernetProtocol';
 import { drawTdrChart } from './reportPdfCharts';
 import { drawWiremap, formatDistance, pairColor } from './reportPdfPrimitives';
 
@@ -18,6 +20,7 @@ const TEST_NAMES: Record<TestId, string> = {
   'tdr-graph': 'TDR graph',
   poe: 'PoE',
   link: 'Link',
+  'network-discovery': 'Network Discovery',
   cdplldp: 'CDP/LLDP',
   vlan: 'VLAN',
   traffic: 'Traffic',
@@ -33,7 +36,8 @@ function runStatusRows(report: SavedReport): ReportPdfRow[] {
   if (report.selectedTests?.length) {
     rows.push(['Selected tests', report.selectedTests.map((id) => TEST_NAMES[id]).join(', ')]);
     for (const id of report.selectedTests) {
-      const resultKey = id === 'tdr-graph' ? 'tdrGraph' : id;
+      const resultKey =
+        id === 'tdr-graph' ? 'tdrGraph' : id === 'network-discovery' ? 'networkDiscovery' : id;
       if (report.failures?.[id] || !report.results[resultKey])
         rows.push([TEST_NAMES[id], report.failures?.[id] || 'No result recorded']);
     }
@@ -112,6 +116,12 @@ export function reportPdfSections(report: SavedReport): ReportPdfSection[] {
           ['1000 Mbit', link.partnerCapabilities['1000M']],
           ['100 Mbit', link.partnerCapabilities['100M']],
           ['10 Mbit', link.partnerCapabilities['10M']],
+          ['EEE advertised by partner', linkEeeText(link.eeePartnerMbps) ?? ''],
+          ...(link.mse ?? []).map((mse, index): ReportPdfRow => [
+            `P${[2, 3, 1, 4][index]} RX-SNR`,
+            linkSnrText(mse) ?? '',
+            pairColor(settings.tia, index),
+          ]),
           ...link.polarity.map((value, index): ReportPdfRow => [
             `P${[2, 3, 1, 4][index]}`,
             value,
@@ -189,6 +199,31 @@ export function reportPdfSections(report: SavedReport): ReportPdfSection[] {
         ]
       : [],
   );
+  const networkDiscovery = results.networkDiscovery;
+  if (networkDiscovery) {
+    const rows: ReportPdfRow[] = [
+      ['Mode', networkDiscovery.mode === 'active' ? 'Active' : 'Passive'],
+      ...discoveryNotes(networkDiscovery).map((note): ReportPdfRow => ['', note]),
+    ];
+    if (networkDiscovery.listenMs !== undefined)
+      rows.push(['Listen time', `${(networkDiscovery.listenMs / 1000).toFixed(1)} s`]);
+    for (const host of networkDiscovery.hosts) {
+      const address = host.ip === '0.0.0.0' ? (host.mac ?? 'Unknown address') : host.ip;
+      const name = discoveryHostName(host);
+      if (name) rows.push([address, name]);
+      for (const [field, value] of discoveryHostFields(host))
+        rows.push([`${address} · ${field}`, String(value)]);
+    }
+    for (const observation of networkDiscovery.observations) {
+      rows.push([
+        observation.label,
+        Object.entries(observation.fields)
+          .map(([field, value]) => `${field} ${value}`)
+          .join(', '),
+      ]);
+    }
+    add('Network Discovery', networkDiscovery, rows);
+  }
   const discovery = results.cdplldp;
   if (discovery) {
     add(discovery.status === 'OK' ? discovery.protocol : 'CDP/LLDP', discovery, [

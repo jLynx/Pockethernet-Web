@@ -3,6 +3,7 @@ import {
   PACKET,
   berCommand,
   berEthernetCommand,
+  combineTdrCaptures,
   diagnosticEthernetCommand,
   ethernetStopCommand,
   externalIpCommand,
@@ -19,6 +20,7 @@ import {
   pingCommand,
   poeCommand,
   tdrCommand,
+  tdrCapturesAgree,
   tdrCrosstalkCommand,
   wiremapCommand,
   type BerFrameSize,
@@ -33,6 +35,7 @@ import {
 } from '@/pockethernetProtocol';
 import type { PockethernetClient } from '@/device/usePockethernet';
 import { DeviceRejectedError, DeviceTimeoutError } from '@/device/packetInbox';
+import { firmwareRequirement, firmwareSupports } from '@/protocol/firmwareFeatures';
 import { errorMessage } from './format';
 import { deferredStart, runNetworkMeasurements } from './runNetworkMeasurements';
 import { assessWiremap } from './wiremapAcceptance';
@@ -43,6 +46,7 @@ import type {
   Ipv4UiSettings,
   Ipv6DisplayResult,
   MeasurementFailures,
+  NetworkDiscoveryResult,
   PingDisplayResult,
   TdrGraphResult,
   TestId,
@@ -65,6 +69,7 @@ export interface MeasurementContext {
   ipv6Mode: 'slaac' | 'dhcpv6' | 'both';
   pingTargets: string[];
   discoveryTimeout?: 10000 | 30000 | 60000;
+  discoveryMode?: 'active' | 'passive';
   setRunning: Setter<boolean>;
   setActiveTest: Setter<TestId | null>;
   setNotice: Setter<string>;
@@ -76,6 +81,7 @@ export interface MeasurementContext {
   setBer: Setter<BerDisplayResult | null>;
   setPoe: Setter<PoeResult | null>;
   setLink: Setter<LinkResult | null>;
+  setNetworkDiscovery: Setter<NetworkDiscoveryResult | null | undefined>;
   setCdplldp: Setter<CdpLldpResult | DiscoveryFailure | null>;
   setVlan: Setter<VlanDisplayResult | null>;
   setTraffic: Setter<TrafficDisplayResult | null>;
@@ -104,13 +110,25 @@ export async function runMeasurements(context: MeasurementContext): Promise<void
     context.setFailures?.({ ...failures });
   };
   // Only device timeouts/rejections are recoverable. A lost Bluetooth connection aborts.
-  const attempt = async <T>(ids: TestId[], action: () => Promise<T>): Promise<T | undefined> => {
+  const attempt = async <T>(
+    ids: TestId[],
+    action: () => Promise<T>,
+    legacyTdrTimeout = false,
+  ): Promise<T | undefined> => {
     try {
       return await action();
     } catch (error) {
       if (!(error instanceof DeviceTimeoutError || error instanceof DeviceRejectedError))
         throw error;
-      fail(ids, error);
+      fail(
+        ids,
+        legacyTdrTimeout &&
+          error instanceof DeviceTimeoutError &&
+          ble.info &&
+          !firmwareSupports(ble.info.espVersion, 'tdrOversizeNack')
+          ? new Error('TDR response timed out. This firmware may drop an oversized capture.')
+          : error,
+      );
       return undefined;
     }
   };
@@ -149,6 +167,7 @@ export async function runMeasurements(context: MeasurementContext): Promise<void
   }
   if (selected.has('poe')) context.setPoe(null);
   if (selected.has('link')) context.setLink(null);
+  if (selected.has('network-discovery')) context.setNetworkDiscovery(null);
   if (selected.has('cdplldp')) context.setCdplldp(null);
   if (selected.has('vlan')) context.setVlan(null);
   if (selected.has('traffic')) context.setTraffic(null);
@@ -180,19 +199,49 @@ export async function runMeasurements(context: MeasurementContext): Promise<void
         return true;
       });
       const response = prepared
-        ? await attempt(ids, () => ble.request(tdrCommand(), PACKET.TDR_SAME, 5000))
+        ? await attempt(ids, () => ble.request(tdrCommand(), PACKET.TDR_SAME, 5000), true)
         : undefined;
       if (response) {
-        const tdr = parseTdrPacket(response.payload, Number(toolSettings.nvp));
+        const espVersion = ble.info?.espVersion;
+        const nvp = Number(toolSettings.nvp);
+        const first = parseTdrPacket(response.payload, nvp, espVersion);
+        const extraCapture = async (): Promise<TdrResult | undefined> => {
+          try {
+            const packet = await ble.request(tdrCommand(), PACKET.TDR_SAME, 5000);
+            return packet.payload.length < 2
+              ? undefined
+              : parseTdrPacket(packet.payload, nvp, espVersion);
+          } catch (error) {
+            if (
+              error instanceof DeviceTimeoutError ||
+              error instanceof DeviceRejectedError ||
+              (error instanceof Error && error.message === 'Invalid TDR response: no samples')
+            )
+              return undefined;
+            throw error;
+          }
+        };
+        const additional: TdrResult[] = [];
+        const second = await extraCapture();
+        if (second) {
+          additional.push(second);
+          if (!tdrCapturesAgree(first, second)) {
+            const third = await extraCapture();
+            if (third) additional.push(third);
+          }
+        }
+        const tdr = combineTdrCaptures(first, additional);
         context.setTdr(tdr);
         if (selected.has('tdr')) expand('tdr');
         if (selected.has('tdr-graph')) {
           activate('tdr-graph');
-          const cross = await attempt(['tdr-graph'], () =>
-            ble.request(tdrCrosstalkCommand(), PACKET.TDR_CROSS, 8000),
+          const cross = await attempt(
+            ['tdr-graph'],
+            () => ble.request(tdrCrosstalkCommand(), PACKET.TDR_CROSS, 8000),
+            true,
           );
           if (cross) {
-            const crosstalk = parseTdrCrosstalkPacket(cross.payload, tdr.nvp);
+            const crosstalk = parseTdrCrosstalkPacket(cross.payload, tdr.nvp, espVersion);
             context.setTdrGraph({
               impedance: tdr.pairs.map((pair) => pair.samples),
               crosstalk: crosstalk.traces,
@@ -277,16 +326,23 @@ export async function runMeasurements(context: MeasurementContext): Promise<void
       if (!hasIpv4)
         fail(['extip'], new Error('No IPv4 address available to start External IP detection'));
       else {
+        const portalCheck = firmwareSupports(ble.info?.espVersion, 'captivePortal');
         const response = await attempt(['extip'], () =>
-          ble.request(externalIpCommand(), PACKET.HTTP_RESPONSE, 15000),
+          ble.request(externalIpCommand(portalCheck), PACKET.HTTP_RESPONSE, 15000),
         );
         if (response) {
-          context.setExtip(parseExternalIpPacket(response.payload));
+          const result = parseExternalIpPacket(response.payload, portalCheck);
+          if (ble.info && !portalCheck)
+            result.fields['Captive portal check'] = firmwareRequirement('captivePortal');
+          context.setExtip(result);
           expand('extip');
         }
       }
     }
-    if (selected.has('ber')) {
+    if (selected.has('ber') && ble.info && !firmwareSupports(ble.info.espVersion, 'ber')) {
+      fail(['ber'], new Error(firmwareRequirement('ber')));
+      expand('ber');
+    } else if (selected.has('ber')) {
       activate('ber');
       context.setBer(null);
       await linkUp(() => configure(berEthernetCommand(berSettings.speed, customMac), 5000));

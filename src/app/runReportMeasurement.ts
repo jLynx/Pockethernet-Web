@@ -17,6 +17,7 @@ export async function runReportMeasurement(
     ipv4Settings: context.ipv4Settings,
     ipv6Mode: context.ipv6Mode,
     discoveryTimeout: context.discoveryTimeout,
+    discoveryMode: context.discoveryMode,
   });
   let failures: MeasurementFailures = {};
   await runMeasurementsWithNotifications(

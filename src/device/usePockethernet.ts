@@ -8,7 +8,7 @@ import {
   deviceInfoCommand,
   encodePacket,
   parseDeviceInfo,
-  parseBatteryPercent,
+  parseBatteryStatus,
   type DeviceInfo,
   type Packet,
 } from '@/pockethernetProtocol';
@@ -20,6 +20,7 @@ export interface PockethernetState {
   device: string | null;
   info: DeviceInfo | null;
   batteryPercent: number | null;
+  batteryCharging?: boolean;
   error: string;
 }
 
@@ -156,13 +157,19 @@ export function usePockethernet({ pollBattery = true } = {}): PockethernetClient
       write: null,
       chunks: [],
     };
-    update({ status: 'disconnected', device: null, info: null, batteryPercent: null });
+    update({
+      status: 'disconnected',
+      device: null,
+      info: null,
+      batteryPercent: null,
+      batteryCharging: false,
+    });
   }, [onNotification, update]);
 
   const connect = useCallback(async () => {
     if (!Reflect.has(navigator, 'bluetooth'))
       throw new Error('Web Bluetooth needs desktop Chrome or Edge and localhost/HTTPS.');
-    update({ status: 'connecting', error: '', batteryPercent: null });
+    update({ status: 'connecting', error: '', batteryPercent: null, batteryCharging: false });
     try {
       const device = await navigator.bluetooth.requestDevice({
         filters: [{ services: [BLE.service] }],
@@ -188,23 +195,29 @@ export function usePockethernet({ pollBattery = true } = {}): PockethernetClient
 
   useEffect(() => {
     if (state.status !== 'connected' || !state.info || !pollBattery) return;
-    let cancelled = false;
+    const scope = new AbortController();
     let hasBatteryReading = false;
     let timer: ReturnType<typeof setTimeout>;
     const device = refs.current.device;
     const refresh = async (): Promise<void> => {
-      if (cancelled || refs.current.device !== device) return;
+      if (scope.signal.aborted || refs.current.device !== device) return;
       // Leave the transport available for measurements and packet collection.
       if (inbox.current.busy) {
         timer = setTimeout(() => void refresh(), 5000);
         return;
       }
       let percent: number | null = null;
+      let charging = false;
       let nextPollDelay = 30_000;
       try {
-        const response = await request(batteryStatusCommand(), PACKET.BATTERY_STATUS, 3500);
-        percent = parseBatteryPercent(response.payload);
-        hasBatteryReading ||= percent !== null;
+        const response = await request(batteryStatusCommand(), PACKET.BATTERY_STATUS, 3500, {
+          signal: scope.signal,
+          rejectNack: false,
+        });
+        const battery = parseBatteryStatus(response.payload);
+        percent = battery?.percent ?? null;
+        charging = battery?.charging ?? false;
+        hasBatteryReading ||= battery !== null;
         // F110 returns zeros until the firmware's first internal STM32 poll.
         // Retry that startup cache promptly; keep failures on the normal interval.
         if (!hasBatteryReading && response.payload.every((byte) => byte === 0))
@@ -212,13 +225,13 @@ export function usePockethernet({ pollBattery = true } = {}): PockethernetClient
       } catch {
         // Older firmware or a missed status response must not break the connection.
       }
-      if (cancelled || refs.current.device !== device) return;
-      update({ batteryPercent: percent });
+      if (scope.signal.aborted || refs.current.device !== device) return;
+      update({ batteryPercent: percent, batteryCharging: charging });
       timer = setTimeout(() => void refresh(), nextPollDelay);
     };
     void refresh();
     return () => {
-      cancelled = true;
+      scope.abort();
       clearTimeout(timer);
     };
   }, [state.status, state.info, pollBattery, request, update]);
