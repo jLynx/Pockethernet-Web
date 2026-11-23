@@ -75,7 +75,7 @@ function drawPageHeader(
   if (showFooterLogo) {
     doc.setFillColor('#ffffff');
     doc.rect(85, 287, 40, 9, 'F');
-    drawBrand(doc, '', true);
+    drawBrand(doc, logoDataUrl, true);
   }
   return 31;
 }
