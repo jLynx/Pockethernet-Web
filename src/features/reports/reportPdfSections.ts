@@ -1,7 +1,12 @@
 import type { jsPDF } from 'jspdf';
 import type { SavedReport, TestId } from '@/app/types';
 import { tdrSummary } from '@/app/format';
-import { discoveryHostFields, discoveryHostName, discoveryNotes } from '@/app/discoveryDisplay';
+import {
+  discoveryHostFields,
+  discoveryHostName,
+  discoveryNotes,
+  igmpQuerierStatus,
+} from '@/app/discoveryDisplay';
 import { formatScalar } from '@/app/numberFormat';
 import { linkEeeText, linkSnrText } from '@/pockethernetProtocol';
 import { drawTdrChart } from './reportPdfCharts';
@@ -246,6 +251,8 @@ export function reportPdfSections(
     ];
     if (networkDiscovery.listenMs !== undefined)
       rows.push(['Listen time', `${(networkDiscovery.listenMs / 1000).toFixed(1)} s`]);
+    const querier = igmpQuerierStatus(networkDiscovery);
+    if (querier) rows.push(['IGMP querier status', querier]);
     for (const host of networkDiscovery.hosts) {
       const address = host.ip === '0.0.0.0' ? (host.mac ?? 'Unknown address') : host.ip;
       const name = discoveryHostName(host);

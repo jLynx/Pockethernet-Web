@@ -1,7 +1,7 @@
 import { md5 } from '@noble/hashes/legacy.js';
 import { bytesToHex } from '@noble/hashes/utils.js';
 import { ESPLoader, Transport } from 'esptool-js';
-import { PACKET } from '../src/protocol/constants';
+import { PACKET } from '@/protocol/constants';
 import { describeError, STM_HEADER_SIZE } from './firmware';
 import type { FirmwareImages } from './firmware';
 import { SERIAL_BUFFER_SIZE } from './serial';

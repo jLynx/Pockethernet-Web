@@ -11,7 +11,6 @@ android-reference/
 
 # Local firmware binaries, recovered keys, and decoding notes
 /firmware-local/
-/web-updater/public/firmware/
 
 # Local research and documentation
 /docs/local/

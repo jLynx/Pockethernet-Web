@@ -35,7 +35,8 @@ export function useFirmwareUpdater(options: {
   );
   const state = useSyncExternalStore(controller.subscribe, controller.getState);
   useEffect(() => {
-    if (options.client.status === 'disconnected') controller.disconnected();
+    if (options.client.status === 'disconnected' || options.client.status === 'reconnecting')
+      controller.disconnected();
   }, [controller, options.client.status]);
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent): void => {

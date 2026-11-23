@@ -5,10 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:updater": "vite --config web-updater/vite.config.ts",
     "build": "vite build",
-    "build:updater": "vite build --config web-updater/vite.config.ts",
-    "preview:updater": "vite preview --config web-updater/vite.config.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "npm run lint -- --fix",

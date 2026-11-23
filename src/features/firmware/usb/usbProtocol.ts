@@ -1,5 +1,5 @@
-import { crc16, decodeCobs, encodePacket } from '../src/protocol/encoding';
-import type { Packet } from '../src/protocol/types';
+import { crc16, decodeCobs, encodePacket } from '@/protocol/encoding';
+import type { Packet } from '@/protocol/types';
 import { SERIAL_BUFFER_SIZE } from './serial';
 import type { UpdaterPort } from './serial';
 

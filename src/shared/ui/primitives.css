@@ -128,7 +128,8 @@
   border-radius: 50%;
   background: #9aa6b2;
 }
-.status-indicator.connecting {
+.status-indicator.connecting,
+.status-indicator.reconnecting {
   background: #f2a516;
   box-shadow: 0 0 0 4px #f2a51622;
 }

@@ -1,6 +1,6 @@
-import { loadImages } from '../../../web-updater/firmware';
-import { requestPort, selectTransport } from '../../../web-updater/serial';
-import type { UpdateMode } from '../../../web-updater/updateDevice';
+import { loadImages } from './usb/firmware';
+import { requestPort, selectTransport } from './usb/serial';
+import type { UpdateMode } from './usb/updateDevice';
 import type { loadOfficialUsbManifest } from './officialFirmware';
 
 function usbTransport(): ReturnType<typeof selectTransport> {
@@ -40,7 +40,7 @@ export async function runUsbFirmwareUpdate(options: {
       'The USB release changed. Reconnect and check for updates again.',
     );
   const images = await loadImages(manifest, () => {});
-  const { updateDevice } = await import('../../../web-updater/updateDevice');
+  const { updateDevice } = await import('./usb/updateDevice');
   await updateDevice(port, images, mode, { onStage, onProgress, onWriteStarting, log: () => {} });
   return 'complete';
 }

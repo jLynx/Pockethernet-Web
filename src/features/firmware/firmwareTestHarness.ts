@@ -8,7 +8,7 @@ import { PACKET, parseDeviceInfo, type Packet } from '@/pockethernetProtocol';
 import { createFirmwareUpdater } from './firmwareUpdateController';
 import { readPendingUpdate } from './updateRecovery';
 import type { uploadOtaFile } from './uploadOtaFile';
-import type { FirmwareManifest } from '../../../web-updater/firmware';
+import type { FirmwareManifest } from './usb/firmware';
 
 export const url = 'https://ota.pockethernet.com/pen_e_crypt_17.bin';
 export const latest = `17#${url}`;

@@ -42,3 +42,12 @@ export function discoveryNotes(result: NetworkDiscoveryResult): string[] {
     notes.push(`Could not read ${result.malformedPackets} discovery packet(s).`);
   return notes;
 }
+
+const IGMP_OBSERVATION_TYPE = 7;
+const IGMP_LISTEN_THRESHOLD_MS = 130_000;
+
+export function igmpQuerierStatus(result: NetworkDiscoveryResult): string | undefined {
+  if (result.observations.some(({ type }) => type === IGMP_OBSERVATION_TYPE)) return 'Detected';
+  if (result.state === 'listening' || result.state === 'scanning') return undefined;
+  return (result.listenMs ?? 0) >= IGMP_LISTEN_THRESHOLD_MS ? 'None observed' : 'Inconclusive';
+}

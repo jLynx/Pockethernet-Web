@@ -3,7 +3,7 @@ import {
   validateOfficialFirmwareUrl,
   type DeviceInfo,
 } from '@/pockethernetProtocol';
-import { loadManifest, type FirmwareManifest } from '../../../web-updater/firmware';
+import { loadManifest, type FirmwareManifest } from './usb/firmware';
 import type { EthernetUpdateTarget, FirmwareCheck, FirmwareUpdateTarget } from './updateTarget';
 
 export async function loadOfficialUsbManifest(): Promise<FirmwareManifest> {

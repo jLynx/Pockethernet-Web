@@ -38,7 +38,10 @@ export default function App(): ReactElement {
   const [firmwareLocked, setFirmwareLocked] = useState(
     () => !!readPendingUpdate(window.localStorage),
   );
-  const ble = usePockethernet({ pollBattery: !measurement.running && !firmwareLocked });
+  const ble = usePockethernet({
+    pollBattery: !measurement.running && !firmwareLocked,
+    autoReconnect: !firmwareLocked,
+  });
   const { runnableTests, unavailableTests } = testSelectionForDevice(
     app.selected,
     ble.status === 'connected',
@@ -107,7 +110,7 @@ export default function App(): ReactElement {
   const connect = async (): Promise<void> => {
     if (updateWorking(firmwareUpdater.state)) return;
     try {
-      if (ble.status === 'connected') ble.disconnect();
+      if (ble.status === 'connected' || ble.status === 'reconnecting') ble.disconnect();
       else await ble.connect();
     } catch (error) {
       const message = errorMessage(error);
@@ -194,7 +197,7 @@ export default function App(): ReactElement {
       : app.toolSettings;
   const feedback = ble.idleShutdown
     ? 'Pockethernet may have switched off after being idle. Turn it on and reconnect.'
-    : notice || ble.error;
+    : (ble.status === 'disconnected' && ble.error) || notice || ble.error;
   return (
     <NumberFormatProvider separator={displaySettings.decimalSeparator ?? '.'}>
       <div className="original-app">

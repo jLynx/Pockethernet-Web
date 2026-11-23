@@ -1,5 +1,10 @@
 import type { ReactElement } from 'react';
-import { discoveryHostFields, discoveryHostName, discoveryNotes } from '@/app/discoveryDisplay';
+import {
+  discoveryHostFields,
+  discoveryHostName,
+  discoveryNotes,
+  igmpQuerierStatus,
+} from '@/app/discoveryDisplay';
 import type { NetworkDiscoveryResult } from '@/app/types';
 import type { SegmentObservation } from '@/protocol/networkDiscovery';
 import { DataRow, EmptyState, SectionTitle } from '@/shared/ui/UiPrimitives';
@@ -11,6 +16,7 @@ export function NetworkDiscoveryResults({
 }): ReactElement | null {
   if (!result) return null;
   const running = result.state === 'listening' || result.state === 'scanning';
+  const querier = igmpQuerierStatus(result);
   const hosts = [...result.hosts].sort((a, b) =>
     a.ip.localeCompare(b.ip, undefined, { numeric: true }),
   );
@@ -41,7 +47,7 @@ export function NetworkDiscoveryResults({
           {renderFields(discoveryHostFields(host))}
         </details>
       ))}
-      {byProtocol.size > 0 && <SectionTitle>Segment observations</SectionTitle>}
+      {(byProtocol.size > 0 || querier) && <SectionTitle>Segment observations</SectionTitle>}
       {result.listenMs !== undefined && (
         <DataRow
           className="cdplldp-row"
@@ -49,6 +55,7 @@ export function NetworkDiscoveryResults({
           value={`${(result.listenMs / 1000).toFixed(1)} s`}
         />
       )}
+      {querier && <DataRow className="cdplldp-row" label="IGMP querier" value={querier} />}
       {[...byProtocol].map(([protocol, records]) => (
         <details key={protocol}>
           <summary>

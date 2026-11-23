@@ -54,8 +54,12 @@ export function ConnectionButton({
   disabled?: boolean;
   onClick: () => void;
 }): ReactElement {
-  const label =
-    status === 'connecting' ? 'Connecting...' : status === 'connected' ? 'Connected' : 'Connect';
+  const label = {
+    disconnected: 'Connect',
+    connecting: 'Connecting...',
+    reconnecting: 'Reconnecting...',
+    connected: 'Connected',
+  }[status];
   const charging = status === 'connected' && batteryCharging;
   const hasBattery = status === 'connected' && (batteryPercent !== null || charging);
   const batteryLabel = batteryPercent === null ? 'Battery' : `Battery ${batteryPercent}%`;
@@ -63,10 +67,15 @@ export function ConnectionButton({
     <Button
       unstyled
       className={`connection-button ${status}${hasBattery ? ' has-battery' : ''}`}
-      disabled={disabled}
+      disabled={disabled || status === 'connecting'}
       aria-label={
-        hasBattery ? `Connected. ${batteryLabel}${charging ? ' charging' : ''}. Disconnect` : label
+        status === 'reconnecting'
+          ? 'Reconnecting. Cancel reconnect'
+          : hasBattery
+            ? `Connected. ${batteryLabel}${charging ? ' charging' : ''}. Disconnect`
+            : label
       }
+      title={status === 'reconnecting' ? 'Cancel reconnect' : undefined}
       onClick={onClick}
     >
       <span className="connection-symbol">
@@ -102,7 +111,9 @@ export function ActionDock({
   const statusLabel =
     status === 'connected'
       ? `${selectedCount} test${selectedCount === 1 ? '' : 's'} selected`
-      : 'Connect a device to measure';
+      : status === 'reconnecting'
+        ? 'Reconnecting to Pockethernet'
+        : 'Connect a device to measure';
   return (
     <div className="action-dock">
       <div className="action-status">

@@ -142,7 +142,7 @@ export function StatusIndicator({
   status,
   className = '',
 }: {
-  status: 'disconnected' | 'connecting' | 'connected';
+  status: 'disconnected' | 'connecting' | 'reconnecting' | 'connected';
   className?: string;
 }): ReactElement {
   return (

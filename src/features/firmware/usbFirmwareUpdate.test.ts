@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { parseDeviceInfo } from '@/pockethernetProtocol';
-import { loadImages, loadManifest } from '../../../web-updater/firmware';
+import { loadImages, loadManifest } from './usb/firmware';
 import { createFirmwareUpdater, updateWorking } from './firmwareUpdateController';
 import { harness, infoPayload, latest, usbManifest } from './firmwareTestHarness';
 import { checkOfficialFirmware } from './officialFirmware';

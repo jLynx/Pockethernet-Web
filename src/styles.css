@@ -241,7 +241,8 @@ button:focus-visible {
   border-radius: 50%;
   background: #9aa6b2;
 }
-.connection-button.connecting .connection-dot {
+.connection-button.connecting .connection-dot,
+.connection-button.reconnecting .connection-dot {
   background: #f2a516;
   box-shadow: 0 0 0 4px #f2a51622;
 }
