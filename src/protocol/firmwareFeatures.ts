@@ -6,6 +6,8 @@ export const MIN_ESP_FIRMWARE = {
   tdrOversizeNack: 25,
   dhcpClasslessRoutes: 32,
   advancedDiscovery: 32,
+  tonerMelody: 32,
+  idleAutoOff: 32,
 } as const;
 
 export function firmwareSupports(

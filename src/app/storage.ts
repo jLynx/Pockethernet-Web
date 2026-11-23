@@ -8,6 +8,7 @@ import type {
   ToolSettings,
   WifiSettings,
 } from './types';
+import { EXAMPLE_RTTTL } from '@/protocol/rtttl';
 
 export const DEFAULT_TOOL_SETTINGS: ToolSettings = {
   tia: '568B',
@@ -30,6 +31,7 @@ export const DEFAULT_TONER_SETTINGS: TonerSettings = {
   pair: 'all',
   shield: 'off',
   tone: '1',
+  melody: EXAMPLE_RTTTL,
   volume: 'high',
   power: 'off',
 };
@@ -108,9 +110,10 @@ export function loadTonerSettings(): TonerSettings {
         : DEFAULT_TONER_SETTINGS.pair,
     shield: saved.shield === 'on' ? 'on' : DEFAULT_TONER_SETTINGS.shield,
     tone:
-      saved.tone === '2' || saved.tone === '3' || saved.tone === '4'
+      saved.tone === '2' || saved.tone === '3' || saved.tone === '4' || saved.tone === 'melody'
         ? saved.tone
         : DEFAULT_TONER_SETTINGS.tone,
+    melody: typeof saved.melody === 'string' ? saved.melody : DEFAULT_TONER_SETTINGS.melody,
     volume: saved.volume === 'low' ? 'low' : DEFAULT_TONER_SETTINGS.volume,
     power: saved.power === 'on' ? 'on' : DEFAULT_TONER_SETTINGS.power,
   };

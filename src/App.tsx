@@ -192,6 +192,9 @@ export default function App(): ReactElement {
     app.workflowMode === 'batch'
       ? (measurement.draft?.settings ?? app.toolSettings)
       : app.toolSettings;
+  const feedback = ble.idleShutdown
+    ? 'Pockethernet may have switched off after being idle. Turn it on and reconnect.'
+    : notice || ble.error;
   return (
     <NumberFormatProvider separator={displaySettings.decimalSeparator ?? '.'}>
       <div className="original-app">
@@ -263,7 +266,7 @@ export default function App(): ReactElement {
           />
         )}
         <AppFooter />
-        {(notice || ble.error) && <Toast message={notice || ble.error} onDismiss={dismissNotice} />}
+        {feedback && <Toast message={feedback} onDismiss={dismissNotice} />}
       </div>
     </NumberFormatProvider>
   );

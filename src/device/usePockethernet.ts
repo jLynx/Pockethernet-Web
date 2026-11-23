@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPacketInbox, requestPacket, type PacketWaitOptions } from './packetInbox';
+import { isTesterUse, probablyIdleShutdown } from './testerActivity';
 import {
   BLE,
   PACKET,
@@ -21,6 +22,7 @@ export interface PockethernetState {
   info: DeviceInfo | null;
   batteryPercent: number | null;
   batteryCharging?: boolean;
+  idleShutdown?: boolean;
   error: string;
 }
 
@@ -48,6 +50,13 @@ interface BluetoothRefs {
   notify: BluetoothRemoteGATTCharacteristic | null;
   write: BluetoothRemoteGATTCharacteristic | null;
   chunks: number[];
+  lastUseAt: number | null;
+  firmwareVersion?: number;
+  onDisconnect?: () => void;
+}
+
+function emptyConnection(): BluetoothRefs {
+  return { device: null, notify: null, write: null, chunks: [], lastUseAt: null };
 }
 
 function errorMessage(error: unknown): string {
@@ -62,19 +71,14 @@ export function usePockethernet({ pollBattery = true } = {}): PockethernetClient
     batteryPercent: null,
     error: '',
   });
-  const refs = useRef<BluetoothRefs>({
-    device: null,
-    notify: null,
-    write: null,
-    chunks: [],
-  });
+  const refs = useRef<BluetoothRefs>(emptyConnection());
   const inbox = useRef(createPacketInbox());
   const writes = useRef<Promise<void>>(Promise.resolve());
   const update = useCallback(
     (patch: Partial<PockethernetState>) => setState((current) => ({ ...current, ...patch })),
     [],
   );
-  const clearError = useCallback(() => update({ error: '' }), [update]);
+  const clearError = useCallback(() => update({ error: '', idleShutdown: false }), [update]);
 
   const onPacket = useCallback((packet: Packet) => {
     inbox.current.receive(packet);
@@ -110,11 +114,13 @@ export function usePockethernet({ pollBattery = true } = {}): PockethernetClient
   }, [onPacket, update]);
 
   const send = useCallback((command: Packet): Promise<void> => {
-    const characteristic = refs.current.write;
+    const connection = refs.current;
+    const characteristic = connection.write;
     const write = writes.current.then(async () => {
-      if (!characteristic || characteristic !== refs.current.write)
+      if (!characteristic || connection !== refs.current)
         throw new Error('Pockethernet is not connected');
       const frame = encodePacket(command.type, command.payload);
+      if (isTesterUse(command.type)) connection.lastUseAt = Date.now();
       for (let offset = 0; offset < frame.length; offset += 20) {
         const chunk = frame.slice(offset, offset + 20);
         await characteristic.writeValueWithResponse(new Uint8Array(chunk));
@@ -146,52 +152,83 @@ export function usePockethernet({ pollBattery = true } = {}): PockethernetClient
     [send],
   );
 
-  const disconnect = useCallback(() => {
-    const { device } = refs.current;
+  const disconnectTransport = useCallback(() => {
+    const { device, notify, onDisconnect } = refs.current;
+    refs.current = emptyConnection();
     inbox.current.cancel();
-    refs.current.notify?.removeEventListener('characteristicvaluechanged', onNotification);
+    notify?.removeEventListener('characteristicvaluechanged', onNotification);
+    if (onDisconnect) device?.removeEventListener('gattserverdisconnected', onDisconnect);
     if (device?.gatt?.connected) device.gatt.disconnect();
-    refs.current = {
-      device: null,
-      notify: null,
-      write: null,
-      chunks: [],
-    };
-    update({
-      status: 'disconnected',
-      device: null,
-      info: null,
-      batteryPercent: null,
-      batteryCharging: false,
-    });
-  }, [onNotification, update]);
+  }, [onNotification]);
+
+  const finishDisconnect = useCallback(
+    (unexpected: boolean) => {
+      const { firmwareVersion, lastUseAt } = refs.current;
+      disconnectTransport();
+      update({
+        status: 'disconnected',
+        device: null,
+        info: null,
+        batteryPercent: null,
+        batteryCharging: false,
+        idleShutdown: unexpected && probablyIdleShutdown(firmwareVersion, lastUseAt, Date.now()),
+      });
+    },
+    [disconnectTransport, update],
+  );
+  const disconnect = useCallback(() => finishDisconnect(false), [finishDisconnect]);
 
   const connect = useCallback(async () => {
     if (!Reflect.has(navigator, 'bluetooth'))
       throw new Error('Web Bluetooth needs desktop Chrome or Edge and localhost/HTTPS.');
-    update({ status: 'connecting', error: '', batteryPercent: null, batteryCharging: false });
+    update({
+      status: 'connecting',
+      error: '',
+      idleShutdown: false,
+      batteryPercent: null,
+      batteryCharging: false,
+    });
     try {
       const device = await navigator.bluetooth.requestDevice({
         filters: [{ services: [BLE.service] }],
       });
-      device.addEventListener('gattserverdisconnected', disconnect, { once: true });
       if (!device.gatt) throw new Error('The selected device does not support Bluetooth GATT');
+      const connection = {
+        ...emptyConnection(),
+        device,
+        onDisconnect: () => {
+          if (refs.current === connection) finishDisconnect(true);
+        },
+      };
+      const assertConnected = () => {
+        if (refs.current !== connection)
+          throw new Error('Pockethernet disconnected while connecting.');
+      };
+      refs.current = connection;
+      device.addEventListener('gattserverdisconnected', connection.onDisconnect, { once: true });
       const server = await device.gatt.connect();
       const service = await server.getPrimaryService(BLE.service);
       const notify = await service.getCharacteristic(BLE.notify);
       const write = await service.getCharacteristic(BLE.write);
-      refs.current = { ...refs.current, device, notify, write };
+      assertConnected();
+      connection.notify = notify;
+      connection.write = write;
       notify.addEventListener('characteristicvaluechanged', onNotification);
       await notify.startNotifications();
+      assertConnected();
+      connection.lastUseAt = Date.now();
       update({ status: 'connected', device: device.name ?? 'Pockethernet 2' });
       const response = await request(deviceInfoCommand(), PACKET.DEVICE_INFO, 3500);
-      update({ info: parseDeviceInfo(response.payload) });
+      assertConnected();
+      const info = parseDeviceInfo(response.payload);
+      connection.firmwareVersion = info.espVersion;
+      update({ info });
     } catch (error) {
       disconnect();
       update({ status: 'disconnected', error: errorMessage(error) });
       throw error;
     }
-  }, [disconnect, onNotification, request, update]);
+  }, [disconnect, finishDisconnect, onNotification, request, update]);
 
   useEffect(() => {
     if (state.status !== 'connected' || !state.info || !pollBattery) return;
@@ -236,13 +273,7 @@ export function usePockethernet({ pollBattery = true } = {}): PockethernetClient
     };
   }, [state.status, state.info, pollBattery, request, update]);
 
-  useEffect(
-    () => () => {
-      inbox.current.cancel();
-      if (refs.current.device?.gatt?.connected) refs.current.device.gatt.disconnect();
-    },
-    [],
-  );
+  useEffect(() => disconnectTransport, [disconnectTransport]);
   return { ...state, clearError, connect, disconnect, request, send, waitFor, collectFor };
 }
 

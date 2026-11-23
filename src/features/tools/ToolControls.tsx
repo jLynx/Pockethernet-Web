@@ -51,6 +51,7 @@ interface ToolControlProps<Name extends string, Value extends string> {
   label: string;
   name: Name;
   value: Value;
+  disabled?: boolean;
   options: readonly (readonly [Value, string])[];
   onChange: (name: Name, value: Value) => void | Promise<void>;
 }
@@ -59,11 +60,12 @@ export function ToolControl<Name extends string, Value extends string>({
   label,
   name,
   value,
+  disabled,
   options,
   onChange,
 }: ToolControlProps<Name, Value>): ReactElement {
   return (
-    <fieldset className="tool-control">
+    <fieldset className="tool-control" disabled={disabled}>
       <legend>{label}</legend>
       <SegmentedControl
         className="tool-segmented"

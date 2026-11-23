@@ -2,9 +2,11 @@ import type { ReactElement } from 'react';
 import type { BlinkerSettings, StateSetter, TonerSettings, WifiSettings } from '@/app/types';
 import { ToolControl, ToolField, ToolPanel } from './ToolControls';
 import { PageLayout } from '@/shared/layout/PageLayout';
+import { firmwareRequirement, firmwareSupports } from '@/protocol/firmwareFeatures';
 
 interface ToolsPageProps {
   firmwareLocked: boolean;
+  firmwareVersion?: number;
   blinkerSettings: BlinkerSettings;
   onBlinkerSettingsChange: StateSetter<BlinkerSettings>;
   onBlinkerChange: (settings: BlinkerSettings, tonerActive: boolean) => Promise<boolean>;
@@ -30,6 +32,8 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
     onWifiSettingsChange,
     onWifiChange,
   } = props;
+  const customMelody = tonerSettings.tone === 'melody';
+  const canPlayMelody = firmwareSupports(props.firmwareVersion, 'tonerMelody');
   const updateToner = async <Key extends keyof TonerSettings>(
     name: Key,
     value: TonerSettings[Key],
@@ -83,7 +87,7 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
             active={tonerSettings.power === 'on'}
             summary={
               tonerSettings.power === 'on'
-                ? `Pair ${tonerSettings.pair === 'all' ? 'all' : tonerSettings.pair} · Tone ${tonerSettings.tone}`
+                ? `Pair ${tonerSettings.pair} · ${customMelody ? 'Custom melody' : `Tone ${tonerSettings.tone}`}`
                 : 'Tone generator is off'
             }
           >
@@ -119,9 +123,30 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
                 ['2', '2'],
                 ['3', '3'],
                 ['4', '4'],
+                ['melody', 'Melody'],
               ]}
               onChange={updateToner}
             />
+            {customMelody && (
+              <>
+                <label className="tool-field tool-melody-field">
+                  Melody (RTTTL)
+                  <textarea
+                    rows={3}
+                    spellCheck={false}
+                    disabled={tonerSettings.power === 'on'}
+                    value={tonerSettings.melody}
+                    onChange={(event) => {
+                      const melody = event.target.value;
+                      onTonerSettingsChange((current) => ({ ...current, melody }));
+                    }}
+                  />
+                </label>
+                {!canPlayMelody && (
+                  <p className="tool-melody-requirement">{firmwareRequirement('tonerMelody')}</p>
+                )}
+              </>
+            )}
             <ToolControl
               label="Volume"
               name="volume"
@@ -136,6 +161,7 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
               label="On/Off"
               name="power"
               value={tonerSettings.power}
+              disabled={customMelody && !canPlayMelody && tonerSettings.power === 'off'}
               options={[
                 ['off', 'Off'],
                 ['on', 'On'],

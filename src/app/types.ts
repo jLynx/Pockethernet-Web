@@ -171,7 +171,8 @@ export interface BlinkerSettings {
 export interface TonerSettings {
   pair: TonerPair;
   shield: TonerShield;
-  tone: TonerTone;
+  tone: TonerTone | 'melody';
+  melody: string;
   volume: TonerVolume;
   power: OnOff;
 }

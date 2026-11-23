@@ -37,8 +37,12 @@ listed physical checks.
   vendor and Art-Net discovery methods. The firmware also joins PTP multicast
   groups in segment mode and supports classless DHCP routes. Pocketweb looks up
   MAC assignments locally and retains unknown discovery records in saved JSON.
-  The official Android app also requires V32 for custom toner melodies and uses
-  V32 to recognize a disconnect that is likely an idle shutdown.
+  Custom toner melodies require V32 in both apps. In Pocketweb, choose **Tools →
+  Tone generator → Melody**, enter RTTTL text and turn the toner on. Pocketweb
+  also matches the official app's 59-minute threshold for a likely V32 idle
+  shutdown after an unexpected disconnect. Battery and device-info reads do not
+  reset that timer. Verify melody playback and stopping, and check the idle
+  message on a physical tester.
 - **App-only** features include presets, jobs, exports and appearance. Presets
   are scoped to Single or Batch. A numbered job assigns its next available
   number as part of saving the report. The existing PDF layout includes new

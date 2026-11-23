@@ -201,10 +201,9 @@
   font-size: 0.8rem;
   font-weight: 800;
 }
-.tool-field input {
+.tool-field input,
+.tool-field textarea {
   min-width: 0;
-  height: 36px;
-  padding: 0 9px;
   border: 1px solid var(--border-control, #cfd9e4);
   border-radius: 6px;
   color: var(--text, #192a40);
@@ -212,9 +211,27 @@
   font: inherit;
   font-weight: 500;
 }
-.tool-field input:disabled {
+.tool-field input {
+  height: 36px;
+  padding: 0 9px;
+}
+.tool-field input:disabled,
+.tool-field textarea:disabled {
   color: #9aa6b2;
   background: var(--surface-muted, #f3f6f8);
+}
+.tool-melody-field {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+.tool-melody-field textarea {
+  max-width: 100%;
+  padding: 8px 9px;
+}
+.tool-melody-requirement {
+  margin: 0;
+  color: var(--text-muted, #718096);
+  font-size: 0.8rem;
 }
 .tool-info-row,
 .tool-action {

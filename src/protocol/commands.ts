@@ -1,4 +1,5 @@
 import { PACKET } from './constants';
+import { parseRtttl } from './rtttl';
 import type {
   BerFrameSize,
   BerPayloadMode,
@@ -182,14 +183,17 @@ export function blinkerCommand(
   return { type: PACKET.ETH_CONFIG, payload };
 }
 
+function tonerOutputMask(pair: TonerPair, shield: TonerShield): number {
+  const pairMask = { '2': 1, '3': 2, '1': 4, '4': 8, all: 15 }[pair];
+  return pairMask | (shield === 'on' ? 16 : 0);
+}
+
 export function tonerCommand(
   pair: TonerPair = 'all',
   shield: TonerShield = 'off',
   tone: TonerTone = '1',
   volume: TonerVolume = 'high',
 ): Packet {
-  const pairMask = { '2': 1, '3': 2, '1': 4, '4': 8, all: 15 }[pair];
-  const shieldFlag = shield === 'on' ? 16 : 0;
   const volumeValue = { low: 1, high: 2 }[volume];
   const toneValues = {
     '1': [600, 1200, 67],
@@ -199,14 +203,36 @@ export function tonerCommand(
   }[tone];
   const payload = new Uint8Array(20);
   const view = new DataView(payload.buffer);
-  view.setInt32(0, pairMask + shieldFlag, true);
+  view.setInt32(0, tonerOutputMask(pair, shield), true);
   view.setInt32(4, volumeValue, true);
   toneValues.forEach((value, index) => view.setInt32(8 + index * 4, value, true));
   return { type: PACKET.ANA_TONER, payload };
 }
 
-export function tonerStopCommand(): Packet {
-  return { type: PACKET.ANA_TONER, payload: new Uint8Array(4) };
+export function tonerStopCommand(mode: 'tone' | 'melody' = 'tone'): Packet {
+  return { type: PACKET.ANA_TONER, payload: new Uint8Array(mode === 'melody' ? 20 : 4) };
+}
+
+export function tonerMelodyCommand(
+  text: string,
+  pair: TonerPair,
+  shield: TonerShield,
+  volume: TonerVolume,
+): Packet {
+  const { bpm, notes } = parseRtttl(text);
+  const tickUs = Math.round(3_750_000 / bpm);
+  const restTicks = Math.max(1, Math.min(255, Math.round(1_500_000 / tickUs)));
+  const sequence = [...notes, { midi: 0, length: restTicks }];
+  // F221 uses five little-endian header words followed by MIDI/duration pairs.
+  const payload = new Uint8Array(20 + sequence.length * 2);
+  const view = new DataView(payload.buffer);
+  view.setUint32(0, tonerOutputMask(pair, shield), true);
+  view.setUint32(4, volume === 'high' ? 1 : 0, true);
+  view.setUint32(8, 15, true);
+  view.setUint32(12, tickUs, true);
+  view.setUint32(16, sequence.length, true);
+  sequence.forEach(({ midi, length }, index) => payload.set([midi, length], 20 + 2 * index));
+  return { type: PACKET.TONER_MELODY, payload };
 }
 
 export function wifiBridgeEthernetCommand(): Packet {

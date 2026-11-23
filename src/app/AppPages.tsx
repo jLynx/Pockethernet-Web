@@ -105,7 +105,8 @@ export function AppPages({
     </TestPage>
   ) : tab === 'tools' ? (
     <ToolsPage
-      firmwareLocked={deviceLocked || measurement.running}
+      firmwareLocked={deviceLocked || measurement.running || deviceTools.busy}
+      firmwareVersion={ble.info?.espVersion}
       blinkerSettings={app.blinkerSettings}
       onBlinkerSettingsChange={app.setBlinkerSettings}
       onBlinkerChange={deviceTools.applyBlinker}

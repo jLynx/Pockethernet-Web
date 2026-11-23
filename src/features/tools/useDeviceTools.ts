@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import type { PockethernetClient } from '@/device/usePockethernet';
 import type { BlinkerSettings, TonerSettings, WifiSettings } from '@/app/types';
 import { errorMessage } from '@/app/format';
+import { firmwareRequirement, firmwareSupports } from '@/protocol/firmwareFeatures';
 import {
   PACKET,
   blinkerCommand,
   ethernetStopCommand,
   readNegotiatedLinkSpeed,
   tonerCommand,
+  tonerMelodyCommand,
   tonerStopCommand,
   wifiBridgeCommand,
   wifiBridgeEthernetCommand,
@@ -121,13 +123,17 @@ export function useDeviceTools(options: {
         return Promise.resolve(false);
       }
       return run('Toner', async () => {
-        await client.request(
-          settings.power === 'on'
-            ? tonerCommand(settings.pair, settings.shield, settings.tone, settings.volume)
-            : tonerStopCommand(),
-          PACKET.ACK,
-          1000,
-        );
+        const { tone } = settings;
+        const melody = tone === 'melody';
+        if (settings.power === 'on' && melody && !firmwareSupports(info?.espVersion, 'tonerMelody'))
+          throw new Error(firmwareRequirement('tonerMelody'));
+        const command =
+          settings.power === 'off'
+            ? tonerStopCommand(melody ? 'melody' : 'tone')
+            : melody
+              ? tonerMelodyCommand(settings.melody, settings.pair, settings.shield, settings.volume)
+              : tonerCommand(settings.pair, settings.shield, tone, settings.volume);
+        await client.request(command, PACKET.ACK, melody ? 2000 : 1000);
       });
     },
     applyWifi(settings) {
