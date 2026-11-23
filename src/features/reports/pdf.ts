@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import type { SavedReport } from '@/app/types';
 import { drawReportPage } from './reportPdfLayout';
+import { uniqueReportFilename, type ReportFile } from './reportFiles';
 
 function filename(report: SavedReport): string {
   const label = report.details.tag || report.details.address || 'measurement';
@@ -33,6 +34,31 @@ export function createReportsPdf(
 }
 
 export function downloadReportsPdf(
+  reports: SavedReport[],
+  logoDataUrl: string,
+  showFooterLogo = true,
+): void {
+  const used = new Set<string>();
+  for (const report of reports) {
+    createReportsPdf([report], logoDataUrl, showFooterLogo).save(
+      uniqueReportFilename(filename(report), used),
+    );
+  }
+}
+
+export function reportPdfFiles(
+  reports: SavedReport[],
+  logoDataUrl: string,
+  showFooterLogo = true,
+): ReportFile[] {
+  const used = new Set<string>();
+  return reports.map((report) => ({
+    name: uniqueReportFilename(filename(report), used),
+    blob: () => createReportsPdf([report], logoDataUrl, showFooterLogo).output('blob'),
+  }));
+}
+
+export function downloadCombinedReportsPdf(
   reports: SavedReport[],
   logoDataUrl: string,
   showFooterLogo = true,

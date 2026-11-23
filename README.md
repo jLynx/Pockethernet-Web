@@ -14,7 +14,7 @@ Pocketweb for Pockethernet is a modern, installable browser application built sp
 - Single test and batch testing workflows with separate configurations, live status, and expandable results
 - Interactive TDR impedance and crosstalk charts
 - Saved measurement history with multiple photos, optional multiline image descriptions, site metadata, and custom branding
-- PDF preview, download, multi-report export, and native sharing
+- PDF preview, individual or combined report downloads, ZIP and desktop folder exports, and native sharing
 - Consecutive PDF page numbers and report/export sorting by Cable ID/Tag or Date/Time
 - Installable PWA support with an offline application shell
 - Persistent cable, network, and reporting preferences
@@ -65,6 +65,17 @@ In **Settings → Appearance & notifications**, enable notifications, accept the
 For watch delivery, run Pocketweb in Chrome on the Android phone paired with the watch and enable Chrome/Pocketweb notification mirroring in the watch companion app. Pixel Watch can receive mirrored Android notifications; Pebble behavior depends on its companion app. Images, text truncation, vibration, and delivery are controlled by the phone/watch software. Desktop Chrome notifications generally do not route to a phone or watch. There is no standard browser API for directly targeting a watch or detecting whether it is worn.
 
 The production PWA uses service-worker notifications; tapping one focuses Pocketweb and opens the measurement page. Keep the app running and the Pockethernet Bluetooth connection active during measurements: notification support does not keep Web Bluetooth alive if the OS suspends the page. No push subscription, cloud relay, or remote upload of measurement results is used.
+
+## Export saved reports
+
+Select reports in **Reports** (or use **Select all**), choose an **Export format**, then use the download or save button:
+
+- **Individual PDFs** downloads a separate PDF for every selected report. Your browser may ask you to allow multiple downloads.
+- **Combined PDF** creates one PDF containing the selected reports in the displayed sort order.
+- **PDFs to a folder** opens a folder picker in desktop Chrome or Edge and writes individual PDFs into the chosen folder. Existing files are preserved using numbered filenames.
+- **ZIP of individual PDFs** downloads one ZIP containing individual PDFs, including in browsers without folder access.
+
+You can select a folder synced by Google Drive or another desktop sync app to have that app upload the exported files.
 
 ## Cloudflare Workers
 

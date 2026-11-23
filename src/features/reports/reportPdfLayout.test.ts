@@ -5,6 +5,7 @@ import { runInNewContext } from 'node:vm';
 import { inflateSync } from 'node:zlib';
 import { build } from 'esbuild';
 import type { jsPDF } from 'jspdf';
+import { jsPDF as PdfDocument } from 'jspdf';
 import type { SavedReport } from '@/app/types';
 import type * as Pdf from './pdf';
 
@@ -413,3 +414,48 @@ assert.match(partialText, /Wiremap, PoE, Traffic/);
 assert.match(partialText, /The device did not respond in time/);
 assert.match(partialText, /No result recorded/);
 assert.match(partialText, /Bluetooth connection lost/);
+
+// Capture actual rendered documents at the browser download boundary.
+const downloads: { name: string; text: string }[] = [];
+const originalSave = Object.getOwnPropertyDescriptor(PdfDocument.API, 'save');
+Object.defineProperty(PdfDocument.API, 'save', {
+  configurable: true,
+  enumerable: true,
+  writable: true,
+  value: function (this: jsPDF, name: string) {
+    downloads.push({
+      name,
+      text: textPages(this)
+        .flat()
+        .map((item) => item.text)
+        .join('\n'),
+    });
+    return this;
+  },
+});
+try {
+  const first = report('First selected report');
+  const second = { ...report('Second selected report'), id: 'second' };
+  const { downloadReportsPdf, downloadCombinedReportsPdf, reportPdfFiles } = bundledModule.exports;
+  assert.ok(downloadReportsPdf && downloadCombinedReportsPdf && reportPdfFiles);
+  downloadReportsPdf([first, second], '', false);
+  assert.equal(downloads.length, 2);
+  assert.notEqual(downloads[0].name, downloads[1].name, 'Retests must have distinct filenames');
+  assert.match(downloads[0].text, /First selected report/);
+  assert.doesNotMatch(downloads[0].text, /Second selected report/);
+  assert.match(downloads[1].text, /Second selected report/);
+  assert.doesNotMatch(downloads[1].text, /First selected report/);
+  downloadCombinedReportsPdf([first, second], '', false);
+  assert.equal(downloads.length, 3);
+  assert.match(downloads[2].text, /First selected report/);
+  assert.match(downloads[2].text, /Second selected report/);
+  const individualFiles = reportPdfFiles([first, second], '', false);
+  assert.deepEqual(
+    Array.from(individualFiles, (file) => file.name),
+    downloads.slice(0, 2).map((file) => file.name),
+  );
+  assert.equal(individualFiles[0].blob().type, 'application/pdf');
+} finally {
+  if (originalSave) Object.defineProperty(PdfDocument.API, 'save', originalSave);
+  else Reflect.deleteProperty(PdfDocument.API, 'save');
+}
