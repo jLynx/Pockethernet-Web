@@ -6,6 +6,11 @@ import { fileURLToPath, URL } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import {
+  USB_FIRMWARE_ORIGIN,
+  USB_FIRMWARE_ROUTE,
+  usbFirmwareUpstream,
+} from './src/server/usbFirmware.ts';
 
 function getBuildRevision(): { hash: string; modified: boolean } {
   const cwd = fileURLToPath(new URL('.', import.meta.url));
@@ -112,6 +117,7 @@ export default defineConfig({
     },
   },
   build: {
+    license: { fileName: 'third-party-licenses.md' },
     rolldownOptions: {
       output: {
         assetFileNames: (asset) =>
@@ -136,6 +142,20 @@ export default defineConfig({
         target: 'https://ota.pockethernet.com',
         changeOrigin: true,
         rewrite: () => '/latest_version',
+      },
+      [USB_FIRMWARE_ROUTE.source.replace(/\$$/, '(\\?.*)?$')]: {
+        target: USB_FIRMWARE_ORIGIN,
+        changeOrigin: true,
+        rewrite: (path) => usbFirmwareUpstream(path.split('?', 1)[0]),
+        configure: (proxy) => {
+          proxy.on('proxyReq', (request) => {
+            request.removeHeader('cookie');
+            request.removeHeader('authorization');
+          });
+          proxy.on('proxyRes', (response) => {
+            response.headers['cache-control'] = 'no-store';
+          });
+        },
       },
     },
   },

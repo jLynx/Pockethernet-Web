@@ -8,7 +8,7 @@ interface ImageDescriptor {
   sha256: string;
 }
 
-interface FirmwareManifest {
+export interface FirmwareManifest {
   source: URL;
   version: number;
   page: string;
@@ -26,7 +26,7 @@ function isImageDescriptor(value: unknown): value is ImageDescriptor {
     value !== null &&
     'file' in value &&
     typeof value.file === 'string' &&
-    /^images\/[a-z\d][\w.-]*\.bin$/i.test(value.file) &&
+    /^images\/[A-Za-z0-9][\w.-]*\.bin$/.test(value.file) &&
     'size' in value &&
     typeof value.size === 'number' &&
     Number.isSafeInteger(value.size) &&
@@ -129,6 +129,15 @@ export async function loadImages(
   const [esp, espAux, stm] = await Promise.all(
     manifest.files.map((image) => downloadImage(image, manifest.source, log)),
   );
+  const header = new DataView(stm.buffer, stm.byteOffset, STM_HEADER_SIZE);
+  if (
+    header.getUint32(0) !== 0x50455549 || // PEUI
+    header.getUint32(8, true) !== stm.length - STM_HEADER_SIZE ||
+    header.getUint32(0x10, true) !== 1 ||
+    header.getUint32(0x14, true) !== manifest.version
+  ) {
+    throw new Error('The USB package does not contain a matching STM firmware image.');
+  }
   return {
     esp: [
       { address: ESP_ADDRESSES[0], data: esp },

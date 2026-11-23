@@ -14,7 +14,7 @@ import {
   validateOfficialFirmwareUrl,
   type DeviceInfo,
 } from '@/pockethernetProtocol';
-import type { FirmwareUpdateTarget } from './updateTarget';
+import type { EthernetUpdateTarget } from './updateTarget';
 
 export type UpdateStage =
   'uploading' | 'preparing' | 'link' | 'dhcp' | 'settling' | 'installing' | 'finishing';
@@ -48,7 +48,7 @@ function delay(ms: number, signal: AbortSignal): Promise<void> {
 export async function runFirmwareUpdate(options: {
   client: PockethernetClient;
   device: DeviceInfo;
-  target: FirmwareUpdateTarget;
+  target: EthernetUpdateTarget;
   signal: AbortSignal;
   onStage: (stage: UpdateStage) => void;
   onCommandStarting: () => void;

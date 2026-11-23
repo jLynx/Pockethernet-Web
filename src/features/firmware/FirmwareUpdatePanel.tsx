@@ -6,6 +6,7 @@ import { updateLocked, updateWorking } from './firmwareUpdateController';
 import type { FirmwareUpdaterActions } from './useFirmwareUpdater';
 import { AdvancedFirmwareForm } from './AdvancedFirmwareForm';
 import { FirmwareUpdateConfirmation } from './FirmwareUpdateConfirmation';
+import { supportsUsbUpdate } from './runUsbFirmwareUpdate';
 
 const STAGES: Partial<Record<FirmwareUpdaterActions['state']['phase'], string>> = {
   uploading: 'Uploading the OTA file to temporary hosting',
@@ -27,6 +28,9 @@ export function FirmwareUpdatePanel({
   const { state, blockedReason } = updater;
   const check = state.check;
   const available = check && !('error' in check) && check.updateAvailable;
+  const usbOffer = available && check.method === 'usb';
+  const usbUpdate = state.phase === 'usb';
+  const usbRecovery = state.pending?.target.method === 'usb';
   const working = updateWorking(state);
   const locked = updateLocked(state);
   const waitingForRestart = state.phase === 'restart' || state.phase === 'unknown';
@@ -51,11 +55,13 @@ export function FirmwareUpdatePanel({
       {available && !locked && !state.advanced && state.phase !== 'confirm' && (
         <section className="firmware-offer" aria-label="Firmware update available">
           <div className="firmware-update-notice">
-            <p role="status">Update available: v{check.latestVersion}</p>
+            <p role="status">
+              Update available: v{check.latestVersion} via {usbOffer ? 'USB' : 'Ethernet'}
+            </p>
             <Button
               variant="primary"
               className="firmware-update-button"
-              disabled={!deviceInfo || !!blockedReason}
+              disabled={(!deviceInfo && !usbOffer) || (!!deviceInfo && !!blockedReason)}
               onClick={(event) => {
                 if (event.shiftKey) updater.openAdvanced();
                 else updater.confirm();
@@ -64,7 +70,12 @@ export function FirmwareUpdatePanel({
               Update
             </Button>
           </div>
-          {blockedReason && <p className="firmware-offer-help">{blockedReason}</p>}
+          {deviceInfo && blockedReason && <p className="firmware-offer-help">{blockedReason}</p>}
+          {check.warning && (
+            <p className="firmware-offer-help" role="status">
+              {check.warning}
+            </p>
+          )}
         </section>
       )}
       {state.advanced && !locked && state.phase !== 'confirm' && (
@@ -73,7 +84,19 @@ export function FirmwareUpdatePanel({
       {state.phase === 'confirm' && (
         <FirmwareUpdateConfirmation updater={updater} deviceInfo={deviceInfo} />
       )}
-      {working && (
+      {usbUpdate && (
+        <div className="firmware-status" role="status">
+          <h3>{state.message || 'Preparing USB update…'}</h3>
+          <progress
+            className="firmware-usb-progress"
+            max={100}
+            value={state.usbProgress}
+            aria-label="USB firmware update progress"
+          />
+          <p>Keep the USB cable connected and this page open until the transfer finishes.</p>
+        </div>
+      )}
+      {working && !usbUpdate && (
         <div className="firmware-status" role="status">
           <h3>{STAGES[state.phase] ?? 'Updating firmware'}</h3>
           <div
@@ -97,23 +120,47 @@ export function FirmwareUpdatePanel({
               : 'Update result unknown'}
           </h3>
           <p>{state.message}</p>
-          {state.phase === 'unknown' && (
-            <p>
-              Keep power and Ethernet connected for at least five minutes after starting the update.
-              Then restart and verify before trying another update.
+          {usbRecovery ? (
+            <p className="firmware-detail">
+              Unplug USB, turn Pockethernet off and on, then reconnect over Bluetooth to verify.
+            </p>
+          ) : (
+            state.phase === 'unknown' && (
+              <p>
+                Keep power and Ethernet connected for at least five minutes after starting the
+                update. Then restart and verify before trying another update.
+              </p>
+            )
+          )}
+          {!usbRecovery && (
+            <p className="firmware-detail">
+              Unplug USB, turn Pockethernet off, wait five seconds, then turn it on. Reconnect USB
+              if needed.
             </p>
           )}
-          <p className="firmware-detail">
-            Unplug USB, turn Pockethernet off, wait five seconds, then turn it on. Reconnect USB if
-            needed.
-          </p>
-          <Button
-            variant="primary"
-            disabled={state.verifying}
-            onClick={() => void updater.verify()}
-          >
-            {state.verifying ? 'Verifying...' : 'I have restarted · verify firmware'}
-          </Button>
+          <div className="firmware-actions">
+            <Button
+              variant="primary"
+              disabled={state.verifying}
+              onClick={() => void updater.verify()}
+            >
+              {state.verifying ? 'Verifying...' : 'I have restarted · verify firmware'}
+            </Button>
+            {usbRecovery && state.phase === 'unknown' && (
+              <Button
+                disabled={state.verifying || !supportsUsbUpdate()}
+                onClick={() => void updater.start()}
+              >
+                Retry over USB in backup mode
+              </Button>
+            )}
+          </div>
+          {usbRecovery && state.phase === 'unknown' && (
+            <p className="firmware-detail firmware-retry-help">
+              To retry, switch Pockethernet off and reconnect the USB cable before selecting it
+              again.
+            </p>
+          )}
         </div>
       )}
       {['failed', 'verified', 'unconfirmed'].includes(state.phase) && state.message && (

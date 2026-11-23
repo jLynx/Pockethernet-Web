@@ -61,6 +61,20 @@
 .firmware-detail {
   color: var(--text-muted, #68768a);
 }
+.firmware-usb-steps {
+  padding-inline-start: 22px;
+  font-size: 0.87rem;
+  line-height: 1.55;
+}
+.firmware-usb-progress {
+  width: 100%;
+  margin-bottom: 12px;
+}
+.firmware-status p.firmware-retry-help,
+.firmware-actions + p {
+  margin-top: 12px;
+  margin-bottom: 0;
+}
 .firmware-status {
   margin: 12px;
   padding: 16px;

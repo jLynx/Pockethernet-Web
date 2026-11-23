@@ -16,7 +16,6 @@ import type {
   BlinkerSpeed,
   CdpLldpResult,
   FieldsResult,
-  FirmwareVersionResult,
   Ipv4Mode,
   Ipv4Result,
   LinkResult,
@@ -58,7 +57,6 @@ export type OnOff = 'on' | 'off';
 export type StateSetter<T> = Dispatch<SetStateAction<T>>;
 export type PanelStatus = 'idle' | 'ok' | 'error';
 export type AppIconName = 'test' | 'configure' | 'report' | 'tools' | 'device' | 'settings';
-export type FirmwareCheck = FirmwareVersionResult | { error: string };
 
 export interface ToolSettings {
   tia: TiaStandard;

@@ -3,6 +3,7 @@ import type { DeviceInfo } from '@/pockethernetProtocol';
 import { Button } from '@/shared/ui/UiPrimitives';
 import type { FirmwareUpdaterActions } from './useFirmwareUpdater';
 import type { FirmwareUpdateTarget } from './updateTarget';
+import { supportsUsbUpdate } from './runUsbFirmwareUpdate';
 
 export function FirmwareUpdateConfirmation({
   updater,
@@ -15,6 +16,43 @@ export function FirmwareUpdateConfirmation({
     updater.state.selection ??
     (updater.state.check && !('error' in updater.state.check) ? updater.state.check : null);
   if (!target) return null;
+  if (target.method === 'usb') {
+    const supported = supportsUsbUpdate();
+    const blockedReason = deviceInfo ? updater.blockedReason : '';
+    return (
+      <section className="firmware-status" aria-label="Confirm firmware update">
+        <h3>Update to v{target.latestVersion} over USB?</h3>
+        <ol className="firmware-usb-steps">
+          <li>Switch off the Pockethernet you checked for updates.</li>
+          <li>Plug it into this computer or phone with a USB data cable.</li>
+          <li>Select Pockethernet 2 in the browser’s device picker.</li>
+        </ol>
+        <p>Keep the USB cable connected and this page open until the transfer finishes.</p>
+        {!supported && (
+          <p>
+            Open Pocketweb in Chrome or Edge over HTTPS or localhost, or use the{' '}
+            <a href="https://pockethernet.com/update/" target="_blank" rel="noreferrer">
+              official USB updater
+            </a>
+            .
+          </p>
+        )}
+        <div className="firmware-actions">
+          <Button
+            variant="primary"
+            disabled={!supported || !!blockedReason}
+            onClick={() => void updater.start()}
+          >
+            Select USB device and update
+          </Button>
+          <Button onClick={updater.cancel}>Cancel</Button>
+        </div>
+        {(blockedReason || updater.state.message) && (
+          <p role="status">{blockedReason || updater.state.message}</p>
+        )}
+      </section>
+    );
+  }
   const custom = 'source' in target && (target.source === 'url' || target.source === 'file');
   const file = 'source' in target && target.source === 'file';
   return (

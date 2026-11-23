@@ -1,19 +1,19 @@
 import type { PockethernetClient } from '@/device/usePockethernet';
-import type { FirmwareCheck } from '@/app/types';
 import {
   PACKET,
   ESP_UPDATE_RESPONSE_TIMEOUT_MS,
   deviceInfoCommand,
   parseDeviceInfo,
-  parseFirmwareVersionResponse,
-  validateOfficialFirmwareUrl,
   espUpdateCommand,
   type DeviceInfo,
 } from '@/pockethernetProtocol';
 import { inspectOtaContainer, OTA_FILE_MAX_BYTES, type OtaFileInfo } from '@/protocol/otaContainer';
-import type { FirmwareUpdateTarget } from './updateTarget';
+import type { FirmwareCheck, FirmwareUpdateTarget, UsbUpdateTarget } from './updateTarget';
 import { otaDownloadOrigin, uploadOtaFile } from './uploadOtaFile';
 import { runFirmwareUpdate, sameDevice, type UpdateStage } from './runFirmwareUpdate';
+import { checkOfficialFirmware, loadOfficialUsbManifest } from './officialFirmware';
+import { runUsbFirmwareUpdate, UsbReleaseChangedError } from './runUsbFirmwareUpdate';
+import { verifyInstalledFirmware } from './verifyFirmwareUpdate';
 import {
   readPendingUpdate,
   UPDATE_RECOVERY_KEY,
@@ -22,7 +22,15 @@ import {
 } from './updateRecovery';
 
 export type UpdatePhase =
-  'idle' | 'confirm' | UpdateStage | 'restart' | 'unknown' | 'failed' | 'verified' | 'unconfirmed';
+  | 'idle'
+  | 'confirm'
+  | UpdateStage
+  | 'usb'
+  | 'restart'
+  | 'unknown'
+  | 'failed'
+  | 'verified'
+  | 'unconfirmed';
 export interface FirmwareUpdateState {
   phase: UpdatePhase;
   checking: boolean;
@@ -33,6 +41,7 @@ export interface FirmwareUpdateState {
   advanced: boolean;
   selecting: boolean;
   selection: FirmwareUpdateTarget | null;
+  usbProgress?: number;
 }
 export function updateLocked(state: FirmwareUpdateState): boolean {
   return !['idle', 'confirm', 'failed', 'verified', 'unconfirmed'].includes(state.phase);
@@ -50,6 +59,8 @@ export function createFirmwareUpdater(options: {
   storage: UpdateStorage;
   onLockChange: (locked: boolean) => void;
   fetchLatest?: () => Promise<Response>;
+  loadUsbManifest?: typeof loadOfficialUsbManifest;
+  runUsb?: typeof runUsbFirmwareUpdate;
   uploadFile?: typeof uploadOtaFile;
 }): {
   getState: () => FirmwareUpdateState;
@@ -76,14 +87,21 @@ export function createFirmwareUpdater(options: {
     advanced: false,
     selecting: false,
     selection: recovered?.target ?? null,
-    message: recovered
-      ? recovered.completed
-        ? 'The update completed. Restart Pockethernet, reconnect and verify its firmware version.'
-        : 'An update was started before this page closed. Its result is unknown.'
-      : '',
+    message:
+      recovered?.target.method === 'usb'
+        ? recovered.completed
+          ? 'The USB transfer finished. Reconnect Pockethernet to verify its firmware.'
+          : 'The USB update was interrupted. Verify the device or retry over USB.'
+        : recovered
+          ? recovered.completed
+            ? 'The update completed. Restart Pockethernet, reconnect and verify its firmware version.'
+            : 'An update was started before this page closed. Its result is unknown.'
+          : '',
   };
   const listeners = new Set<() => void>();
+  const loadUsbManifest = options.loadUsbManifest ?? loadOfficialUsbManifest;
   let scope: AbortController | null = null;
+  let checkedDevice: DeviceInfo | null = null;
   let confirmation: {
     device: DeviceInfo;
     target: FirmwareUpdateTarget;
@@ -111,6 +129,88 @@ export function createFirmwareUpdater(options: {
       : options.getBlockedReason();
   };
   const fail = (message: string): void => set({ phase: 'failed', message });
+  const savePending = (device: DeviceInfo, target: FirmwareUpdateTarget): void => {
+    const pending = { device, target, startedAt: Date.now(), completed: false };
+    options.storage.setItem(UPDATE_RECOVERY_KEY, JSON.stringify(pending));
+    set({ pending });
+  };
+  const completePending = (pending: PendingUpdate): PendingUpdate => {
+    const completed = { ...pending, completed: true };
+    try {
+      options.storage.setItem(UPDATE_RECOVERY_KEY, JSON.stringify(completed));
+    } catch {
+      /* Preserve the in-memory result; the stored marker recovers as unknown. */
+    }
+    return completed;
+  };
+  const sameFirmware = (left: DeviceInfo, right: DeviceInfo): boolean =>
+    sameDevice(left, right) &&
+    left.espVersion === right.espVersion &&
+    left.stmVersion === right.stmVersion;
+  const usbBlockedReason = (device: DeviceInfo, retry: boolean): string => {
+    const client = options.getClient();
+    if (client.status !== 'connected') return '';
+    const matches = retry ? sameDevice : sameFirmware;
+    if (!client.info || !matches(device, client.info))
+      return 'The connected device or its firmware changed. Check for updates again.';
+    return options.getBlockedReason();
+  };
+  const startUsb = async (
+    device: DeviceInfo,
+    target: UsbUpdateTarget,
+    retry: boolean,
+  ): Promise<void> => {
+    const previousMessage = state.message;
+    const reason = usbBlockedReason(device, retry);
+    if (reason) {
+      if (retry) set({ message: reason });
+      else {
+        set({ phase: 'failed', message: reason, check: null, selection: null });
+        confirmation = null;
+      }
+      return;
+    }
+    confirmation = null;
+    set({ phase: 'usb', selection: target, usbProgress: undefined, message: '' });
+    try {
+      const result = await (options.runUsb ?? runUsbFirmwareUpdate)({
+        version: target.latestVersion,
+        mode: retry ? 'backup' : 'fast',
+        loadManifest: loadUsbManifest,
+        onStage: (message) => set({ message }),
+        onProgress: (fraction) => {
+          const progress = Math.floor(Math.max(0, Math.min(1, fraction)) * 100);
+          if (progress > (state.usbProgress ?? -1)) set({ usbProgress: progress });
+        },
+        onWriteStarting: () => {
+          if (disposed) throw new Error('The firmware update page was closed.');
+          const blocked = usbBlockedReason(device, retry);
+          if (blocked) throw new Error(blocked);
+          savePending(device, target);
+        },
+      });
+      if (result === 'cancelled') {
+        if (retry) set({ phase: 'unknown', message: previousMessage });
+        else {
+          confirmation = { device, target };
+          set({ phase: 'confirm', message: 'No tester selected. Try again.' });
+        }
+      } else if (state.pending) {
+        set({
+          phase: 'restart',
+          pending: completePending(state.pending),
+          message: 'USB transfer complete. Reconnect Pockethernet to verify its firmware.',
+        });
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'USB update failed.';
+      if (state.pending) set({ phase: 'unknown', message });
+      else {
+        if (error instanceof UsbReleaseChangedError) set({ check: null, selection: null });
+        fail(message);
+      }
+    }
+  };
 
   return {
     getState: () => state,
@@ -129,6 +229,7 @@ export function createFirmwareUpdater(options: {
       }
       const device = client.info;
       confirmation = null;
+      checkedDevice = null;
       set({
         phase: 'idle',
         checking: true,
@@ -138,22 +239,11 @@ export function createFirmwareUpdater(options: {
         selection: null,
       });
       try {
-        const response = await (options.fetchLatest?.() ??
-          fetch('/api/latest-version', {
-            cache: 'no-store',
-            signal: AbortSignal.timeout(15000),
-          }));
-        if (!response.ok) throw new Error(`Update server returned ${response.status}`);
-        const result = parseFirmwareVersionResponse(await response.text(), device.espVersion);
-        validateOfficialFirmwareUrl(result.downloadUrl, result.latestVersion);
+        const result = await checkOfficialFirmware(device, loadUsbManifest, options.fetchLatest);
         const current = options.getClient();
-        if (
-          current.status !== 'connected' ||
-          !current.info ||
-          !sameDevice(device, current.info) ||
-          current.info.espVersion !== device.espVersion
-        )
+        if (current.status !== 'connected' || !current.info || !sameFirmware(device, current.info))
           return;
+        checkedDevice = device;
         set({ check: result });
       } catch (error) {
         set({
@@ -174,15 +264,16 @@ export function createFirmwareUpdater(options: {
         !state.check.updateAvailable
       )
         return;
-      const reason = unavailable();
+      const target = state.check;
+      const device = checkedDevice;
+      if (!device) return;
+      const reason = target.method === 'usb' ? usbBlockedReason(device, false) : unavailable();
       if (reason) {
-        fail(reason);
+        set({ phase: 'failed', message: reason, check: null, selection: null });
         return;
       }
-      const device = options.getClient().info;
-      if (!device) return;
-      confirmation = { device, target: state.check };
-      set({ phase: 'confirm', message: '', selection: state.check });
+      confirmation = { device, target };
+      set({ phase: 'confirm', message: '', selection: target });
     },
     cancel() {
       if (state.phase !== 'confirm') return;
@@ -191,14 +282,23 @@ export function createFirmwareUpdater(options: {
     },
     async start() {
       // Set the phase synchronously before the first await to reject duplicate clicks.
-      if (state.phase !== 'confirm' || !confirmation || scope) return;
+      if (scope || state.verifying) return;
+      if (state.phase === 'unknown' && state.pending?.target.method === 'usb') {
+        await startUsb(state.pending.device, state.pending.target, true);
+        return;
+      }
+      if (state.phase !== 'confirm' || !confirmation) return;
+      const { device, file } = confirmation;
+      let { target } = confirmation;
+      if (target.method === 'usb') {
+        await startUsb(device, target, false);
+        return;
+      }
       const reason = unavailable();
       if (reason) {
         fail(reason);
         return;
       }
-      const { device, file } = confirmation;
-      let { target } = confirmation;
       confirmation = null;
       scope = new AbortController();
       set({ phase: 'preparing', message: '', pending: null });
@@ -221,24 +321,14 @@ export function createFirmwareUpdater(options: {
           target,
           signal: scope.signal,
           onStage: (phase) => set({ phase }),
-          onCommandStarting: () => {
-            const pending = { device, target, startedAt: Date.now(), completed: false };
-            options.storage.setItem(UPDATE_RECOVERY_KEY, JSON.stringify(pending));
-            set({ pending });
-          },
+          onCommandStarting: () => savePending(device, target),
         });
         let pending = state.pending;
         if (outcome.phase === 'failed') {
           clearPending();
           pending = null;
         } else if (outcome.phase === 'restart' && pending) {
-          pending = { ...pending, completed: true };
-          // Keep the in-memory success even if browser storage becomes unavailable.
-          try {
-            options.storage.setItem(UPDATE_RECOVERY_KEY, JSON.stringify(pending));
-          } catch {
-            /* recovered as unknown */
-          }
+          pending = completePending(pending);
         }
         set({ ...outcome, pending });
       } catch (error) {
@@ -250,7 +340,11 @@ export function createFirmwareUpdater(options: {
     async verify() {
       const pending = state.pending;
       if (!pending || state.verifying || !['restart', 'unknown'].includes(state.phase)) return;
-      if (!pending.completed && Date.now() < pending.startedAt + ESP_UPDATE_RESPONSE_TIMEOUT_MS) {
+      if (
+        pending.target.method !== 'usb' &&
+        !pending.completed &&
+        Date.now() < pending.startedAt + ESP_UPDATE_RESPONSE_TIMEOUT_MS
+      ) {
         set({
           message:
             'Keep power and Ethernet connected. Wait at least five minutes after starting the update before restarting and verifying.',
@@ -264,52 +358,13 @@ export function createFirmwareUpdater(options: {
         const info = parseDeviceInfo(
           (await client.request(deviceInfoCommand(), PACKET.DEVICE_INFO, 3500)).payload,
         );
-        if (!sameDevice(info, pending.device))
-          throw new Error(
-            'This is a different device. Reconnect the Pockethernet that was updated.',
-          );
-        if (info.stmVersion !== pending.device.stmVersion)
-          throw new Error(
-            'The STM firmware version changed unexpectedly. Update verification needs investigation.',
-          );
-        if (
-          info.espVersion === pending.target.latestVersion &&
-          pending.target.latestVersion === pending.device.espVersion
-        ) {
-          clearPending();
-          set({
-            phase: pending.completed ? 'verified' : 'unconfirmed',
-            pending: null,
-            check: null,
-            message: pending.completed
-              ? `ESP v${info.espVersion} confirmed after your restart. Both builds report this version, so build identity cannot be verified from the version number. STM remains v${info.stmVersion}.`
-              : `ESP v${info.espVersion} is running after your restart. Both builds report this version and the OTA result was not received, so installation could not be confirmed.`,
-          });
-          return;
-        }
-        if (info.espVersion !== pending.target.latestVersion) {
-          if (!pending.completed && info.espVersion === pending.device.espVersion) {
-            clearPending();
-            set({
-              phase: 'failed',
-              pending: null,
-              check: null,
-              message: `After restarting, Pockethernet is still running ESP v${info.espVersion}. The update was not applied. Check for updates to try again.`,
-            });
-            return;
-          }
-          set({
-            message: `Pockethernet is running ESP v${info.espVersion}; expected v${pending.target.latestVersion}. Fully turn it off and on, then verify again.`,
-          });
+        const result = verifyInstalledFirmware(info, pending);
+        if (result.phase === 'unknown') {
+          set(result);
           return;
         }
         clearPending();
-        set({
-          phase: 'verified',
-          pending: null,
-          check: null,
-          message: `Update verified: Pockethernet is running ESP v${info.espVersion}. STM firmware remains v${info.stmVersion}.`,
-        });
+        set({ ...result, pending: null, check: null, selection: null });
       } catch (error) {
         set({
           message: error instanceof Error ? error.message : 'Could not verify the updated device',
@@ -321,6 +376,14 @@ export function createFirmwareUpdater(options: {
     disconnected() {
       selectionGeneration++;
       scope?.abort();
+      // Switching off the tester for USB intentionally drops Bluetooth.
+      if (
+        !state.advanced &&
+        (state.selection?.method === 'usb' ||
+          (state.check && 'method' in state.check && state.check.method === 'usb'))
+      )
+        return;
+      checkedDevice = null;
       if (state.phase === 'confirm') {
         confirmation = null;
         set({ phase: 'idle', check: null, selection: null, selecting: false });

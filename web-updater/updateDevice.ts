@@ -25,6 +25,7 @@ export type UpdateMode = keyof typeof ESP_BAUD_RATES;
 interface UpdateCallbacks {
   onStage: (message: string) => void;
   onProgress: (fraction: number) => void;
+  onWriteStarting?: () => void;
   log: (message: string) => void;
 }
 
@@ -145,6 +146,7 @@ export async function updateDevice(
     throw new Error('Switch the tester off, unplug the USB cable, and plug it back in.');
   }
 
+  callbacks.onWriteStarting?.();
   onStage('Updating ESP firmware…');
   try {
     await flashEsp(port, images.esp, mode, callbacks);

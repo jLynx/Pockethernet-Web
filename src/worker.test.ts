@@ -103,3 +103,37 @@ try {
 }
 
 console.log('Firmware update proxy tests passed');
+
+try {
+  const upstreamPaths: string[] = [];
+  globalThis.fetch = (input, init) => {
+    assert.ok(typeof input === 'string');
+    upstreamPaths.push(input);
+    assert.equal(init?.redirect, 'error');
+    assert.equal(new Headers(init?.headers).get('Cookie'), null);
+    return Promise.resolve(
+      new Response('official response', { headers: { 'Set-Cookie': 'upstream=test' } }),
+    );
+  };
+  const usbManifest = await get('/api/usb-firmware/manifest.json');
+  assert.equal(usbManifest.headers.get('Content-Type'), 'application/json');
+  assert.equal(usbManifest.headers.get('Cache-Control'), 'no-store');
+  assert.equal(usbManifest.headers.get('Set-Cookie'), null);
+  assert.equal(await usbManifest.text(), 'official response');
+  const image = await get('/api/usb-firmware/images/1.bin?unused=true');
+  assert.equal(image.headers.get('Content-Type'), 'application/octet-stream');
+  assert.equal(await image.text(), 'official response');
+  assert.equal((await get('/api/usb-firmware/images/1.bin.js')).status, 404);
+  assert.equal((await get('/api/usb-firmware/app.js')).status, 404);
+  const post = await worker.fetch(
+    new Request(new URL('/api/usb-firmware/manifest.json', origin), { method: 'POST' }),
+    env,
+  );
+  assert.equal(post.status, 405);
+  assert.deepEqual(upstreamPaths, [
+    'https://pockethernet.com/update/manifest.json',
+    'https://pockethernet.com/update/images/1.bin',
+  ]);
+} finally {
+  globalThis.fetch = originalFetch;
+}

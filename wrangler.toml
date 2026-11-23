@@ -8,6 +8,7 @@ binding = "ASSETS"
 not_found_handling = "single-page-application"
 run_worker_first = [
   "/api/latest-version",
+  "/api/usb-firmware/*",
   "/api/ota-files",
   "/f/*",
   "/assets/index-*.js",

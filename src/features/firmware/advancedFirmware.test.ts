@@ -56,7 +56,9 @@ for (const version of [16, 15])
       new TextDecoder().decode(ota.packet.payload.slice(3, -1)),
       'http://192.168.1.161:8765/fw.bin',
     );
-    assert.equal(readPendingUpdate(h.storage)?.target.source, 'url');
+    const target = readPendingUpdate(h.storage)?.target;
+    assert.ok(target && target.method !== 'usb');
+    assert.equal(target.source, 'url');
     h.setInfo(version);
     await h.updater.verify();
     assert.equal(h.updater.getState().phase, 'verified');
@@ -94,15 +96,18 @@ await clocked(async () => {
   assert.equal(uploads, 1);
   assert.equal(h.updater.getState().phase, 'restart');
   const pending = readPendingUpdate(h.storage);
-  assert.equal(pending?.target.source, 'file');
-  assert.equal(pending?.target.sha256, info.sha256);
+  assert.ok(pending && pending.target.method !== 'usb');
+  assert.equal(pending.target.source, 'file');
+  assert.equal(pending.target.sha256, info.sha256);
   const recovered = createFirmwareUpdater({
     getClient: () => h.client,
     getBlockedReason: () => '',
     storage: h.storage,
     onLockChange: () => {},
   });
-  assert.equal(recovered.getState().selection?.source, 'file');
+  const selection = recovered.getState().selection;
+  assert.ok(selection && selection.method !== 'usb');
+  assert.equal(selection.source, 'file');
   await h.updater.verify();
   assert.equal(h.updater.getState().phase, 'verified');
 });
