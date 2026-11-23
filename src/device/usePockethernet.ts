@@ -4,6 +4,7 @@ import {
   BLE,
   PACKET,
   batteryStatusCommand,
+  decodeCobs,
   deviceInfoCommand,
   encodePacket,
   parseDeviceInfo,
@@ -50,19 +51,6 @@ interface BluetoothRefs {
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
-}
-
-function decodeCobs(input: Uint8Array): Uint8Array {
-  const output = new Uint8Array(input.length);
-  let r = 0,
-    w = 0;
-  while (r < input.length) {
-    const code = input[r++];
-    if (!code || r + code - 1 > input.length) throw new Error('Invalid COBS data');
-    for (let i = 1; i < code; i++) output[w++] = input[r++];
-    if (code !== 255 && r < input.length) output[w++] = 0;
-  }
-  return output.slice(0, w);
 }
 
 export function usePockethernet({ pollBattery = true } = {}): PockethernetClient {

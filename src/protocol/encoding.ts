@@ -34,6 +34,19 @@ export function cobsEncode(input: Uint8Array): Uint8Array {
   return output.slice(0, write);
 }
 
+export function decodeCobs(input: Uint8Array): Uint8Array<ArrayBuffer> {
+  const output = new Uint8Array(input.length);
+  let read = 0;
+  let write = 0;
+  while (read < input.length) {
+    const code = input[read++];
+    if (!code || read + code - 1 > input.length) throw new Error('Invalid COBS data');
+    for (let i = 1; i < code; i++) output[write++] = input[read++];
+    if (code !== 255 && read < input.length) output[write++] = 0;
+  }
+  return output.slice(0, write);
+}
+
 export function encodePacket(type: number, payload = new Uint8Array()): Uint8Array {
   const raw = new Uint8Array(payload.length + 4);
   const view = new DataView(raw.buffer);

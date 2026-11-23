@@ -28,7 +28,7 @@ export default tseslint.config(
     ignores: ['dist', 'storybook-static', 'node_modules', '.wrangler'],
   },
   {
-    files: ['src/**/*.{ts,tsx}'],
+    files: ['src/**/*.{ts,tsx}', 'web-updater/*.ts'],
     extends: [js.configs.recommended, ...tseslint.configs.recommendedTypeChecked],
     languageOptions: {
       ecmaVersion: 'latest',
@@ -64,7 +64,7 @@ export default tseslint.config(
   },
   {
     ...css.configs.recommended,
-    files: ['src/**/*.css'],
+    files: ['src/**/*.css', 'web-updater/*.css'],
     plugins: { ...css.configs.recommended.plugins, project: projectPlugin },
     language: 'css/css',
     rules: {

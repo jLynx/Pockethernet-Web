@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:updater": "vite --config web-updater/vite.config.ts",
     "build": "vite build",
+    "build:updater": "vite build --config web-updater/vite.config.ts",
+    "preview:updater": "vite preview --config web-updater/vite.config.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "npm run lint -- --fix",
@@ -19,7 +22,9 @@
     "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
+    "@noble/hashes": "2.4.0",
     "@vitejs/plugin-react": "latest",
+    "esptool-js": "0.7.0",
     "fflate": "^0.8.3",
     "jspdf": "^4.2.1",
     "react": "latest",
@@ -35,6 +40,8 @@
     "@types/node": "^26.6.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@types/w3c-web-serial": "1.0.9",
+    "@types/w3c-web-usb": "1.0.14",
     "@types/web-bluetooth": "^0.0.21",
     "esbuild": "^0.28.1",
     "eslint": "^10.10.0",

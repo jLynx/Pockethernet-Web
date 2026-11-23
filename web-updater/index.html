@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pocketweb Firmware Updater</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <p class="product">Pocketweb</p>
+        <h1>Firmware Updater</h1>
+        <p class="description">Install the official Pockethernet 2 firmware over USB.</p>
+      </header>
+
+      <section class="card" aria-labelledby="prepare-title">
+        <h2 id="prepare-title">Prepare your tester</h2>
+        <ol>
+          <li>Switch the Pockethernet 2 off.</li>
+          <li>Plug it into this computer or phone with a USB data cable.</li>
+          <li>Select <strong>Update firmware</strong> and choose Pockethernet 2.</li>
+        </ol>
+        <p>Keep the tester connected until the updater says it is safe to unplug.</p>
+      </section>
+
+      <section class="card updater" aria-label="USB firmware update">
+        <div class="update-row">
+          <div>
+            <h2>Official firmware</h2>
+            <p id="version" class="version"></p>
+          </div>
+          <button type="button" id="update" disabled>Update firmware</button>
+        </div>
+        <progress id="progress" aria-label="Update progress" value="0" max="1"></progress>
+        <p id="status" class="status" role="status">Checking for firmware…</p>
+        <div id="failure" class="failure" hidden>
+          <button type="button" id="copy-details" class="secondary">Copy diagnostic details</button>
+          <p id="copy-status" role="status"></p>
+        </div>
+        <details id="settings">
+          <summary>Connection settings</summary>
+          <fieldset id="modes">
+            <legend>Update speed</legend>
+            <label><input type="radio" name="mode" value="fast" checked /> Fast</label>
+            <label><input type="radio" name="mode" value="backup" /> Backup</label>
+          </fieldset>
+          <p>Use Backup if a previous attempt stalled during the update.</p>
+        </details>
+      </section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
