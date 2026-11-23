@@ -51,6 +51,7 @@ void test('report data exports preserve ordering, job numbers, discovery fields 
   assert.match(csv, /,Job sequence,42\r\n/);
   assert.match(csv, /Network Discovery,192\.0\.2\.14 · Vendor,Cisco/);
   assert.match(csv, /Network Discovery,VLAN,VLAN 100/);
+  assert.match(csv, /Network Discovery,Summary,"1 host, 1 segment observation"/);
   const json: unknown = JSON.parse(createReportJson([first, second]));
   assert.deepEqual(json, { schemaVersion: 1, reports: [first, second] });
 });

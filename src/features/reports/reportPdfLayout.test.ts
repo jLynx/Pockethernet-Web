@@ -127,12 +127,15 @@ for (const comment of [
   const pages = textPages(doc);
   const commentText: string[] = [];
   for (const page of pages) {
-    const label = page.findIndex((item) => item.text === 'Comment: ');
+    const label = page.findIndex(
+      (item) => item.text === 'Comment' || item.text === 'Report details (continued)',
+    );
     if (label < 0) continue;
-    const wiremap = page.find((item) => item.text === 'Wiremap');
+    const wiremapIndex = page.findIndex((item) => item.text === 'Wiremap');
+    const wiremap = page[wiremapIndex];
     const notes = page
-      .slice(label + 1)
-      .filter((item) => !/^Page \d+ of \d+$/.test(item.text) && (!wiremap || item.y < wiremap.y));
+      .slice(label + 1, wiremapIndex >= 0 ? wiremapIndex : undefined)
+      .filter((item) => !/^Page \d+ of \d+$/.test(item.text));
     for (const item of notes) {
       assert.ok(item.y < 280, 'Comments must remain above the footer');
       assert.ok(item.x >= 12 && item.x < 198, 'Comments must stay inside the metadata box');
@@ -263,6 +266,7 @@ const sparseText = sparsePages
   .flat()
   .map((item) => item.text)
   .join(' ');
+assert.match(sparseText, /FAIL.*1 failed.*3 tests/);
 for (const absent of ['DHCPv4', 'IPv6 ND', 'DHCPv6', 'Ping', 'LLDP', 'CDP', 'TDR', 'Wiremap']) {
   assert.ok(
     !sparsePages.flat().some((item) => item.text === absent),
@@ -390,10 +394,6 @@ pageStreams(described).forEach((data, pageIndex) => {
     );
   }
 });
-console.log(
-  'Compact report sections, long fields, multiline photo descriptions and page continuation passed.',
-);
-
 const partialRun = createReportsPdf(
   [
     {
@@ -414,6 +414,45 @@ assert.match(partialText, /Wiremap, PoE, Traffic/);
 assert.match(partialText, /The device did not respond in time/);
 assert.match(partialText, /No result recorded/);
 assert.match(partialText, /Bluetooth connection lost/);
+assert.match(partialText, /FAIL.*1 failed.*1 incomplete.*3 tests/);
+
+const incomplete = createReportsPdf(
+  [{ ...report('Interrupted run'), selectedTests: ['wiremap', 'link'], runError: 'Disconnected' }],
+  '',
+  false,
+);
+assert.ok(
+  textPages(incomplete)
+    .flat()
+    .some(({ text }) => /^INCOMPLETE.*1 incomplete.*2 tests$/.test(text)),
+);
+
+const gridReport: SavedReport = {
+  ...report('Review the test cards.'),
+  selectedTests: ['wiremap', 'ipv4', 'extip', 'tdr'],
+  results: {
+    ...report('').results,
+    ipv4: { status: 'OK', summary: 'IPv4 lease obtained', fields: { Gateway: '192.0.2.1' } },
+    extip: { status: 'OK', summary: 'External IP obtained', fields: { IPv4: '203.0.113.7' } },
+    tdr: {
+      status: 'OK',
+      summary: 'Open',
+      nvp: 68,
+      pairs: [{ status: 'Open', distance: 29, samples: [] }],
+    },
+  },
+};
+const grid = textPages(createReportsPdf([gridReport], '', false))[0];
+assert.ok(grid.some(({ text }) => /^PASS.*4 tests$/.test(text)));
+const headings = ['Wiremap', 'DHCPv4', 'External IP'].map((name) =>
+  grid.find(({ text }) => text === name),
+);
+const [wiremap, dhcp, external] = headings;
+assert.ok(wiremap && dhcp && external);
+assert.ok(wiremap.x < dhcp.x && dhcp.x < external.x);
+assert.equal(wiremap.y, dhcp.y);
+assert.equal(wiremap.y, external.y);
+assert.ok(grid.some(({ text }) => text === 'Open @ 29.0 m'));
 
 // Capture actual rendered documents at the browser download boundary.
 const downloads: { name: string; text: string }[] = [];

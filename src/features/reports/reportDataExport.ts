@@ -1,5 +1,6 @@
 import type { SavedReport } from '@/app/types';
 import { reportPdfSections } from './reportPdfSections';
+import { reportPdfVerdicts } from './reportPdfVerdicts';
 
 type Cell = string | number;
 
@@ -26,7 +27,8 @@ export function createReportCsv(reports: readonly SavedReport[]): string {
         rows.push([...identity, 'Report', 'Job sequence', report.job.number]);
     }
     rows.push([...identity, 'Report', 'Selected tests', report.selectedTests?.join(', ') ?? '']);
-    for (const section of reportPdfSections(report)) {
+    for (const section of reportPdfSections(report, reportPdfVerdicts(report).tests)) {
+      if (section.summary) rows.push([...identity, section.title, 'Summary', section.summary]);
       for (const [field, value] of section.rows)
         rows.push([...identity, section.title, field || 'Summary', value]);
     }

@@ -1,15 +1,15 @@
 import type { jsPDF } from 'jspdf';
 import type { ReportPhoto } from '@/app/types';
-import { BLUE, wrap } from './reportPdfPrimitives';
+import { PDF_BODY_BOTTOM, REPORT_COLORS, wrap } from './reportPdfPrimitives';
 
-const BOTTOM = 280;
+const BOTTOM = PDF_BODY_BOTTOM;
 const DESCRIPTION_LINE_HEIGHT = 4;
 
 export function drawReportPhotos(
   doc: jsPDF,
   photos: ReportPhoto[],
   y: number,
-  newPage: () => void,
+  newPage: () => number,
 ): void {
   let cursor = y;
   photos.forEach((photo, index) => {
@@ -26,14 +26,13 @@ export function drawReportPhotos(
         : 0;
       // Use the remaining space unless it would make the image too small to read.
       if (cursor + 4 + Math.min(60, preferredHeight) + descriptionSpace > BOTTOM) {
-        newPage();
-        cursor = 24;
+        cursor = newPage();
       }
       const height = Math.min(preferredHeight, BOTTOM - cursor - 4 - descriptionSpace);
       const width = height * ratio;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7.2);
-      doc.setTextColor(BLUE);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.3);
+      doc.setTextColor(REPORT_COLORS.ink);
       const title = `Image ${index + 1} of ${photos.length}`;
       doc.text(title, 10, cursor);
       doc.addImage(
@@ -48,11 +47,10 @@ export function drawReportPhotos(
       if (description.length) cursor += 4;
       for (const value of description) {
         if (cursor + DESCRIPTION_LINE_HEIGHT > BOTTOM) {
-          newPage();
-          cursor = 24;
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(7.2);
-          doc.setTextColor(BLUE);
+          cursor = newPage();
+          doc.setFont('helvetica', 'bold');
+          doc.setFontSize(8.3);
+          doc.setTextColor(REPORT_COLORS.ink);
           doc.text(`${title} description (continued)`, 10, cursor);
           cursor += 5;
         }
