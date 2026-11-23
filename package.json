@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
+    "fflate": "^0.8.3",
     "jspdf": "^4.2.1",
     "react": "latest",
     "react-dom": "latest",

@@ -3,19 +3,23 @@
   min-height: 60vh;
 }
 .reports-controls {
-  margin-bottom: 18px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 24px;
+  width: min(100%, 480px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 12px;
 }
 .reports-filter {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 12px;
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  color: var(--text-secondary, #5f6e80);
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 .reports-filter select {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
   max-width: 100%;
 }
 .report-composer,
@@ -40,6 +44,58 @@
   margin: 0;
   color: var(--text, #18283e);
   font-size: 1rem;
+}
+.report-library > header {
+  flex-wrap: wrap;
+}
+.report-library {
+  margin-top: 22px;
+}
+.report-export-toolbar {
+  padding: 14px 18px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 240px) auto;
+  align-items: end;
+  gap: 8px 14px;
+  border-bottom: 1px solid var(--border, #e5ebf1);
+  background: var(--surface-hover, #f4faff);
+}
+.report-selection {
+  min-height: 40px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  color: var(--text-muted, #718096);
+  font-size: 0.8rem;
+}
+.report-selection label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text, #18283e);
+  font-weight: 700;
+}
+.report-selection input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+.report-export-button {
+  min-height: 40px;
+  font-size: 0.85rem;
+}
+.report-export-hint {
+  grid-column: 2 / -1;
+  margin: 0;
+  color: var(--text-muted, #718096);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+.report-export-status {
+  margin: 12px 18px;
+  color: var(--text-muted, #718096);
+  font-size: 0.8rem;
 }
 .report-composer header p,
 .report-library header p {
@@ -192,6 +248,24 @@
   color: var(--text-danger, #b32932);
 }
 @media (max-width: 720px) {
+  .report-library > header {
+    display: block;
+  }
+  .reports-controls {
+    width: 100%;
+    margin-top: 16px;
+  }
+  .report-export-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .report-selection {
+    min-height: 28px;
+    justify-content: space-between;
+  }
+  .report-export-hint {
+    grid-column: 1;
+  }
   .report-fields {
     grid-template-columns: 1fr;
   }
@@ -205,5 +279,10 @@
   .report-composer > header,
   .report-library > header {
     align-items: flex-start;
+  }
+}
+@media (max-width: 420px) {
+  .reports-controls {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
