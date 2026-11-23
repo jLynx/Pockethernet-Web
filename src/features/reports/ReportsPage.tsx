@@ -4,6 +4,7 @@ import { Button, EmptyState, SelectField } from '@/shared/ui/UiPrimitives';
 import { PageLayout } from '@/shared/layout/PageLayout';
 import { createLlmExport } from './llmExport';
 import { downloadReportsPdf, previewReportPdf, shareReportPdf } from './pdf';
+import { isReportSort, REPORT_SORT_OPTIONS, sortReports, type ReportSort } from './reportSort';
 
 interface ReportsPageProps {
   children?: ReactNode;
@@ -57,7 +58,11 @@ export function ReportsPage({
 }: ReportsPageProps): ReactElement {
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [project, setProject] = useState('');
-  const visibleReports = reports.filter((report) => !project || report.details.project === project);
+  const [sort, setSort] = useState<ReportSort>('date-desc');
+  const visibleReports = sortReports(
+    reports.filter((report) => !project || report.details.project === project),
+    sort,
+  );
   const selectedReports = visibleReports.filter((report) => selected.has(report.id));
   const projects = [...new Set(reports.map((report) => report.details.project ?? ''))]
     .filter(Boolean)
@@ -95,22 +100,38 @@ export function ReportsPage({
       {error && <p role="alert">{error}</p>}
       {children}
       {!ready && !error && <p role="status">Loading saved reports…</p>}
-      <SelectField
-        className="reports-filter"
-        label="Filter by project"
-        value={project}
-        onChange={(event) => {
-          setProject(event.target.value);
-          setSelected(new Set());
-        }}
-      >
-        <option value="">All projects</option>
-        {projects.map((name) => (
-          <option key={name} value={name}>
-            {name}
-          </option>
-        ))}
-      </SelectField>
+      <div className="reports-controls">
+        <SelectField
+          className="reports-filter"
+          label="Filter by project"
+          value={project}
+          onChange={(event) => {
+            setProject(event.target.value);
+            setSelected(new Set());
+          }}
+        >
+          <option value="">All projects</option>
+          {projects.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
+          ))}
+        </SelectField>
+        <SelectField
+          className="reports-filter"
+          label="Sort reports and PDF export by"
+          value={sort}
+          onChange={(event) => {
+            if (isReportSort(event.target.value)) setSort(event.target.value);
+          }}
+        >
+          {REPORT_SORT_OPTIONS.map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </SelectField>
+      </div>
       <section className="report-library" aria-labelledby="saved-reports-title">
         <header>
           <div>

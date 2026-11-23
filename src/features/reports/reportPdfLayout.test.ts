@@ -89,7 +89,7 @@ function pageStreams(doc: jsPDF): string[] {
 }
 
 function textPages(doc: jsPDF): { text: string; x: number; y: number }[][] {
-  return pageStreams(doc).map((data) => {
+  return pageStreams(doc).map((data, pageIndex, pages) => {
     const text: { text: string; x: number; y: number }[] = [];
     for (const block of data.matchAll(/BT\n([\s\S]*?)\nET/g)) {
       const position = block[1].match(/([\d.-]+) ([\d.-]+) Td/);
@@ -106,6 +106,11 @@ function textPages(doc: jsPDF): { text: string; x: number; y: number }[][] {
         y += Number(spacing[1]) / doc.internal.scaleFactor;
       }
     }
+    const numbers = text.filter((item) => /^Page \d+ of \d+$/.test(item.text));
+    assert.equal(numbers.length, 1, 'Every page must have exactly one page number');
+    assert.equal(numbers[0].text, `Page ${pageIndex + 1} of ${pages.length}`);
+    assert.ok(Math.abs(numbers[0].y - 291) < 0.001);
+    assert.ok(numbers[0].x > 140 && numbers[0].x < 198, 'Keep numbering clear of footer branding');
     return text;
   });
 }
@@ -124,7 +129,9 @@ for (const comment of [
     const label = page.findIndex((item) => item.text === 'Comment: ');
     if (label < 0) continue;
     const wiremap = page.find((item) => item.text === 'Wiremap');
-    const notes = page.slice(label + 1).filter((item) => !wiremap || item.y < wiremap.y);
+    const notes = page
+      .slice(label + 1)
+      .filter((item) => !/^Page \d+ of \d+$/.test(item.text) && (!wiremap || item.y < wiremap.y));
     for (const item of notes) {
       assert.ok(item.y < 280, 'Comments must remain above the footer');
       assert.ok(item.x >= 12 && item.x < 198, 'Comments must stay inside the metadata box');
@@ -264,7 +271,7 @@ for (const absent of ['DHCPv4', 'IPv6 ND', 'DHCPv6', 'Ping', 'LLDP', 'CDP', 'TDR
 for (const marker of ['AS_END', 'ISP_END', 'GEO_END', 'No PoE', 'Image 1 of 1'])
   assert.ok(sparseText.includes(marker));
 for (const page of sparsePages) {
-  for (const item of page)
+  for (const item of page.filter((item) => !/^Page \d+ of \d+$/.test(item.text)))
     assert.ok(item.y <= 280 + 0.001, 'Result text must remain inside the page');
   const external = page.find((item) => item.text === 'External IP');
   const ber = page.find((item) => item.text === 'Error rate');
@@ -358,7 +365,7 @@ assert.ok(secondLine.y > firstLine.y + 3.9, 'Explicit line breaks must use separ
 described.setFont('helvetica', 'normal');
 described.setFontSize(8.5);
 for (const page of describedPages) {
-  for (const item of page) {
+  for (const item of page.filter((item) => !/^Page \d+ of \d+$/.test(item.text))) {
     assert.ok(item.y <= 280 + 0.001, 'Photo description text must remain above the footer');
     if (/^(?:Photo description line|Switch port|Patch panel A|Access point)/.test(item.text))
       assert.ok(item.x >= 12 && item.x + described.getTextWidth(item.text) <= 198 + 0.1);

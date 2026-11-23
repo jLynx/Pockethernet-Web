@@ -20,6 +20,15 @@ export function createReportsPdf(
     if (index > 0) doc.addPage();
     drawReportPage(doc, report, logoDataUrl, showFooterLogo);
   });
+  // Count after rendering: comments, measurements and photos can all add pages.
+  const total = doc.getNumberOfPages();
+  for (let page = 1; page <= total; page++) {
+    doc.setPage(page);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor('#777777');
+    doc.text(`Page ${page} of ${total}`, 198, 291, { align: 'right' });
+  }
   return doc;
 }
 
