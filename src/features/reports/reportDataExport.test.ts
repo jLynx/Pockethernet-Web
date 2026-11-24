@@ -19,7 +19,7 @@ runInNewContext(bundled.outputFiles[0].text, { module, require: createRequire(im
 const { createReportCsv, createReportJson } = module.exports;
 assert.ok(createReportCsv && createReportJson);
 
-void test('report data exports preserve ordering, job numbers, discovery fields and attachments', () => {
+void test('report data exports preserve ordering, project numbers, discovery fields and attachments', () => {
   const first = workflowReport('test-first', '=first');
   first.details.comment = 'rack, "north"\ncontrol';
   first.job = { id: 'site-a', name: 'Site A', number: 42 };
@@ -49,7 +49,7 @@ void test('report data exports preserve ordering, job numbers, discovery fields 
   assert.ok(csv.indexOf(first.id) < csv.indexOf(second.id));
   assert.match(csv, /'=first/);
   assert.match(csv, /"rack, ""north""\ncontrol"/);
-  assert.match(csv, /,Job sequence,42\r\n/);
+  assert.match(csv, /,Project sequence,42\r\n/);
   assert.match(csv, /Network Discovery,192\.0\.2\.14 · Vendor,Cisco/);
   assert.match(csv, /Network Discovery,VLAN,VLAN 100/);
   assert.match(csv, /Network Discovery,IGMP querier status,None observed/);

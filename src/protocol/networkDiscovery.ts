@@ -22,6 +22,22 @@ const METHODS = [
 const LISTEN = 64;
 const BASELINE_METHODS = 0x7f;
 const ADVANCED_METHODS = 128 | 512 | 1024 | 4096 | 8192 | 65536 | 262144;
+const PROFINET = 1024;
+export const DEFAULT_DISCOVERY_PROBES = 2 | 4 | 8 | 16 | 32;
+export const DISCOVERY_PROBES = [
+  { bit: 2, label: 'Ping', group: 'ipv4' },
+  { bit: 4, label: 'mDNS', group: 'ipv4' },
+  { bit: 8, label: 'SSDP', group: 'ipv4' },
+  { bit: 16, label: 'NetBIOS', group: 'ipv4' },
+  { bit: 32, label: 'Reverse DNS', group: 'ipv4' },
+  { bit: PROFINET, label: 'PROFINET DCP', group: 'layer2' },
+  { bit: 512, label: 'EtherNet/IP', group: 'device' },
+  { bit: 262144, label: 'KNX', group: 'device' },
+  { bit: 8192, label: 'Camera vendors', group: 'device' },
+  { bit: 128, label: 'Art-Net', group: 'device' },
+  { bit: 4096, label: 'ONVIF', group: 'device' },
+  { bit: 65536, label: 'BACnet', group: 'device' },
+] as const;
 const BACNET_PORT = 47808;
 const MDNS_TYPES = [
   '_http._tcp',
@@ -51,20 +67,25 @@ export function discoveryStartCommand(
   active: boolean,
   espVersion: number | undefined,
   timeoutMs: number,
+  probeMask = active ? BASELINE_METHODS | ADVANCED_METHODS : 0,
 ): Packet {
-  const advanced = active && firmwareSupports(espVersion, 'advancedDiscovery');
-  const methods = active ? BASELINE_METHODS | (advanced ? ADVANCED_METHODS : 0) : LISTEN;
-  const types = active ? MDNS_TYPES : [];
+  const advanced = firmwareSupports(espVersion, 'advancedDiscovery');
+  const methods =
+    LISTEN |
+    (active ? 1 | (probeMask & DEFAULT_DISCOVERY_PROBES) : 0) |
+    (advanced ? probeMask & (active ? ADVANCED_METHODS : PROFINET) : 0);
+  const hasExtendedTail = advanced && (active || (methods & PROFINET) !== 0);
+  const types = methods & 4 ? MDNS_TYPES : [];
   const encoder = new TextEncoder();
   const tail = [types.length, ...types.flatMap((type) => [type.length, ...encoder.encode(type)])];
-  const payload = new Uint8Array(8 + tail.length + (advanced ? 4 : 0));
+  const payload = new Uint8Array(8 + tail.length + (hasExtendedTail ? 4 : 0));
   const view = dataView(payload);
   payload.set([1, token]);
   view.setUint16(2, methods & 0xffff, true);
   view.setUint16(4, 256, true);
   view.setUint16(6, timeoutMs, true);
   payload.set(tail, 8);
-  if (advanced) {
+  if (hasExtendedTail) {
     view.setUint16(8 + tail.length, methods >>> 16, true);
     view.setUint16(10 + tail.length, BACNET_PORT, true);
   }

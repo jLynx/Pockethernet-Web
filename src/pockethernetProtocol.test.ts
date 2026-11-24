@@ -184,7 +184,7 @@ const tonerView = new DataView(toner.payload.buffer);
 assert.equal(toner.type, PACKET.ANA_TONER);
 assert.equal(toner.payload.length, 20);
 assert.equal(tonerView.getInt32(0, true), 31);
-assert.equal(tonerView.getInt32(4, true), 1);
+assert.equal(tonerView.getInt32(4, true), 0);
 assert.deepEqual(
   [tonerView.getInt32(8, true), tonerView.getInt32(12, true), tonerView.getInt32(16, true)],
   [400, 700, 150],

@@ -7,18 +7,18 @@ import {
 import { useStoredState } from './useStoredState';
 import { useTestConfiguration } from './useTestConfiguration';
 import { loadWorkflowMode } from './workflowMode';
-import { loadNamedItems, type MeasurementPreset, type ReportJob } from './savedConfigurations';
+import { loadNamedItems, type MeasurementPreset, type ReportProject } from './savedConfigurations';
 
 const PRESETS = 'pockethernet.measurementPresets';
-const JOBS = 'pockethernet.reportJobs';
+const PROJECTS = 'pockethernet.reportJobs';
 
 function useAppSettingsInternal() {
   const [workflowMode, setWorkflowMode] = useStoredState(
     'pockethernet.workflowMode',
     loadWorkflowMode,
   );
-  const singleConfiguration = useTestConfiguration('pockethernet.single.');
-  const batchConfiguration = useTestConfiguration('pockethernet.');
+  const single = useTestConfiguration('pockethernet.single.');
+  const batch = useTestConfiguration('pockethernet.');
   const [presets, setPresets] = useStoredState(PRESETS, () =>
     loadNamedItems<MeasurementPreset>(
       PRESETS,
@@ -30,10 +30,13 @@ function useAppSettingsInternal() {
         Array.isArray(item.pingTargets),
     ),
   );
-  const [jobs, setJobs] = useStoredState(JOBS, () =>
-    loadNamedItems<ReportJob>(
-      JOBS,
-      (item) => typeof item.site === 'string' && typeof item.numberPattern === 'string',
+  const [projects, setProjects] = useStoredState(PROJECTS, () =>
+    loadNamedItems<ReportProject>(
+      PROJECTS,
+      (item) =>
+        typeof item.site === 'string' &&
+        typeof item.numberPattern === 'string' &&
+        (item.incrementCableId === undefined || typeof item.incrementCableId === 'boolean'),
     ),
   );
   const [blinkerSettings, setBlinkerSettings] = useStoredState(
@@ -59,16 +62,20 @@ function useAppSettingsInternal() {
       return false;
     }
   });
+  const withProject = (configuration: ReturnType<typeof useTestConfiguration>) => {
+    const project = projects.find((item) => item.id === configuration.projectId);
+    const reportDetails = project
+      ? { ...configuration.reportDetails, project: project.name, address: project.site }
+      : configuration.reportDetails;
+    return { ...configuration, project, reportDetails };
+  };
+  const singleConfiguration = withProject(single);
+  const batchConfiguration = withProject(batch);
   const configuration = workflowMode === 'single' ? singleConfiguration : batchConfiguration;
-  const selectReportJob = (job?: ReportJob): void => {
-    configuration.setJobId(job?.id ?? '');
-    if (job) {
-      configuration.setReportDetails((current) => ({
-        ...current,
-        project: job.name,
-        address: job.site,
-      }));
-    }
+  const removeProject = (id: string): void => {
+    setProjects((current) => current.filter((project) => project.id !== id));
+    single.setProjectId((current) => (current === id ? '' : current));
+    batch.setProjectId((current) => (current === id ? '' : current));
   };
   return {
     ...configuration,
@@ -78,9 +85,9 @@ function useAppSettingsInternal() {
     batchConfiguration,
     presets,
     setPresets,
-    jobs,
-    setJobs,
-    selectReportJob,
+    projects,
+    setProjects,
+    removeProject,
     blinkerSettings,
     setBlinkerSettings,
     tonerSettings,

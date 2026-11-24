@@ -11,6 +11,8 @@ export const REPORT_TESTS: Record<TestId, readonly [title: string, key: keyof Re
   link: ['Link', 'link'],
   'network-discovery': ['Network Discovery', 'networkDiscovery'],
   cdplldp: ['CDP/LLDP', 'cdplldp'],
+  cdp: ['CDP', 'cdp'],
+  lldp: ['LLDP', 'lldp'],
   vlan: ['VLAN', 'vlan'],
   traffic: ['Traffic', 'traffic'],
   ipv4: ['IPv4', 'ipv4'],
@@ -49,7 +51,14 @@ export function reportPdfVerdicts(report: SavedReport): {
         id,
         [...impedance, ...crosstalk].some((trace) => trace.length >= 2) ? 'recorded' : 'incomplete',
       );
-    } else if (id === 'tdr' || id === 'cdplldp' || id === 'vlan' || id === 'traffic') {
+    } else if (
+      id === 'tdr' ||
+      id === 'cdplldp' ||
+      id === 'cdp' ||
+      id === 'lldp' ||
+      id === 'vlan' ||
+      id === 'traffic'
+    ) {
       // These sections document observations. An explicit run failure still counts.
       tests.set(id, 'recorded');
     } else if ('status' in result) {

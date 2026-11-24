@@ -74,6 +74,66 @@ void test('discovery requests encode legacy, v32 and listen-only method masks', 
   assert.deepEqual([...passive], [1, 13, 64, 0, 0, 1, 0xb8, 11, 0]);
 });
 
+void test('probe selections gate Layer 2 on V32 and omit IPv4 probes in monitor mode', () => {
+  const mask = 1024 | 4 | 262144;
+  const v18 = discoveryStartCommand(5, true, 18, 3000, mask).payload;
+  const v32Monitor = discoveryStartCommand(5, false, 32, 3000, mask).payload;
+  const v32 = discoveryStartCommand(5, true, 32, 3000, mask).payload;
+  assert.deepEqual([...v18.slice(2, 4)], [69, 0]);
+  assert.deepEqual([...v32Monitor.slice(2, 4)], [64, 4]);
+  assert.deepEqual([...v32Monitor.slice(-4)], [0, 0, 192, 186]);
+  assert.deepEqual([...v32.slice(2, 4)], [69, 4]);
+  assert.deepEqual([...v32.slice(-4)], [4, 0, 192, 186]);
+  assert.equal(v32Monitor[8], 0, 'layer 2 probes do not send mDNS queries');
+});
+
+void test('automatic mode can complete a five-minute IPv4-free monitor run', async () => {
+  const run = measurementHarness(['network-discovery']);
+  run.context.ble.info = deviceInfo(32);
+  run.context.discoveryMode = 'auto';
+  run.context.discoveryTimeout = 300000;
+  run.setResponder((command) => {
+    if (command.type !== PACKET.DISCOVERY_START) return run.respond(command);
+    const token = command.payload[1];
+    const payload = segmentPayload(token);
+    new DataView(payload.buffer).setUint32(2, 300000, true);
+    run.inbox.receive({ type: PACKET.DISCOVERY_SEGMENT, payload });
+    run.inbox.receive({
+      type: PACKET.DISCOVERY_DONE,
+      payload: Uint8Array.of(token, 0, 64, 0, 0, 0, 0, 0),
+    });
+  });
+  await finishWithClock(() => runMeasurements(run.context), 310);
+  assert.equal(new DataView(run.sent[0].payload.buffer).getUint16(2, true) & 3, 1);
+  assert.equal(run.sent[1].payload[2], 64);
+  assert.equal(run.snapshot.results.networkDiscovery?.mode, 'passive');
+  assert.equal(run.snapshot.results.networkDiscovery?.listenMs, 300000);
+});
+
+void test('Stop aborts an active discovery token, retains its hosts and shuts down Ethernet', async () => {
+  const run = measurementHarness(['network-discovery']);
+  run.context.ble.info = deviceInfo(32);
+  run.context.discoveryTimeout = 10000;
+  const runScope = new AbortController();
+  run.context.signal = runScope.signal;
+  run.setResponder((command) => {
+    if (command.type === PACKET.DISCOVERY_ABORT) return;
+    if (command.type !== PACKET.DISCOVERY_START) return run.respond(command);
+    const token = command.payload[1];
+    run.inbox.receive({ type: PACKET.DISCOVERY_HOST, payload: hostPayload(token, 'switch') });
+    runScope.abort();
+  });
+  await finishWithClock(() => runMeasurements(run.context));
+  assert.deepEqual(
+    run.sent.map(({ type }) => type),
+    [PACKET.ETH_CONFIG, PACKET.DISCOVERY_START, PACKET.DISCOVERY_ABORT, PACKET.ETH_STOP],
+  );
+  assert.equal(run.snapshot.results.networkDiscovery?.state, 'aborted');
+  assert.equal(run.snapshot.results.networkDiscovery?.hosts.length, 1);
+  assert.match(run.snapshot.error, /Measurement stopped/);
+  assert.equal(run.inbox.busy, false);
+});
+
 void test('discovery parses token-matched host, progress and segment frames', () => {
   const host = parseDiscoveryHosts(hostPayload(1, 'switch'))[0];
   assert.equal(host.ip, '192.0.2.14');

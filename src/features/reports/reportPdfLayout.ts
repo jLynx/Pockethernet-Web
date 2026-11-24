@@ -20,11 +20,10 @@ function reportDetails(report: SavedReport): ReportPdfSection {
         ['Date', stamp],
         ['Timezone', Intl.DateTimeFormat().resolvedOptions().timeZone],
         ['User', details.user],
-        [report.job?.number !== undefined ? 'Report no.' : 'Cable ID', details.tag],
+        ['Cable ID', details.tag],
       ],
       [
-        ['Project', details.project ?? ''],
-        ['Job', report.job?.name !== details.project ? (report.job?.name ?? '') : ''],
+        ['Project', details.project || report.job?.name || ''],
         ['Address', details.address],
         ['Location', details.location],
         ['Port ID', details.portId],

@@ -59,12 +59,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'prompt',
       injectRegister: null,
-      includeAssets: [
-        'logo-192.png',
-        'logo-512.png',
-        'notification-events.js',
-        'discovery-vendor-data-license.txt',
-      ],
+      includeAssets: ['logo-192.png', 'logo-512.png', 'notification-events.js'],
       manifest: {
         name: 'Pocketweb for Pockethernet',
         short_name: 'Pocketweb',
@@ -117,7 +112,6 @@ export default defineConfig({
     },
   },
   build: {
-    license: { fileName: 'third-party-licenses.md' },
     rolldownOptions: {
       output: {
         assetFileNames: (asset) =>

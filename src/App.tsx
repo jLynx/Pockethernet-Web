@@ -71,7 +71,7 @@ export default function App(): ReactElement {
               : '',
   });
   const deviceLocked = updateLocked(firmwareUpdater.state);
-  const measuring = useRef(false);
+  const measuring = useRef<AbortController | null>(null);
   const changeWorkflow = (mode: WorkflowMode): void => {
     if (measuring.current || testing.busy || deviceLocked || deviceTools.busy || library.busy)
       return;
@@ -141,7 +141,8 @@ export default function App(): ReactElement {
       return;
     }
     if (!workflow.beforeMeasure()) return;
-    measuring.current = true;
+    const run = new AbortController();
+    measuring.current = run;
     if (app.workflowMode === 'batch') measurement.setResults(emptyResults());
     measurement.setDraft(null);
     setNotice('');
@@ -150,6 +151,7 @@ export default function App(): ReactElement {
         {
           ...measurement.setters,
           ble,
+          signal: run.signal,
           selected: runnableTests,
           toolSettings: app.toolSettings,
           ...app.measurementSettings,
@@ -159,7 +161,7 @@ export default function App(): ReactElement {
         measurement.setDraft,
       );
     } finally {
-      measuring.current = false;
+      measuring.current = null;
     }
   };
   const reset = async (): Promise<void> => {
@@ -266,6 +268,7 @@ export default function App(): ReactElement {
               !deviceLocked && !workflow.busy && !workflow.addingPhotos && runnableTests.size > 0
             }
             onMeasure={() => void measure()}
+            onStop={() => measuring.current?.abort()}
           />
         )}
         <AppFooter />

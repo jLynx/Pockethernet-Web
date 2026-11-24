@@ -99,6 +99,7 @@ interface ActionDockProps {
   running: boolean;
   canMeasure: boolean;
   onMeasure: () => void;
+  onStop?: () => void;
 }
 
 export function ActionDock({
@@ -107,6 +108,7 @@ export function ActionDock({
   running,
   canMeasure,
   onMeasure,
+  onStop,
 }: ActionDockProps): ReactElement {
   const statusLabel =
     status === 'connected'
@@ -135,6 +137,11 @@ export function ActionDock({
           'Measure'
         )}
       </Button>
+      {running && onStop && (
+        <Button unstyled className="measure-stop-button" onClick={onStop}>
+          Stop
+        </Button>
+      )}
     </div>
   );
 }

@@ -1,5 +1,11 @@
 import type { jsPDF } from 'jspdf';
-import { distanceForUnits, distanceUnitLabel, pairColorsForTia } from '@/app/format';
+import {
+  distanceForUnits,
+  distanceUnitLabel,
+  pairColorsForTia,
+  wiremapPairIndex,
+  wiremapPins,
+} from '@/app/format';
 import type { SavedReport, TiaStandard, Units } from '@/app/types';
 import { formatDecimal, type DecimalSeparator } from '@/app/numberFormat';
 import logo from '@/assets/logo.png?inline';
@@ -63,20 +69,8 @@ export function drawWiremap(
   const diagramWidth = Math.min(width, 72);
   const at = (offset: number): number =>
     x + (width - diagramWidth) / 2 + (offset * diagramWidth) / 57;
-  const pins =
-    report.settings.shieldTest !== false ? [1, 2, 3, 6, 4, 5, 7, 8, 9] : [1, 2, 3, 6, 4, 5, 7, 8];
+  const pins = wiremapPins(report.settings.shieldTest !== false, report.settings.wiremapPinOrder);
   const colors = pairColorsForTia(report.settings.tia);
-  const pinColors = [
-    colors[0],
-    colors[0],
-    colors[1],
-    colors[1],
-    colors[2],
-    colors[2],
-    colors[3],
-    colors[3],
-    '#222222',
-  ];
   const striped = new Set([1, 3, 5, 7]);
   const lineY = (pin: number): number => y + 5 + pins.indexOf(pin) * 2.15;
   const drawWire = (
@@ -86,7 +80,7 @@ export function drawWiremap(
     endX: number,
     endY: number,
   ): void => {
-    doc.setDrawColor(pinColors[pins.indexOf(pin)]);
+    doc.setDrawColor(pin === 9 ? '#222222' : colors[wiremapPairIndex(pin)]);
     doc.setLineWidth(0.55);
     if (striped.has(pin)) doc.setLineDashPattern([1.2, 1.2], 0);
     doc.line(startX, startY, endX, endY);

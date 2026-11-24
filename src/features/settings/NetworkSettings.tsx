@@ -1,12 +1,17 @@
 import type { ReactElement } from 'react';
-import type { Ipv4UiSettings, MeasurementSettings, StateSetter } from '@/app/types';
+import type { Ipv4UiSettings, MeasurementSettings, StateSetter, TestId } from '@/app/types';
 import { SelectField, TextField } from '@/shared/ui/UiPrimitives';
 import { ToolControl } from '@/features/tools/ToolControls';
+import { DiscoverySettings } from './DiscoverySettings';
+import { DhcpVendorClass } from './DhcpVendorClass';
 
 interface NetworkSettingsProps {
-  section?: 'all' | 'ipv4' | 'ipv6' | 'cdplldp' | 'network-discovery' | 'vlan' | 'ping';
+  section?:
+    'all' | 'ipv4' | 'ipv6' | 'cdplldp' | 'cdp' | 'lldp' | 'network-discovery' | 'vlan' | 'ping';
   settings: MeasurementSettings;
   discoveryUnavailable?: boolean;
+  firmwareVersion?: number;
+  selected?: ReadonlySet<TestId>;
   onChange: StateSetter<MeasurementSettings>;
   pingTargets: string[];
   onPingTargetsChange: StateSetter<string[]>;
@@ -16,6 +21,8 @@ export function NetworkSettings({
   section = 'all',
   settings,
   discoveryUnavailable,
+  firmwareVersion,
+  selected = new Set<TestId>(),
   onChange,
   pingTargets,
   onPingTargetsChange,
@@ -48,15 +55,13 @@ export function NetworkSettings({
             <option value="static">Static</option>
           </SelectField>
           {ipv4.mode === 'dhcp' && (
-            <TextField
-              label="DHCP vendor class"
+            <DhcpVendorClass
+              firmwareVersion={firmwareVersion}
               value={ipv4.vendorClass ?? ''}
-              placeholder="Optional · firmware V18+"
-              maxLength={64}
-              onChange={(event) =>
+              onChange={(value) =>
                 onChange((current) => ({
                   ...current,
-                  ipv4Settings: { ...current.ipv4Settings, vendorClass: event.target.value },
+                  ipv4Settings: { ...current.ipv4Settings, vendorClass: value },
                 }))
               }
             />
@@ -103,45 +108,29 @@ export function NetworkSettings({
           </SelectField>
         </>
       )}
-      {showDiscovery && (
-        <SelectField
-          label="Network Discovery mode"
-          value={settings.discoveryMode ?? 'active'}
-          onChange={(event) => {
-            const discoveryMode = event.target.value === 'passive' ? 'passive' : 'active';
-            onChange((current) => ({ ...current, discoveryMode }));
-          }}
-        >
-          <option value="active">Scan the attached IPv4 subnet and listen</option>
-          <option value="passive">Listen only</option>
-        </SelectField>
-      )}
-      {(show('cdplldp') || showDiscovery) && (
+      {(show('cdp') || show('lldp')) && (
         <>
-          <SelectField
-            label={showDiscovery ? 'Discovery observation time' : 'CDP / LLDP observation time'}
-            value={settings.discoveryTimeout}
-            onChange={(event) => {
-              const discoveryTimeout =
-                event.target.value === '10000'
-                  ? 10000
-                  : event.target.value === '60000'
-                    ? 60000
-                    : 30000;
-              onChange((current) => ({ ...current, discoveryTimeout }));
-            }}
-          >
-            <option value="10000">10 seconds</option>
-            <option value="30000">30 seconds</option>
-            <option value="60000">1 minute</option>
-          </SelectField>
-          {showDiscovery && (
-            <p className="settings-hint">
-              Active Discovery uses the configured IPv4 settings and listens only if an address is
-              unavailable.
-            </p>
-          )}
+          <label className="neighbor-listen-option">
+            <input
+              type="checkbox"
+              checked={settings.cdpLldpFull === true}
+              onChange={(event) => {
+                const cdpLldpFull = event.target.checked;
+                onChange((current) => ({ ...current, cdpLldpFull }));
+              }}
+            />
+            Listen the full 70 seconds for CDP and LLDP
+          </label>
+          <p className="settings-hint">Off stops each selected test at its first announcement.</p>
         </>
+      )}
+      {showDiscovery && (
+        <DiscoverySettings
+          settings={settings}
+          onChange={onChange}
+          selected={selected}
+          firmwareVersion={firmwareVersion}
+        />
       )}
       {show('vlan') && (
         <>

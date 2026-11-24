@@ -183,3 +183,15 @@ void test('numbered jobs skip collisions and assign independent counters atomica
   assert.equal(next.job?.number, 4);
   assert.equal((await readReportDatabase()).length, 5);
 });
+
+void test('project numbering skips a matching legacy Cable ID', async () => {
+  const legacy = workflowReport('legacy', 'CAB-001');
+  legacy.details.project = ' school ';
+  legacy.details.address = 'SITE A';
+  await writeReportDatabase(legacy);
+  const saved = await writeReportDatabase(
+    { ...workflowReport('saved', ''), job: { id: 'school', name: 'School' } },
+    'CAB-###',
+  );
+  assert.equal(saved.details.tag, 'CAB-002');
+});

@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import type { ReportDraft, ReportPhoto, ReportDetails, StateSetter } from './types';
 import type { ReportLibrary } from './useReports';
-import type { ReportJob } from './savedConfigurations';
+import type { ReportProject } from './savedConfigurations';
 import {
   createSavedReport,
   incrementCableId,
@@ -16,14 +16,14 @@ interface WorkflowOptions {
   details: ReportDetails;
   setDetails: StateSetter<ReportDetails>;
   autoIncrement: boolean;
-  job?: ReportJob;
+  project?: ReportProject;
   onNext: () => void;
   onNotice: (message: string) => void;
 }
 
 function useReportWorkflowInternal(options: WorkflowOptions) {
-  const { library, draft, details, setDetails, job, onNext, onNotice } = options;
-  const numberPattern = job?.numberPattern || undefined;
+  const { library, draft, details, setDetails, project, onNext, onNotice } = options;
+  const numberPattern = project?.numberPattern || undefined;
   const autoIncrement = options.autoIncrement && !numberPattern;
   const [photos, setPhotos] = useState<ReportPhoto[]>([]);
   const [addingPhotos, setAddingPhotos] = useState(false);
@@ -49,8 +49,8 @@ function useReportWorkflowInternal(options: WorkflowOptions) {
           crypto.randomUUID(),
           !options.singleTest && !numberPattern,
         );
-        if (job) report.job = { id: job.id, name: job.name };
-        const duplicates = numberPattern ? [] : matchingCableReports(reports, details);
+        if (project) report.job = { id: project.id, name: project.name };
+        const duplicates = numberPattern ? [] : matchingCableReports(reports, details, project?.id);
         if (
           duplicates.length &&
           !window.confirm(
@@ -66,7 +66,9 @@ function useReportWorkflowInternal(options: WorkflowOptions) {
         setSavedRun(draft.createdAt);
       }
       if (advance) {
-        const next = autoIncrement ? nextAvailableCableId(details.tag, reports, details) : null;
+        const next = autoIncrement
+          ? nextAvailableCableId(details.tag, reports, details, project?.id)
+          : null;
         setDetails((current) => ({
           ...current,
           tag: next ?? current.tag,

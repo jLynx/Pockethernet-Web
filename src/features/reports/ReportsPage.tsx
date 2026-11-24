@@ -1,5 +1,7 @@
 import { useState, type ReactElement, type ReactNode } from 'react';
 import type { ReportPreferences, ReportResults, SavedReport } from '@/app/types';
+import type { ReportProject } from '@/app/savedConfigurations';
+import { reportProjectNames } from '@/app/reportWorkflow';
 import { Button, EmptyState, SelectField } from '@/shared/ui/UiPrimitives';
 import { PageLayout } from '@/shared/layout/PageLayout';
 import { createLlmExport } from './llmExport';
@@ -64,6 +66,7 @@ interface ReportsPageProps {
   children?: ReactNode;
   preferences: ReportPreferences;
   reports: SavedReport[];
+  projects: readonly ReportProject[];
   onRemove: (id: string) => Promise<boolean>;
   busy: boolean;
   ready: boolean;
@@ -104,6 +107,7 @@ export function ReportsPage({
   children,
   preferences,
   reports,
+  projects,
   onRemove,
   busy,
   ready,
@@ -112,16 +116,21 @@ export function ReportsPage({
 }: ReportsPageProps): ReactElement {
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
   const [project, setProject] = useState('');
-  const [jobId, setJobId] = useState('');
   const [sort, setSort] = useState<ReportSort>('date-desc');
   const [exporting, setExporting] = useState(false);
   const [exportStatus, setExportStatus] = useState('');
   const [exportMode, setExportMode] = useState<ExportMode>('individual');
   const folderSupported = supportsReportFolder();
+  const projectNames = reportProjectNames(reports, projects);
+  const projectOptions = new Map<string, string>();
+  for (const name of projectNames.values()) {
+    if (name && !projectOptions.has(name.toLowerCase()))
+      projectOptions.set(name.toLowerCase(), name);
+  }
+  const currentProject = projectOptions.has(project) ? project : '';
   const visibleReports = sortReports(
     reports.filter(
-      (report) =>
-        (!project || report.details.project === project) && (!jobId || report.job?.id === jobId),
+      (report) => !currentProject || projectNames.get(report.id)?.toLowerCase() === currentProject,
     ),
     sort,
   );
@@ -129,12 +138,6 @@ export function ReportsPage({
   const allSelected = visibleReports.length > 0 && selectedReports.length === visibleReports.length;
   const exportOption =
     EXPORT_OPTIONS.find((option) => option.mode === exportMode) ?? EXPORT_OPTIONS[0];
-  const projects = [...new Set(reports.map((report) => report.details.project ?? ''))]
-    .filter(Boolean)
-    .sort();
-  const jobNames = new Map<string, string>();
-  for (const report of reports)
-    if (report.job && !jobNames.has(report.job.id)) jobNames.set(report.job.id, report.job.name);
   const exportSelected = async (mode: ExportMode): Promise<void> => {
     if (exporting || selectedReports.length === 0) return;
     setExporting(true);
@@ -245,37 +248,21 @@ export function ReportsPage({
             <SelectField
               className="reports-filter"
               label="Project"
-              value={project}
+              value={currentProject}
               onChange={(event) => {
                 setProject(event.target.value);
                 setSelected(new Set());
               }}
             >
               <option value="">All projects</option>
-              {projects.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </SelectField>
-            {(jobNames.size > 0 || jobId) && (
-              <SelectField
-                className="reports-filter"
-                label="Job"
-                value={jobId}
-                onChange={(event) => {
-                  setJobId(event.target.value);
-                  setSelected(new Set());
-                }}
-              >
-                <option value="">All jobs</option>
-                {[...jobNames].map(([id, name]) => (
-                  <option key={id} value={id}>
+              {[...projectOptions]
+                .sort(([, a], [, b]) => a.localeCompare(b))
+                .map(([key, name]) => (
+                  <option key={key} value={key}>
                     {name}
                   </option>
                 ))}
-              </SelectField>
-            )}
+            </SelectField>
             <SelectField
               className="reports-filter"
               label="Sort by"
@@ -400,7 +387,7 @@ export function ReportsPage({
                     {report.photos.length > 0 &&
                       ` · ${report.photos.length} image${report.photos.length === 1 ? '' : 's'}`}
                   </span>
-                  {report.job && <small>{report.job.name}</small>}
+                  {projectNames.get(report.id) && <small>{projectNames.get(report.id)}</small>}
                   {(report.details.location || report.details.portId) && (
                     <small>
                       {[report.details.location, report.details.portId].filter(Boolean).join(' · ')}

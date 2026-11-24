@@ -1,19 +1,23 @@
 import type { ReactElement, ReactNode } from 'react';
-import type { TestId, UnavailableTests } from '@/app/types';
+import type { ReportResults, TestId, UnavailableTests } from '@/app/types';
 import type { useAppSettings } from '@/app/useAppSettings';
 import { MIN_ESP_FIRMWARE } from '@/protocol/firmwareFeatures';
-import { SelectField, TextField } from '@/shared/ui/UiPrimitives';
+import { SelectField } from '@/shared/ui/UiPrimitives';
 import { PageLayout } from '@/shared/layout/PageLayout';
 import { PingDefaultsPanel } from '@/features/tools/PingDefaultsPanel';
 import { ToolControl, ToolPanel } from '@/features/tools/ToolControls';
 import { GeneralSettings } from './GeneralSettings';
 import { NetworkSettings } from './NetworkSettings';
 import { BerSettingsPanel } from './BerSettingsPanel';
-import { JobSettings, PresetSettings } from './SavedConfigurations';
+import { PresetSettings } from './SavedConfigurations';
+import { ProjectSettings } from './ProjectSettings';
+import { discoveryLabel } from '@/app/measurementSettings';
 
 interface ConfigurePageProps {
   app: ReturnType<typeof useAppSettings>;
   disabled: boolean;
+  firmwareVersion?: number;
+  lastTdr?: ReportResults['tdr'];
   unavailableTests?: UnavailableTests;
   onToggle: (id: TestId) => void;
   onNotice: (message: string) => void;
@@ -36,7 +40,8 @@ const TEST_GROUPS: readonly { title: string; tests: readonly [TestId, string][] 
       ['poe', 'PoE'],
       ['link', 'Link'],
       ['network-discovery', 'Network Discovery'],
-      ['cdplldp', 'CDP / LLDP'],
+      ['cdp', 'CDP'],
+      ['lldp', 'LLDP'],
       ['vlan', 'Incoming VLANs'],
       ['traffic', 'Observe traffic'],
       ['ipv4', 'IPv4'],
@@ -50,6 +55,8 @@ const TEST_GROUPS: readonly { title: string; tests: readonly [TestId, string][] 
 export function ConfigurePage({
   app,
   disabled,
+  firmwareVersion,
+  lastTdr,
   unavailableTests = {},
   onToggle,
   onNotice,
@@ -75,6 +82,12 @@ export function ConfigurePage({
     >
       <div className="settings-board">
         <div className="settings-column">
+          <ProjectSettings
+            key={app.workflowMode}
+            app={app}
+            disabled={disabled}
+            onNotice={onNotice}
+          />
           {batch && (
             <ToolPanel title="Tests to run" disabled={disabled}>
               <div className="settings-test-groups">
@@ -82,6 +95,13 @@ export function ConfigurePage({
                   <fieldset className="settings-test-selection" key={group.title}>
                     <legend className="test-group-heading">{group.title}</legend>
                     {group.tests.map(([id, title]) => {
+                      const label =
+                        id === 'network-discovery'
+                          ? discoveryLabel(
+                              app.selected,
+                              app.measurementSettings.discoveryMode ?? 'active',
+                            )
+                          : title;
                       const requirement =
                         unavailableTests[id] ??
                         (id === 'network-discovery'
@@ -95,7 +115,7 @@ export function ConfigurePage({
                             disabled={Boolean(unavailableTests[id])}
                             onChange={() => onToggle(id)}
                           />
-                          {requirement ? `${title} · ${requirement}` : title}
+                          {requirement ? `${label} · ${requirement}` : label}
                         </label>
                       );
                     })}
@@ -154,56 +174,6 @@ export function ConfigurePage({
               </p>
             </div>
           </ToolPanel>
-          <ToolPanel title="Project & workflow" disabled={disabled}>
-            <div className="settings-fields">
-              {(
-                [
-                  ['project', 'Project'],
-                  ['address', 'Address / site'],
-                  ['user', 'Technician'],
-                  ['location', 'Location'],
-                ] as const
-              ).map(([key, label]) => (
-                <TextField
-                  key={key}
-                  label={label}
-                  value={app.reportDetails[key] ?? ''}
-                  maxLength={160}
-                  onChange={(event) =>
-                    app.setReportDetails((current) => ({ ...current, [key]: event.target.value }))
-                  }
-                />
-              ))}
-              {batch && (
-                <>
-                  <ToolControl
-                    label="Auto increment Cable ID"
-                    name="autoIncrement"
-                    value={app.autoIncrement ? 'on' : 'off'}
-                    options={[
-                      ['off', 'Off'],
-                      ['on', 'On'],
-                    ]}
-                    onChange={(_, value) => app.setAutoIncrement(value === 'on')}
-                  />
-                  <p className="settings-hint">
-                    Save & next increases the final number, preserves leading zeros, and skips
-                    existing cable IDs. Retrying a test keeps the same ID.
-                  </p>
-                </>
-              )}
-              <SelectField
-                label="Decimal separator"
-                value={settings.decimalSeparator ?? '.'}
-                onChange={(event) =>
-                  update('decimalSeparator', event.target.value === ',' ? ',' : '.')
-                }
-              >
-                <option value=".">0.00</option>
-                <option value=",">0,00</option>
-              </SelectField>
-            </div>
-          </ToolPanel>
         </div>
         <div className="settings-column">
           <PresetSettings
@@ -212,8 +182,8 @@ export function ConfigurePage({
             disabled={disabled}
             onNotice={onNotice}
           />
-          <JobSettings app={app} disabled={disabled} onNotice={onNotice} />
           <GeneralSettings
+            lastTdr={lastTdr}
             disabled={disabled}
             settings={settings}
             onSettingsChange={app.setToolSettings}
@@ -226,6 +196,8 @@ export function ConfigurePage({
               <ToolPanel title="Network & discovery" disabled={disabled}>
                 <NetworkSettings
                   settings={app.measurementSettings}
+                  selected={app.selected}
+                  firmwareVersion={firmwareVersion}
                   discoveryUnavailable={Boolean(unavailableTests['network-discovery'])}
                   onChange={app.setMeasurementSettings}
                   pingTargets={app.pingTargets}

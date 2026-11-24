@@ -1,6 +1,7 @@
 import type { SavedReport } from './types';
 import { isSavedReport, loadReports } from './storage';
 import { formatJobReportNumber } from './savedConfigurations';
+import { sameProjectSite } from './reportWorkflow';
 
 const DATABASE = 'pockethernet-reports';
 const STORE = 'reports';
@@ -142,7 +143,7 @@ export async function writeReportDatabase(
   let saved = report;
   const job = report.job;
   if (numberPattern && !numberPattern.includes('#'))
-    throw new Error('Job number pattern is missing #.');
+    throw new Error('Cable ID pattern is missing #.');
   await transaction((store, _backups, counters) => {
     if (!job || !numberPattern) {
       store.add(report);
@@ -159,9 +160,7 @@ export async function writeReportDatabase(
             .filter(
               (item) =>
                 item.job?.id === job.id ||
-                (!item.job &&
-                  item.details.project === report.details.project &&
-                  item.details.address === report.details.address),
+                (!item.job && sameProjectSite(item.details, report.details)),
             )
             .map((item) => item.details.tag.trim().toLowerCase()),
         );

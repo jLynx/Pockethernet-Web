@@ -10,12 +10,16 @@ import {
   type FieldsResult,
   type VlanTag,
   type TrafficPacketResult,
+  type Packet,
 } from '@/pockethernetProtocol';
 import type { PacketWaitOptions } from '@/device/packetInbox';
 import type { MeasurementContext } from './runMeasurements';
 import type { TestId } from './types';
 import { firmwareRequirement, firmwareSupports } from '@/protocol/firmwareFeatures';
 import { runNetworkDiscovery } from './runNetworkDiscovery';
+import { discoveryIsActive } from './measurementSettings';
+import { collectNeighbors } from './collectNeighbors';
+import { DEFAULT_DISCOVERY_PROBES } from '@/protocol/networkDiscovery';
 
 export function deferredStart(): { promise: Promise<void>; start: () => void } {
   let start!: () => void;
@@ -35,16 +39,21 @@ export async function runNetworkMeasurements(
   linkUp: (configure: () => Promise<void>) => Promise<void>,
   fail: (ids: TestId[], error: unknown) => void,
   expand: (id: TestId) => void,
+  sendDiscoveryAbort: (packet: Packet) => Promise<void>,
 ): Promise<FieldsResult | null> {
   const { ble, selected, ipv4Settings, ipv6Mode, vlanSettings, toolSettings } = context;
   const wantsDiscovery = selected.has('network-discovery');
   const discovery = wantsDiscovery && firmwareSupports(ble.info?.espVersion, 'discovery');
-  const activeDiscovery = discovery && context.discoveryMode !== 'passive';
+  const activeDiscovery =
+    discovery && discoveryIsActive(selected, context.discoveryMode ?? 'active');
+  const neighborTests = (['cdp', 'lldp'] as const).filter((id) => selected.has(id));
   const showIpv4 = (['ipv4', 'ping', 'extip'] as const).some((id) => selected.has(id));
   const needsIpv4 = showIpv4 || activeDiscovery;
   const networkIds = [
     'network-discovery',
     'cdplldp',
+    'cdp',
+    'lldp',
     'vlan',
     'traffic',
     'ipv4',
@@ -64,7 +73,7 @@ export async function runNetworkMeasurements(
   const command = measurementEthernetCommand({
     customMac: toolSettings.customMac === 'on' ? toolSettings.mac.trim() : '',
     outgoingVlanId: vlanSettings.tagging ? Number(vlanSettings.id) : 0,
-    discovery: selected.has('cdplldp'),
+    discovery: selected.has('cdplldp') || neighborTests.length > 0,
     listenForSegment: discovery,
     collectVlans: selected.has('vlan'),
     ipv4: needsIpv4,
@@ -78,9 +87,10 @@ export async function runNetworkMeasurements(
     throw new Error('Outgoing VLAN ID must be between 1 and 4094');
 
   const scope = new AbortController();
+  const signal = context.signal ? AbortSignal.any([scope.signal, context.signal]) : scope.signal;
   const ready = deferredStart();
   const options: PacketWaitOptions = {
-    signal: scope.signal,
+    signal,
     rejectNack: false,
     startAfter: ready.promise,
   };
@@ -118,6 +128,16 @@ export async function runNetworkMeasurements(
           expand('cdplldp');
         })
         .finally(() => finish('cdplldp')),
+    );
+  }
+  for (const id of neighborTests) {
+    jobs.push(
+      collectNeighbors(ble, id === 'cdp' ? 'CDP' : 'LLDP', context.cdpLldpFull === true, options)
+        .then((result) => {
+          context.setNeighbor?.(id, result);
+          expand(id);
+        })
+        .finally(() => finish(id)),
     );
   }
   if (selected.has('vlan')) {
@@ -244,7 +264,7 @@ export async function runNetworkMeasurements(
   const completed = Promise.all(
     jobs.map((job) =>
       job.catch((error: unknown) => {
-        if (!scope.signal.aborted) throw error;
+        if (!signal.aborted) throw error;
       }),
     ),
   );
@@ -273,7 +293,7 @@ export async function runNetworkMeasurements(
     }
     ready.start(); // APK's 30/48 second async timers begin after link/filter setup.
     if (discovery) {
-      const listenMs = context.discoveryTimeout ?? 30000;
+      const listenMs = context.discoveryTimeout ?? 15000;
       context.setNetworkDiscovery({
         status: 'OK',
         state: 'listening',
@@ -296,24 +316,37 @@ export async function runNetworkMeasurements(
           ipv4.fields['Your IP'] !== '0.0.0.0';
         const result = await runNetworkDiscovery(
           ble,
-          { active, passiveFallback: activeDiscovery && !active, signal: scope.signal },
+          {
+            active,
+            passiveFallback: activeDiscovery && !active,
+            signal,
+            probeMask: context.discoveryProbeMask ?? DEFAULT_DISCOVERY_PROBES,
+            sendAbort: sendDiscoveryAbort,
+          },
           context.setNetworkDiscovery,
         );
         context.setNetworkDiscovery(result);
+        signal.throwIfAborted();
         if (result.status !== 'OK') fail(['network-discovery'], new Error(result.summary));
       })().finally(() => finish('network-discovery'));
     }
     await Promise.all([completed, discover]);
+    signal.throwIfAborted();
     return ipv4;
   } catch (error) {
     if (discovery) {
       context.setNetworkDiscovery((result) =>
         result?.state === 'listening' || result?.state === 'scanning'
-          ? { ...result, status: 'not_OK', state: 'error', summary: 'Discovery interrupted' }
+          ? {
+              ...result,
+              status: 'not_OK',
+              state: context.signal?.aborted ? 'aborted' : 'error',
+              summary: context.signal?.aborted ? 'Scan stopped' : 'Discovery interrupted',
+            }
           : result,
       );
     }
-    fail(enabled, error);
+    if (!context.signal?.aborted) fail(enabled, error);
     throw error;
   } finally {
     scope.abort();

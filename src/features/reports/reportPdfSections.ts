@@ -279,6 +279,22 @@ export function reportPdfSections(
       ),
     ]);
   }
+  for (const id of ['cdp', 'lldp'] as const) {
+    const result = results[id];
+    if (!result) continue;
+    const announcements = result.announcements ?? (result.status === 'OK' ? [result] : []);
+    add(
+      id.toUpperCase(),
+      result,
+      announcements.flatMap((entry): ReportPdfRow[] => [
+        ['Eth Src Addr', entry.source],
+        ...fields(entry.fields).filter(
+          ([key]) => key !== 'Eth Dst Addr' && key !== 'Protocol' && key !== 'Eth Src Addr',
+        ),
+      ]),
+      { test: id },
+    );
+  }
   add(
     'VLAN',
     results.vlan,

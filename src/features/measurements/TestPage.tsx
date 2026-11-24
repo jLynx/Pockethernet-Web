@@ -15,6 +15,7 @@ import type {
   Ipv6DisplayResult,
   MeasurementFailures,
   NetworkDiscoveryResult,
+  NeighborResult,
   PingDisplayResult,
   StateSetter,
   TdrGraphResult,
@@ -44,10 +45,12 @@ import type { useTestConfiguration } from '@/app/useTestConfiguration';
 import { MeasurementControls } from './MeasurementControls';
 import { Button } from '@/shared/ui/UiPrimitives';
 import { PageLayout } from '@/shared/layout/PageLayout';
+import { discoveryLabel } from '@/app/measurementSettings';
 
 interface TestPageProps {
   batch?: boolean;
   configuration?: ReturnType<typeof useTestConfiguration>;
+  firmwareVersion?: number;
   disabled?: boolean;
   unavailableTests?: UnavailableTests;
   selected: Set<TestId>;
@@ -67,6 +70,8 @@ interface TestPageProps {
   link: LinkResult | null;
   networkDiscovery?: NetworkDiscoveryResult | null;
   cdplldp: CdpLldpResult | DiscoveryFailure | null;
+  cdp?: NeighborResult | null;
+  lldp?: NeighborResult | null;
   vlan: VlanDisplayResult | null;
   traffic: TrafficDisplayResult | null;
   ipv4: FieldsResult | null;
@@ -82,12 +87,14 @@ export function TestPage(props: TestPageProps): ReactElement {
   const { selected, expanded, onExpandedChange, activeTest, toolSettings, batch = true } = props;
   const unavailable = props.unavailableTests ?? {};
   const selectionDisabled = props.disabled ?? props.running;
+  const discoveryMode = props.configuration?.measurementSettings.discoveryMode ?? 'active';
   const visible = (id: TestId): boolean => !batch || selected.has(id);
   const controls = (id: TestId): ReactNode =>
     !batch && props.configuration && !unavailable[id] ? (
       <MeasurementControls
         id={id}
         configuration={props.configuration}
+        firmwareVersion={props.firmwareVersion}
         disabled={props.disabled ?? props.running}
       />
     ) : null;
@@ -165,6 +172,7 @@ export function TestPage(props: TestPageProps): ReactElement {
           summary={props.wiremap?.summary ?? 'Not measured'}
         >
           <WiremapDiagram
+            pinOrder={toolSettings.wiremapPinOrder}
             result={props.wiremap}
             tia={toolSettings.tia}
             showShield={toolSettings.shieldTest !== false}
@@ -251,7 +259,7 @@ export function TestPage(props: TestPageProps): ReactElement {
         <TestPanel
           selectable={!batch}
           id="network-discovery"
-          title="Network Discovery"
+          title={discoveryLabel(selected, discoveryMode)}
           help={TEST_HELP['network-discovery']}
           {...panel('network-discovery')}
           status={
@@ -262,14 +270,20 @@ export function TestPage(props: TestPageProps): ReactElement {
               : 'idle'
           }
           summary={
-            unavailable['network-discovery'] ?? props.networkDiscovery?.summary ?? 'Not measured'
+            unavailable['network-discovery'] ??
+            props.networkDiscovery?.summary ??
+            (discoveryMode === 'auto'
+              ? selected.has('ipv4')
+                ? 'Turn off IPv4 to monitor only'
+                : 'Turn on IPv4 for discovery'
+              : 'Not measured')
           }
         >
           {controls('network-discovery')}
           <NetworkDiscoveryResults result={props.networkDiscovery} />
         </TestPanel>
       )}
-      {visible('cdplldp') && (
+      {selected.has('cdplldp') && (
         <TestPanel
           selectable={!batch}
           id="cdplldp"
@@ -283,6 +297,26 @@ export function TestPage(props: TestPageProps): ReactElement {
           <CdpLldpResults result={props.cdplldp} />
         </TestPanel>
       )}
+      {(['cdp', 'lldp'] as const).filter(visible).map((id) => {
+        const result = props[id];
+        return (
+          <TestPanel
+            key={id}
+            selectable={!batch}
+            id={id}
+            title={id.toUpperCase()}
+            help={TEST_HELP[id]}
+            {...panel(id)}
+            status={result ? (result.status === 'OK' ? 'ok' : 'error') : 'idle'}
+            summary={result?.summary ?? 'Not measured'}
+          >
+            {controls(id)}
+            {(result?.announcements ?? [result]).map((announcement, index) => (
+              <CdpLldpResults key={index} result={announcement ?? null} />
+            ))}
+          </TestPanel>
+        );
+      })}
       {visible('vlan') && (
         <TestPanel
           selectable={!batch}

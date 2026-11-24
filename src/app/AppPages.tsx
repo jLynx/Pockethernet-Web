@@ -67,18 +67,19 @@ export function AppPages({
       busy={workflow.busy}
       running={measurement.running}
       ready={library.ready}
-      autoIncrement={batch && app.autoIncrement}
+      autoIncrement={batch && (app.project?.incrementCableId ?? app.autoIncrement)}
       onSave={workflow.save}
       onNotice={onNotice}
-      jobs={app.jobs}
-      jobId={app.jobId}
-      onJobChange={(id) => app.selectReportJob(app.jobs.find((job) => job.id === id))}
+      projects={app.projects}
+      project={app.project}
+      onProjectChange={app.setProjectId}
     />
   );
   return tab === 'test' ? (
     <TestPage
       batch={batch}
       configuration={app}
+      firmwareVersion={ble.info?.espVersion}
       disabled={measurement.running || deviceLocked}
       unavailableTests={unavailableTests}
       {...measurement.results}
@@ -117,10 +118,13 @@ export function AppPages({
       bridgeSpeed={deviceTools.bridgeSpeed}
       onWifiSettingsChange={app.setWifiSettings}
       onWifiChange={deviceTools.applyWifi}
+      onNotice={onNotice}
     />
   ) : tab === 'configure' ? (
     <ConfigurePage
       app={app}
+      lastTdr={measurement.lastTdr}
+      firmwareVersion={ble.info?.espVersion}
       disabled={measurement.running || deviceLocked}
       unavailableTests={unavailableTests}
       onToggle={onToggle}
@@ -146,6 +150,7 @@ export function AppPages({
     <ReportsPage
       preferences={app.reportPreferences}
       reports={library.reports}
+      projects={app.projects}
       onRemove={library.remove}
       ready={library.ready}
       busy={library.busy}

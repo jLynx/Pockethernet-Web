@@ -43,6 +43,8 @@ export type TestId =
   | 'link'
   | 'network-discovery'
   | 'cdplldp'
+  | 'cdp'
+  | 'lldp'
   | 'vlan'
   | 'traffic'
   | 'ipv4'
@@ -62,6 +64,7 @@ export interface ToolSettings {
   tia: TiaStandard;
   units: Units;
   nvp: string;
+  wiremapPinOrder?: 'pairwise' | 'sequential';
   customMac: OnOff;
   mac: string;
   shieldTest?: boolean;
@@ -100,6 +103,8 @@ export interface ReportResults {
   link: LinkResult | null;
   networkDiscovery?: NetworkDiscoveryResult | null;
   cdplldp: DiscoveryResult | null;
+  cdp?: NeighborResult | null;
+  lldp?: NeighborResult | null;
   vlan: VlanDisplayResult | null;
   traffic: TrafficDisplayResult | null;
   ipv4: Ipv4Result | null;
@@ -124,6 +129,7 @@ export interface SavedReport {
         | 'tia'
         | 'units'
         | 'nvp'
+        | 'wiremapPinOrder'
         | 'shieldTest'
         | 'allowCrossover'
         | 'requiredPairs'
@@ -140,13 +146,18 @@ export interface SavedReport {
   job?: { id: string; name: string; number?: number };
 }
 
+export type DiscoveryListenTime = 10000 | 15000 | 30000 | 60000 | 130000 | 300000;
+export type DiscoveryMode = 'auto' | 'active' | 'passive';
+
 export interface MeasurementSettings {
   berSettings: BerSettings;
   vlanSettings: VlanSettings;
   ipv4Settings: Ipv4UiSettings;
   ipv6Mode: 'slaac' | 'dhcpv6' | 'both';
-  discoveryTimeout: 10000 | 30000 | 60000;
-  discoveryMode?: 'active' | 'passive';
+  discoveryTimeout: DiscoveryListenTime;
+  discoveryMode?: DiscoveryMode;
+  discoveryProbeMask?: number;
+  cdpLldpFull?: boolean;
 }
 
 export interface ReportDraft {
@@ -170,6 +181,7 @@ export interface BlinkerSettings {
 
 export interface TonerSettings {
   pair: TonerPair;
+  pairMask?: number;
   shield: TonerShield;
   tone: TonerTone | 'melody';
   melody: string;
@@ -180,6 +192,7 @@ export interface TonerSettings {
 export interface WifiSettings {
   name: string;
   password: string;
+  channel?: number;
   enabled: OnOff;
 }
 
@@ -244,6 +257,7 @@ export interface DiscoveryFailure extends FieldsResult {
 }
 
 export type DiscoveryResult = CdpLldpResult | DiscoveryFailure;
+export type NeighborResult = DiscoveryResult & { announcements?: CdpLldpResult[] };
 
 export interface NetworkDiscoveryResult {
   status: ResultStatus;
@@ -273,6 +287,8 @@ export const SUPPORTED_TESTS: readonly TestId[] = [
   'link',
   'network-discovery',
   'cdplldp',
+  'cdp',
+  'lldp',
   'vlan',
   'traffic',
   'ipv4',

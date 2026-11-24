@@ -14,6 +14,7 @@ export const DEFAULT_TOOL_SETTINGS: ToolSettings = {
   tia: '568B',
   units: 'meters',
   nvp: '71',
+  wiremapPinOrder: 'pairwise',
   customMac: 'off',
   mac: '',
   shieldTest: false,
@@ -38,6 +39,7 @@ export const DEFAULT_TONER_SETTINGS: TonerSettings = {
 export const DEFAULT_WIFI_SETTINGS: WifiSettings = {
   name: 'Pockethernet',
   password: '',
+  channel: 1,
   enabled: 'off',
 };
 export const DEFAULT_REPORT_DETAILS: ReportDetails = {
@@ -74,6 +76,7 @@ export function loadToolSettings(key = 'pockethernet.toolSettings'): ToolSetting
     tia: saved.tia === '568A' ? '568A' : DEFAULT_TOOL_SETTINGS.tia,
     units: saved.units === 'feet' ? 'feet' : DEFAULT_TOOL_SETTINGS.units,
     nvp: typeof saved.nvp === 'string' ? saved.nvp : DEFAULT_TOOL_SETTINGS.nvp,
+    wiremapPinOrder: saved.wiremapPinOrder === 'sequential' ? 'sequential' : 'pairwise',
     customMac: saved.customMac === 'on' ? 'on' : DEFAULT_TOOL_SETTINGS.customMac,
     mac: typeof saved.mac === 'string' ? saved.mac : DEFAULT_TOOL_SETTINGS.mac,
     shieldTest: saved.shieldTest === true,
@@ -114,7 +117,17 @@ export function loadTonerSettings(): TonerSettings {
         ? saved.tone
         : DEFAULT_TONER_SETTINGS.tone,
     melody: typeof saved.melody === 'string' ? saved.melody : DEFAULT_TONER_SETTINGS.melody,
-    volume: saved.volume === 'low' ? 'low' : DEFAULT_TONER_SETTINGS.volume,
+    pairMask:
+      typeof saved.pairMask === 'number' &&
+      Number.isInteger(saved.pairMask) &&
+      saved.pairMask >= 0 &&
+      saved.pairMask <= 15
+        ? saved.pairMask
+        : undefined,
+    volume:
+      saved.volume === 'low' || saved.volume === 'diff'
+        ? saved.volume
+        : DEFAULT_TONER_SETTINGS.volume,
     power: saved.power === 'on' ? 'on' : DEFAULT_TONER_SETTINGS.power,
   };
 }
@@ -124,6 +137,13 @@ export function loadWifiSettings(): WifiSettings {
   return {
     name: typeof saved.name === 'string' ? saved.name : DEFAULT_WIFI_SETTINGS.name,
     password: typeof saved.password === 'string' ? saved.password : DEFAULT_WIFI_SETTINGS.password,
+    channel:
+      typeof saved.channel === 'number' &&
+      Number.isInteger(saved.channel) &&
+      saved.channel >= 1 &&
+      saved.channel <= 11
+        ? saved.channel
+        : 1,
     enabled: saved.enabled === 'on' ? 'on' : DEFAULT_WIFI_SETTINGS.enabled,
   };
 }

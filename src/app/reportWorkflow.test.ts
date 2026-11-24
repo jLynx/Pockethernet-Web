@@ -5,6 +5,7 @@ import {
   incrementCableId,
   matchingCableReports,
   nextAvailableCableId,
+  reportProjectNames,
 } from './reportWorkflow';
 import { workflowDraft, workflowReport } from './workflowFixtures';
 import { assessWiremap } from './wiremapAcceptance';
@@ -30,6 +31,25 @@ void test('duplicate detection respects project and site, and the next ID skips 
   assert.equal(matchingCableReports([report], { ...report.details, project: 'Office' }).length, 0);
   assert.equal(matchingCableReports([report], { ...report.details, address: 'Site B' }).length, 0);
   assert.equal(nextAvailableCableId('CAB-001', [report, next], report.details), 'CAB-003');
+});
+
+void test('the project filter groups legacy and linked reports and follows a saved project rename', () => {
+  const legacy = workflowReport('legacy');
+  const linked = { ...workflowReport('linked'), job: { id: 'school', name: 'School' } };
+  const elsewhere = workflowReport('elsewhere');
+  elsewhere.details.address = 'Site B';
+  const project = { id: 'school', name: 'North Campus', site: 'Site A', numberPattern: '' };
+  assert.deepEqual(
+    [...reportProjectNames([legacy, linked, elsewhere], [project])],
+    [
+      ['legacy', 'North Campus'],
+      ['linked', 'North Campus'],
+      ['elsewhere', 'School'],
+    ],
+  );
+  const renamed = { ...linked.details, project: project.name };
+  assert.equal(matchingCableReports([linked], renamed, project.id).length, 1);
+  assert.equal(nextAvailableCableId('CAB-000', [linked], renamed, project.id), 'CAB-002');
 });
 
 void test('saved reports freeze measurements, settings, details, photos, and failure metadata', () => {

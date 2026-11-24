@@ -125,14 +125,17 @@ export function useDeviceTools(options: {
       return run('Toner', async () => {
         const { tone } = settings;
         const melody = tone === 'melody';
+        const pairs = settings.pairMask ?? settings.pair;
         if (settings.power === 'on' && melody && !firmwareSupports(info?.espVersion, 'tonerMelody'))
           throw new Error(firmwareRequirement('tonerMelody'));
+        if (settings.power === 'on' && pairs === 0 && settings.shield === 'off')
+          throw new Error('Select a pair or enable the shield tone.');
         const command =
           settings.power === 'off'
             ? tonerStopCommand(melody ? 'melody' : 'tone')
             : melody
-              ? tonerMelodyCommand(settings.melody, settings.pair, settings.shield, settings.volume)
-              : tonerCommand(settings.pair, settings.shield, tone, settings.volume);
+              ? tonerMelodyCommand(settings.melody, pairs, settings.shield, settings.volume)
+              : tonerCommand(pairs, settings.shield, tone, settings.volume);
         await client.request(command, PACKET.ACK, melody ? 2000 : 1000);
       });
     },
@@ -145,7 +148,12 @@ export function useDeviceTools(options: {
           if (settings.password === 'Pockethernet' || passwordLength < 8 || passwordLength > 63)
             throw new Error('Choose your own WiFi password of 8–63 UTF-8 bytes.');
           if (!settings.name.trim()) throw new Error('Enter a WiFi name.');
-          const command = wifiBridgeCommand(true, settings.name, settings.password);
+          const command = wifiBridgeCommand(
+            true,
+            settings.name,
+            settings.password,
+            settings.channel,
+          );
           setBridgeLink(null);
           let wifiConfigSent = false;
           try {

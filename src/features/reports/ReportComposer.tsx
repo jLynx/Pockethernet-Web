@@ -1,7 +1,7 @@
 import type { ReactElement } from 'react';
 import type { ReportDetails, ReportDraft, ReportPhoto, StateSetter } from '@/app/types';
 import { Button, SelectField, TextField } from '@/shared/ui/UiPrimitives';
-import type { ReportJob } from '@/app/savedConfigurations';
+import type { ReportProject } from '@/app/savedConfigurations';
 import { ReportPhotos } from './ReportPhotos';
 
 interface ReportComposerProps {
@@ -20,13 +20,13 @@ interface ReportComposerProps {
   autoIncrement: boolean;
   onSave: (advance: boolean) => Promise<void>;
   onNotice: (message: string) => void;
-  jobs?: readonly ReportJob[];
-  jobId?: string;
-  onJobChange?: (id: string) => void;
+  projects?: readonly ReportProject[];
+  project?: ReportProject;
+  onProjectChange?: (id: string) => void;
 }
 
 const FIELDS: readonly [keyof ReportDetails, string, string][] = [
-  ['project', 'Project', 'Project or job name'],
+  ['project', 'Project name', 'Project name'],
   ['address', 'Address / site', 'Site or street address'],
   ['user', 'Technician', 'Technician or customer'],
   ['location', 'Location', 'Room or rack'],
@@ -45,9 +45,10 @@ export function ReportComposer(props: ReportComposerProps): ReactElement {
     ready,
     addingPhotos,
     autoIncrement,
+    project,
   } = props;
   const disabled = busy || running || addingPhotos;
-  const job = props.jobs?.find((item) => item.id === props.jobId);
+  const assignCableId = Boolean(project?.numberPattern);
   return (
     <section className="report-composer batch-composer" aria-labelledby="cable-report-title">
       <header>
@@ -63,7 +64,9 @@ export function ReportComposer(props: ReportComposerProps): ReactElement {
                     ? 'Results ready to save'
                     : 'Latest measurement run ready to save'
                   : batch
-                    ? 'Enter the cable ID, then run your tests'
+                    ? assignCableId
+                      ? 'Run tests to create a cable report'
+                      : 'Enter the cable ID, then run your tests'
                     : 'Run tests from the Test tab to create a report'}
           </p>
         </div>
@@ -86,34 +89,35 @@ export function ReportComposer(props: ReportComposerProps): ReactElement {
         </div>
       </header>
       <fieldset className="batch-fields" disabled={disabled || saved}>
-        {!!props.jobs?.length && (
+        {!!props.projects?.length && (
           <SelectField
-            label="File under job"
-            value={job?.id ?? ''}
-            onChange={(event) => props.onJobChange?.(event.target.value)}
+            label="File under project"
+            value={project?.id ?? ''}
+            onChange={(event) => props.onProjectChange?.(event.target.value)}
           >
-            <option value="">No job</option>
-            {props.jobs.map((item) => (
+            <option value="">Unsaved project</option>
+            {props.projects.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.name}
               </option>
             ))}
           </SelectField>
         )}
-        {job?.numberPattern ? (
-          <p className="batch-hint">Report number is assigned when saved.</p>
+        {project?.site && <p className="batch-hint">{project.site}</p>}
+        {assignCableId ? (
+          <p className="batch-hint">Cable ID is assigned when you save.</p>
         ) : (
           <TextField
             label={batch ? 'Cable ID / Tag' : 'Tag (optional)'}
             value={details.tag}
-            placeholder={batch ? 'CAB-001' : 'Cable or job tag'}
+            placeholder={batch ? 'CAB-001' : 'Cable or report tag'}
             maxLength={160}
             onChange={(event) =>
               onDetailsChange((current) => ({ ...current, tag: event.target.value }))
             }
           />
         )}
-        {batch && autoIncrement && !job?.numberPattern && (
+        {batch && autoIncrement && !assignCableId && (
           <p className="batch-hint">
             Save & next increases the trailing number and skips IDs already saved in this project
             and site.
@@ -122,18 +126,20 @@ export function ReportComposer(props: ReportComposerProps): ReactElement {
         <details className="batch-project-details" open={batch ? undefined : true}>
           <summary>Project details, notes & photos</summary>
           <div className="report-fields">
-            {FIELDS.map(([key, label, placeholder]) => (
-              <TextField
-                key={key}
-                label={label}
-                value={details[key] ?? ''}
-                placeholder={placeholder}
-                maxLength={160}
-                onChange={(event) =>
-                  onDetailsChange((current) => ({ ...current, [key]: event.target.value }))
-                }
-              />
-            ))}
+            {FIELDS.filter(([key]) => !project || (key !== 'project' && key !== 'address')).map(
+              ([key, label, placeholder]) => (
+                <TextField
+                  key={key}
+                  label={label}
+                  value={details[key] ?? ''}
+                  placeholder={placeholder}
+                  maxLength={160}
+                  onChange={(event) =>
+                    onDetailsChange((current) => ({ ...current, [key]: event.target.value }))
+                  }
+                />
+              ),
+            )}
             <label className="text-field report-comment">
               <span>Comment</span>
               <textarea

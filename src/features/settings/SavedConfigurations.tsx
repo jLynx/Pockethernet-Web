@@ -1,6 +1,7 @@
 import { useState, type ReactElement } from 'react';
-import { normalizeSelection } from '@/app/testSelection';
-import type { MeasurementPreset, ReportJob } from '@/app/savedConfigurations';
+import { restoreSelection } from '@/app/testSelection';
+import { normalizeMeasurementSettings } from '@/app/measurementSettings';
+import type { MeasurementPreset } from '@/app/savedConfigurations';
 import type { useAppSettings } from '@/app/useAppSettings';
 import { ToolPanel } from '@/features/tools/ToolControls';
 import { Button, SelectField, TextField } from '@/shared/ui/UiPrimitives';
@@ -52,10 +53,10 @@ export function PresetSettings({ app, disabled, onNotice }: SettingsProps): Reac
   };
 
   return (
-    <ToolPanel title="Presets" disabled={disabled}>
+    <ToolPanel title="Test presets" disabled={disabled}>
       <div className="settings-fields">
         <SelectField
-          label="Saved preset"
+          label="Test preset"
           value={selected?.id ?? ''}
           onChange={(event) => {
             const item = presets.find((preset) => preset.id === event.target.value);
@@ -82,14 +83,16 @@ export function PresetSettings({ app, disabled, onNotice }: SettingsProps): Reac
               <Button
                 onClick={() => {
                   const preset = structuredClone(selected);
-                  app.setSelected(normalizeSelection(preset.selected));
+                  app.setSelected(restoreSelection(preset.selected));
                   app.setToolSettings(preset.toolSettings);
-                  app.setMeasurementSettings(preset.measurementSettings);
+                  app.setMeasurementSettings(
+                    normalizeMeasurementSettings({ ...preset.measurementSettings }),
+                  );
                   app.setPingTargets(preset.pingTargets);
                   onNotice(`Preset “${preset.name}” applied.`);
                 }}
               >
-                Apply
+                Apply preset
               </Button>
               <Button onClick={() => writePreset(selected)}>Update from current tests</Button>
               <Button onClick={() => writePreset(selected, true)}>Rename</Button>
@@ -106,102 +109,6 @@ export function PresetSettings({ app, disabled, onNotice }: SettingsProps): Reac
             </>
           ) : (
             <Button onClick={() => writePreset()}>Save current tests</Button>
-          )}
-        </div>
-      </div>
-    </ToolPanel>
-  );
-}
-
-export function JobSettings({ app, disabled, onNotice }: SettingsProps): ReactElement {
-  const [editId, setEditId] = useState('');
-  const [name, setName] = useState('');
-  const [site, setSite] = useState('');
-  const [numberPattern, setNumberPattern] = useState('');
-  const selected = app.jobs.find((job) => job.id === editId);
-  const edit = (job?: ReportJob): void => {
-    setEditId(job?.id ?? '');
-    setName(job?.name ?? '');
-    setSite(job?.site ?? '');
-    setNumberPattern(job?.numberPattern ?? '');
-  };
-  const save = (): void => {
-    const label = name.trim();
-    const pattern = numberPattern.trim();
-    if (
-      !label ||
-      app.jobs.some(
-        (job) => job.id !== editId && job.name.toLocaleLowerCase() === label.toLocaleLowerCase(),
-      )
-    ) {
-      onNotice(label ? 'A job with that name already exists.' : 'Enter a job name.');
-      return;
-    }
-    if (pattern && !pattern.includes('#')) {
-      onNotice('Include # where the report number should appear, for example CAB-###.');
-      return;
-    }
-    const job = {
-      id: selected?.id ?? crypto.randomUUID(),
-      name: label,
-      site: site.trim(),
-      numberPattern: pattern,
-    };
-    app.setJobs((current) =>
-      selected ? current.map((item) => (item.id === selected.id ? job : item)) : [...current, job],
-    );
-    app.selectReportJob(job);
-    edit(job);
-    onNotice(`Job “${job.name}” selected.`);
-  };
-  return (
-    <ToolPanel title="Jobs" disabled={disabled}>
-      <div className="settings-fields">
-        <SelectField
-          label="Manage job"
-          value={selected?.id ?? ''}
-          onChange={(event) => edit(app.jobs.find((job) => job.id === event.target.value))}
-        >
-          <option value="">New job</option>
-          {app.jobs.map((job) => (
-            <option key={job.id} value={job.id}>
-              {job.name}
-            </option>
-          ))}
-        </SelectField>
-        <TextField
-          label="Job name"
-          value={name}
-          maxLength={80}
-          onChange={(event) => setName(event.target.value)}
-        />
-        <TextField
-          label="Job site"
-          value={site}
-          maxLength={160}
-          onChange={(event) => setSite(event.target.value)}
-        />
-        <TextField
-          label="Automatic report number (optional)"
-          placeholder="CAB-###"
-          value={numberPattern}
-          maxLength={80}
-          onChange={(event) => setNumberPattern(event.target.value)}
-        />
-        <div className="batch-save-actions">
-          <Button onClick={save}>{selected ? 'Save job' : 'Create job'}</Button>
-          {selected && (
-            <Button
-              onClick={() => {
-                if (!window.confirm(`Remove job “${selected.name}”? Its reports stay in Reports.`))
-                  return;
-                app.setJobs((current) => current.filter((job) => job.id !== selected.id));
-                if (app.jobId === selected.id) app.selectReportJob();
-                edit();
-              }}
-            >
-              Remove job
-            </Button>
           )}
         </div>
       </div>

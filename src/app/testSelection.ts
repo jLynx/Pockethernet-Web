@@ -3,6 +3,8 @@ import { firmwareUnavailableReason } from '@/protocol/firmwareFeatures';
 
 const NETWORK_TESTS: readonly TestId[] = [
   'cdplldp',
+  'cdp',
+  'lldp',
   'vlan',
   'traffic',
   'ipv4',
@@ -50,10 +52,16 @@ export function testSelectionForDevice(
 export function loadSelection(key = 'pockethernet.selectedTests'): Set<TestId> {
   try {
     const saved: unknown = JSON.parse(localStorage.getItem(key) ?? '[]');
-    return normalizeSelection(
+    return restoreSelection(
       Array.isArray(saved) ? SUPPORTED_TESTS.filter((id) => saved.includes(id)) : [],
     );
   } catch {
     return new Set();
   }
+}
+
+export function restoreSelection(ids: readonly TestId[]): Set<TestId> {
+  return normalizeSelection(
+    ids.flatMap((id) => (id === 'cdplldp' ? (['cdp', 'lldp'] as const) : [id])),
+  );
 }

@@ -48,6 +48,20 @@ listed physical checks.
   number as part of saving the report. The existing PDF layout includes new
   measurements and job information.
 
+In **Follow IPv4 selection** mode, the test is labelled **Network Monitor**
+with IPv4 off and **Network Discovery** with IPv4 on. Existing Listen only
+settings carry forward. The setup includes 15 seconds, 130 seconds and
+5 minutes of pre-scan listening. Advanced probes are opt-in on V32, and
+PROFINET DCP can run in monitor mode. CDP and LLDP use the existing Ethernet
+filter and can finish on the first announcement or record the full 70 seconds.
+Stop ends the active run and retains received results.
+
+Toner pair masks and differential drive are present in V17 and V32. The
+volume field is 0 for Low, 1 for High and 2 for Diff. Custom melodies continue to
+require V32. The bridge uses the existing Wi-Fi configuration channel field,
+including on the working V17 path. Wiremap layout, last-TDR NVP preview and
+the tester reference are app features.
+
 The offline checks cover packet parsing, discovery token matching and timeouts,
 report storage migration and counter rollback, file generation and rendering.
 The browser smoke test checked discovery controls and saved a preset. Validation

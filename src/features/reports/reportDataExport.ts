@@ -17,15 +17,12 @@ export function createReportCsv(reports: readonly SavedReport[]): string {
   ];
   for (const report of reports) {
     const { project = '', address, tag, user, location, comment, portId } = report.details;
-    const identity = [report.id, report.createdAt, project, address, tag];
+    const identity = [report.id, report.createdAt, project || report.job?.name || '', address, tag];
     for (const [field, value] of Object.entries({ user, location, comment, portId })) {
       if (value) rows.push([...identity, 'Report', field, value]);
     }
-    if (report.job) {
-      rows.push([...identity, 'Report', 'Job', report.job.name]);
-      if (report.job.number !== undefined)
-        rows.push([...identity, 'Report', 'Job sequence', report.job.number]);
-    }
+    if (report.job?.number !== undefined)
+      rows.push([...identity, 'Report', 'Project sequence', report.job.number]);
     rows.push([...identity, 'Report', 'Selected tests', report.selectedTests?.join(', ') ?? '']);
     for (const section of reportPdfSections(report, reportPdfVerdicts(report).tests)) {
       if (section.summary) rows.push([...identity, section.title, 'Summary', section.summary]);

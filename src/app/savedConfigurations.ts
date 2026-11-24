@@ -10,11 +10,12 @@ export interface MeasurementPreset {
   pingTargets: string[];
 }
 
-export interface ReportJob {
+export interface ReportProject {
   id: string;
   name: string;
   site: string;
   numberPattern: string;
+  incrementCableId?: boolean;
 }
 
 export function loadNamedItems<T extends { id: string; name: string }>(

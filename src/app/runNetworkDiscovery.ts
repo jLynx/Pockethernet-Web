@@ -14,6 +14,7 @@ import {
   type DiscoveryHost,
   type DiscoveryProgress,
   type SegmentObservation,
+  DISCOVERY_PROBES,
 } from '@/protocol/networkDiscovery';
 import type { Packet } from '@/protocol/types';
 import type { NetworkDiscoveryResult } from './types';
@@ -54,10 +55,16 @@ export function mergeDiscoveryHost(
 
 export async function runNetworkDiscovery(
   client: PockethernetClient,
-  options: { active: boolean; passiveFallback: boolean; signal: AbortSignal },
+  options: {
+    active: boolean;
+    passiveFallback: boolean;
+    signal: AbortSignal;
+    probeMask?: number;
+    sendAbort?: (packet: Packet) => Promise<void>;
+  },
   onProgress: (result: NetworkDiscoveryResult) => void,
 ): Promise<NetworkDiscoveryResult> {
-  const { active, passiveFallback, signal } = options;
+  const { active, passiveFallback, signal, probeMask, sendAbort = client.send } = options;
   const token = nextToken++ & 255;
   const hosts = new Map<string, DiscoveryHost>();
   const observations = new Map<string, SegmentObservation>();
@@ -132,12 +139,20 @@ export async function runNetworkDiscovery(
   if (signal.aborted) cancel();
   signal.addEventListener('abort', cancel, { once: true });
   const advanced = firmwareSupports(client.info?.espVersion, 'advancedDiscovery');
+  const deviceProbes =
+    probeMask === undefined ||
+    DISCOVERY_PROBES.some(({ bit, group }) => group === 'device' && (probeMask & bit) !== 0);
   const vendorData = import('virtual:discovery-oui').then(
     (data) => data.default,
     () => ({}),
   );
+  let scanStarted = false;
   try {
-    const deadline = active ? (advanced ? 60_000 : 40_000) : METHOD_TIMEOUT_MS + 5000;
+    const deadline = active
+      ? advanced && deviceProbes
+        ? 90_000
+        : 40_000
+      : METHOD_TIMEOUT_MS + 5000;
     // The first token-matching stream event is the reply to START, even if ACK is absent.
     const done = client.waitFor(REPLIES, deadline, { signal: scope.signal, accept });
     void done.catch(() => undefined);
@@ -146,13 +161,17 @@ export async function runNetworkDiscovery(
         snapshot(active ? 'Scanning the local IPv4 subnet' : 'Collecting segment results'),
       );
       if (scope.signal.aborted) await done;
+      scanStarted = true;
       await client.send(
-        discoveryStartCommand(token, active, client.info?.espVersion, METHOD_TIMEOUT_MS),
+        discoveryStartCommand(token, active, client.info?.espVersion, METHOD_TIMEOUT_MS, probeMask),
       );
       await done;
       state = completion?.status ?? 'error';
     } catch (error) {
-      if (error instanceof DeviceTimeoutError) {
+      if (signal.aborted) {
+        state = 'aborted';
+        if (scanStarted) await sendAbort(discoveryAbortCommand(token)).catch(() => undefined);
+      } else if (error instanceof DeviceTimeoutError) {
         state = 'timed-out';
         // The firmware may flush the last segment packet when it processes ABORT.
         const grace = client.waitFor(REPLIES, 3000, {
@@ -161,7 +180,7 @@ export async function runNetworkDiscovery(
           rejectNack: false,
         });
         void grace.catch(() => undefined);
-        await client.send(discoveryAbortCommand(token));
+        await sendAbort(discoveryAbortCommand(token));
         await grace.catch((failure: unknown) => {
           if (!(failure instanceof DeviceTimeoutError)) throw failure;
         });

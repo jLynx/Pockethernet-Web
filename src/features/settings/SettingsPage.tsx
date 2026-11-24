@@ -8,6 +8,7 @@ import { NotificationSettings } from '@/features/notifications/NotificationSetti
 import { ToolInfoRow, ToolPanel } from '@/features/tools/ToolControls';
 import { FirmwareUpdatePanel } from '@/features/firmware/FirmwareUpdatePanel';
 import type { FirmwareUpdaterActions } from '@/features/firmware/useFirmwareUpdater';
+import { TesterHelp } from './TesterHelp';
 
 interface SettingsPageProps {
   deviceInfo: DeviceInfo | null;
@@ -33,6 +34,7 @@ export function SettingsPage({
       <div className="tools-board">
         <div className="tools-column">
           <NotificationSettings />
+          <TesterHelp />
         </div>
         <div className="tools-column">
           <ToolPanel

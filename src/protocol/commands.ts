@@ -183,18 +183,28 @@ export function blinkerCommand(
   return { type: PACKET.ETH_CONFIG, payload };
 }
 
-function tonerOutputMask(pair: TonerPair, shield: TonerShield): number {
-  const pairMask = { '2': 1, '3': 2, '1': 4, '4': 8, all: 15 }[pair];
-  return pairMask | (shield === 'on' ? 16 : 0);
+export const TONER_PAIR_MASKS = { '2': 1, '3': 2, '1': 4, '4': 8, all: 15 } as const;
+const TONER_VOLUME_VALUES = { low: 0, high: 1, diff: 2 } as const;
+
+function tonerOutputMask(
+  pair: TonerPair | number,
+  shield: TonerShield,
+  volume: TonerVolume,
+): number {
+  let mask = typeof pair === 'number' ? pair : TONER_PAIR_MASKS[pair];
+  if (!Number.isInteger(mask) || mask < 0 || mask > 15)
+    throw new Error('Invalid toner pair selection');
+  if (volume === 'diff') mask = (mask & 3 ? 3 : 0) | (mask & 12 ? 12 : 0);
+  return mask | (shield === 'on' ? 16 : 0);
 }
 
 export function tonerCommand(
-  pair: TonerPair = 'all',
+  pair: TonerPair | number = 'all',
   shield: TonerShield = 'off',
   tone: TonerTone = '1',
   volume: TonerVolume = 'high',
 ): Packet {
-  const volumeValue = { low: 1, high: 2 }[volume];
+  const volumeValue = TONER_VOLUME_VALUES[volume];
   const toneValues = {
     '1': [600, 1200, 67],
     '2': [400, 700, 150],
@@ -203,7 +213,7 @@ export function tonerCommand(
   }[tone];
   const payload = new Uint8Array(20);
   const view = new DataView(payload.buffer);
-  view.setInt32(0, tonerOutputMask(pair, shield), true);
+  view.setInt32(0, tonerOutputMask(pair, shield, volume), true);
   view.setInt32(4, volumeValue, true);
   toneValues.forEach((value, index) => view.setInt32(8 + index * 4, value, true));
   return { type: PACKET.ANA_TONER, payload };
@@ -215,7 +225,7 @@ export function tonerStopCommand(mode: 'tone' | 'melody' = 'tone'): Packet {
 
 export function tonerMelodyCommand(
   text: string,
-  pair: TonerPair,
+  pair: TonerPair | number,
   shield: TonerShield,
   volume: TonerVolume,
 ): Packet {
@@ -226,8 +236,8 @@ export function tonerMelodyCommand(
   // F221 uses five little-endian header words followed by MIDI/duration pairs.
   const payload = new Uint8Array(20 + sequence.length * 2);
   const view = new DataView(payload.buffer);
-  view.setUint32(0, tonerOutputMask(pair, shield), true);
-  view.setUint32(4, volume === 'high' ? 1 : 0, true);
+  view.setUint32(0, tonerOutputMask(pair, shield, volume), true);
+  view.setUint32(4, TONER_VOLUME_VALUES[volume], true);
   view.setUint32(8, 15, true);
   view.setUint32(12, tickUs, true);
   view.setUint32(16, sequence.length, true);
@@ -243,7 +253,10 @@ export function wifiBridgeCommand(
   enabled: boolean,
   ssid = 'Pockethernet',
   password = 'Pockethernet',
+  channel = 1,
 ): Packet {
+  if (!Number.isInteger(channel) || channel < 1 || channel > 11)
+    throw new Error('WiFi channel must be between 1 and 11');
   const payload = new Uint8Array(144);
   const ssidBytes = new TextEncoder().encode(enabled ? ssid : '');
   const passwordBytes = new TextEncoder().encode(enabled ? password : '');
@@ -258,7 +271,7 @@ export function wifiBridgeCommand(
   // APK ui_item_wifi uses ESP WIFI_AUTH_WPA_WPA2_PSK (4), not WPA2-only (3).
   payload[39] = passwordBytes.length || !enabled ? 4 : 0;
   payload.set(passwordBytes, 40);
-  payload[103] = 1;
+  payload[103] = channel;
   return { type: PACKET.WIFI_CONFIG, payload };
 }
 

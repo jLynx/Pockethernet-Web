@@ -39,6 +39,8 @@ export const TEST_HELP: Record<TestId, { description: string; note?: string }> =
     description:
       'Pockethernet listens for CDP or LLDP announcements for the timeout chosen in Configure and reports details such as switch name, physical port ID, and management address.',
   },
+  cdp: { description: 'Listen for Cisco Discovery Protocol announcements on the port.' },
+  lldp: { description: 'Listen for Link Layer Discovery Protocol announcements on the port.' },
   vlan: {
     description:
       'Listen for up to 30 seconds to discover VLAN tags seen on the port. Enable outgoing tagging to place Pockethernet DHCP, Ping, and External IP traffic on a specific VLAN.',

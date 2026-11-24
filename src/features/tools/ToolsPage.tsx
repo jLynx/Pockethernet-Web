@@ -3,6 +3,8 @@ import type { BlinkerSettings, StateSetter, TonerSettings, WifiSettings } from '
 import { ToolControl, ToolField, ToolPanel } from './ToolControls';
 import { PageLayout } from '@/shared/layout/PageLayout';
 import { firmwareRequirement, firmwareSupports } from '@/protocol/firmwareFeatures';
+import { TONER_PAIR_MASKS } from '@/protocol/commands';
+import { Button, SelectField } from '@/shared/ui/UiPrimitives';
 
 interface ToolsPageProps {
   firmwareLocked: boolean;
@@ -17,6 +19,7 @@ interface ToolsPageProps {
   onWifiSettingsChange: StateSetter<WifiSettings>;
   onWifiChange: (settings: WifiSettings) => Promise<boolean>;
   bridgeSpeed?: number | null;
+  onNotice?: (message: string) => void;
 }
 
 export function ToolsPage(props: ToolsPageProps): ReactElement {
@@ -34,6 +37,10 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
   } = props;
   const customMelody = tonerSettings.tone === 'melody';
   const canPlayMelody = firmwareSupports(props.firmwareVersion, 'tonerMelody');
+  const pairMask = tonerSettings.pairMask ?? TONER_PAIR_MASKS[tonerSettings.pair];
+  const pairs = ['1', '2', '3', '4'] as const;
+  const enabledPairs = pairs.filter((pair) => pairMask & TONER_PAIR_MASKS[pair]);
+  const channel = wifiSettings.channel ?? 1;
   const updateToner = async <Key extends keyof TonerSettings>(
     name: Key,
     value: TonerSettings[Key],
@@ -87,23 +94,26 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
             active={tonerSettings.power === 'on'}
             summary={
               tonerSettings.power === 'on'
-                ? `Pair ${tonerSettings.pair} · ${customMelody ? 'Custom melody' : `Tone ${tonerSettings.tone}`}`
+                ? `${enabledPairs.length ? `Pairs ${enabledPairs.join(', ')}` : 'Shield'} · ${customMelody ? 'Custom melody' : `Tone ${tonerSettings.tone}`}`
                 : 'Tone generator is off'
             }
           >
-            <ToolControl
-              label="Pair"
-              name="pair"
-              value={tonerSettings.pair}
-              options={[
-                ['2', 'P2'],
-                ['3', 'P3'],
-                ['1', 'P1'],
-                ['4', 'P4'],
-                ['all', 'All'],
-              ]}
-              onChange={updateToner}
-            />
+            <fieldset className="tool-control">
+              <legend>Pairs</legend>
+              <div className="tool-button-row">
+                {pairs.map((pair) => (
+                  <Button
+                    key={pair}
+                    aria-pressed={Boolean(pairMask & TONER_PAIR_MASKS[pair])}
+                    variant={pairMask & TONER_PAIR_MASKS[pair] ? 'primary' : undefined}
+                    onClick={() => void updateToner('pairMask', pairMask ^ TONER_PAIR_MASKS[pair])}
+                  >
+                    P{pair}
+                  </Button>
+                ))}
+                <Button onClick={() => void updateToner('pairMask', 15)}>All</Button>
+              </div>
+            </fieldset>
             <ToolControl
               label="Shield tone"
               name="shield"
@@ -119,10 +129,10 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
               name="tone"
               value={tonerSettings.tone}
               options={[
-                ['1', '1'],
-                ['2', '2'],
-                ['3', '3'],
-                ['4', '4'],
+                ['1', 'Standard'],
+                ['2', 'Warble'],
+                ['3', 'Pulse'],
+                ['4', 'Continuous'],
                 ['melody', 'Melody'],
               ]}
               onChange={updateToner}
@@ -154,6 +164,7 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
               options={[
                 ['low', 'Low'],
                 ['high', 'High'],
+                ['diff', 'Diff'],
               ]}
               onChange={updateToner}
             />
@@ -200,6 +211,52 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
                 void updateWifi('password', event.target.value.slice(0, 63));
               }}
             />
+            <div className="tool-button-row tool-password-actions">
+              <Button
+                disabled={!wifiSettings.password}
+                onClick={() => {
+                  void (async () => {
+                    try {
+                      await navigator.clipboard.writeText(wifiSettings.password);
+                      props.onNotice?.('WiFi password copied.');
+                    } catch {
+                      props.onNotice?.('Could not copy the WiFi password.');
+                    }
+                  })();
+                }}
+              >
+                Copy password
+              </Button>
+              <Button
+                disabled={wifiSettings.enabled === 'on'}
+                onClick={() => {
+                  const alphabet = 'abcdefghijkmnpqrstuvwxyz23456789';
+                  const chars = crypto.getRandomValues(new Uint8Array(12));
+                  const password = Array.from(chars, (byte) => alphabet[byte & 31]).join('');
+                  void updateWifi(
+                    'password',
+                    `${password.slice(0, 4)}-${password.slice(4, 8)}-${password.slice(8)}`,
+                  );
+                }}
+              >
+                New password
+              </Button>
+            </div>
+            <SelectField
+              className="tool-field"
+              label="WiFi channel"
+              value={channel}
+              disabled={wifiSettings.enabled === 'on'}
+              onChange={(event) => {
+                void updateWifi('channel', Number(event.target.value));
+              }}
+            >
+              {Array.from({ length: 11 }, (_, index) => (
+                <option key={index + 1} value={index + 1}>
+                  {index + 1} ({2412 + index * 5} MHz)
+                </option>
+              ))}
+            </SelectField>
             <ToolControl
               label="Enable"
               name="enabled"

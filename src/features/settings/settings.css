@@ -36,12 +36,107 @@
   grid-template-columns: minmax(0, 1fr);
   gap: 7px;
 }
-.settings-fields input,
+.settings-fields input:not([type='checkbox']),
 .settings-fields select,
 .batch-fields input {
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
+}
+.discovery-probes {
+  min-width: 0;
+  margin: 0;
+  padding: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  border: 1px solid var(--border, #dfe6ed);
+  border-radius: 8px;
+}
+.discovery-probes legend {
+  padding: 0 5px;
+  font-weight: 700;
+}
+.discovery-probes label,
+.neighbor-listen-option {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.86rem;
+}
+.discovery-probes .settings-hint {
+  flex-basis: 100%;
+}
+.nvp-calibration,
+.nvp-calibration label {
+  display: grid;
+  gap: 8px;
+}
+.nvp-calibration input {
+  width: 100%;
+  margin: 0;
+}
+.nvp-calibration output {
+  font-weight: 700;
+}
+.tester-help details {
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border, #dfe6ed);
+}
+.tester-help summary {
+  font-weight: 700;
+  cursor: pointer;
+}
+.tester-help table {
+  width: 100%;
+  margin-block: 12px;
+  border-collapse: collapse;
+  text-align: start;
+}
+.tester-help th,
+.tester-help td {
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--border, #dfe6ed);
+  text-align: start;
+  font-size: 0.82rem;
+}
+.tester-led {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-inline-end: 6px;
+  border-radius: 50%;
+}
+.tester-reference-list div {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: 10px;
+  padding-block: 4px;
+  font-size: 0.84rem;
+}
+.tester-reference-list dt {
+  font-weight: 700;
+}
+.tester-reference-list dd {
+  margin: 0;
+}
+.tester-pinout ol {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 4px;
+  padding: 0;
+  list-style: none;
+  text-align: center;
+  font-size: 0.8rem;
+}
+.tester-pinout li span {
+  display: block;
+  height: 22px;
+  margin-top: 4px;
+  border-radius: 2px;
+}
+.tester-pinout li .striped {
+  background-image: repeating-linear-gradient(135deg, transparent 0 4px, #fff 4px 8px);
 }
 .settings-hint,
 .batch-hint {
