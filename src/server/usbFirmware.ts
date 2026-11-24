@@ -18,9 +18,12 @@ export async function serveUsbFirmware(request: Request, path: string): Promise<
   try {
     const upstream = await fetch(USB_FIRMWARE_ORIGIN + usbFirmwareUpstream(path), {
       headers: { Accept: contentType },
-      redirect: 'error',
+      redirect: 'manual',
       signal: AbortSignal.timeout(60_000),
     });
+    if (upstream.status >= 300 && upstream.status < 400) {
+      return new Response('Unexpected redirect from the USB firmware server', { status: 502 });
+    }
     return new Response(upstream.body, {
       status: upstream.status,
       headers: {

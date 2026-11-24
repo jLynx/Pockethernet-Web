@@ -109,7 +109,7 @@ try {
   globalThis.fetch = (input, init) => {
     assert.ok(typeof input === 'string');
     upstreamPaths.push(input);
-    assert.equal(init?.redirect, 'error');
+    assert.equal(init?.redirect, 'manual');
     assert.equal(new Headers(init?.headers).get('Cookie'), null);
     return Promise.resolve(
       new Response('official response', { headers: { 'Set-Cookie': 'upstream=test' } }),
@@ -134,6 +134,13 @@ try {
     'https://pockethernet.com/update/manifest.json',
     'https://pockethernet.com/update/images/1.bin',
   ]);
+
+  globalThis.fetch = () =>
+    Promise.resolve(Response.redirect('https://other.example/manifest.json', 302));
+  const redirect = await get('/api/usb-firmware/manifest.json');
+  assert.equal(redirect.status, 502);
+  assert.equal(redirect.headers.get('Location'), null);
+  assert.equal(await redirect.text(), 'Unexpected redirect from the USB firmware server');
 } finally {
   globalThis.fetch = originalFetch;
 }
