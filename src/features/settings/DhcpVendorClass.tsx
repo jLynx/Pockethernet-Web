@@ -1,8 +1,9 @@
-import { useId, type ReactElement } from 'react';
-import { TextField } from '@/shared/ui/UiPrimitives';
+import type { ReactElement } from 'react';
+import { Button, TextField } from '@/shared/ui/UiPrimitives';
 import { firmwareRequirement, firmwareSupports } from '@/protocol/firmwareFeatures';
 
 const PRESETS = [
+  ['None', ''],
   ['Pockethernet', 'Pockethernet'],
   ['Cisco AP', 'Cisco AP c9120'],
   ['Aruba AP', 'ArubaAP'],
@@ -20,35 +21,55 @@ const PRESETS = [
 
 export function DhcpVendorClass({
   value,
+  custom = false,
   onChange,
   firmwareVersion,
 }: {
   value: string;
-  onChange: (value: string) => void;
+  custom?: boolean;
+  onChange: (value: string, custom: boolean) => void;
   firmwareVersion?: number;
 }): ReactElement {
-  const id = useId();
   const unavailable =
     firmwareVersion !== undefined && !firmwareSupports(firmwareVersion, 'dhcpVendorClass');
+  const customSelected = custom || !PRESETS.some(([, preset]) => preset === value);
   return (
-    <>
-      <TextField
-        label="DHCP vendor class (option 60)"
-        value={value}
-        list={id}
-        placeholder="None"
-        maxLength={64}
-        disabled={unavailable}
-        onChange={(event) => onChange(event.target.value)}
-      />
-      <datalist id={id}>
-        {PRESETS.map(([label, preset]) => (
-          <option key={preset} value={preset}>
-            {label}
-          </option>
-        ))}
-      </datalist>
+    <fieldset className="dhcp-vendor-class" disabled={unavailable}>
+      <legend>DHCP vendor class (option 60)</legend>
+      <div className="tool-button-row dhcp-vendor-options">
+        {PRESETS.map(([label, preset]) => {
+          const selected = !customSelected && value === preset;
+          return (
+            <Button
+              key={preset}
+              variant={selected ? 'primary' : 'secondary'}
+              aria-pressed={selected}
+              title={preset || undefined}
+              onClick={() => onChange(preset, false)}
+            >
+              {label}
+            </Button>
+          );
+        })}
+        <Button
+          variant={customSelected ? 'primary' : 'secondary'}
+          aria-pressed={customSelected}
+          onClick={() => onChange(value, true)}
+        >
+          Custom
+        </Button>
+      </div>
+      {customSelected && (
+        <TextField
+          label="Custom vendor class"
+          value={value}
+          maxLength={64}
+          spellCheck={false}
+          autoCapitalize="none"
+          onChange={(event) => onChange(event.target.value, true)}
+        />
+      )}
       {unavailable && <p className="settings-hint">{firmwareRequirement('dhcpVendorClass')}</p>}
-    </>
+    </fieldset>
   );
 }

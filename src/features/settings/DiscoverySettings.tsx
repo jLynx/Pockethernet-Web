@@ -3,7 +3,7 @@ import type { MeasurementSettings, StateSetter, TestId } from '@/app/types';
 import { DISCOVERY_LISTEN_TIMES, discoveryIsActive } from '@/app/measurementSettings';
 import { firmwareRequirement, firmwareSupports } from '@/protocol/firmwareFeatures';
 import { DEFAULT_DISCOVERY_PROBES, DISCOVERY_PROBES } from '@/protocol/networkDiscovery';
-import { SelectField } from '@/shared/ui/UiPrimitives';
+import { Checkbox, SelectField } from '@/shared/ui/UiPrimitives';
 
 export function DiscoverySettings({
   settings,
@@ -73,8 +73,7 @@ export function DiscoverySettings({
           )}
           {DISCOVERY_PROBES.filter((probe) => probe.group === group).map(({ bit, label }) => (
             <label key={bit}>
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={Boolean(mask & bit)}
                 onChange={(event) => {
                   const enabled = event.target.checked;

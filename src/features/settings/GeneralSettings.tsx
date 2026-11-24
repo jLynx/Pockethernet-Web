@@ -77,15 +77,16 @@ export function GeneralSettings({
         ]}
         onChange={updateSettings}
       />
-      <ToolField
-        label="MAC"
-        value={settings.mac}
-        onChange={(event) => {
-          updateSettings('mac', event.target.value.slice(0, 17));
-        }}
-        placeholder="00:11:22:33:44:55"
-        disabled={settings.customMac !== 'on'}
-      />
+      {settings.customMac === 'on' && (
+        <ToolField
+          label="MAC"
+          value={settings.mac}
+          onChange={(event) => {
+            updateSettings('mac', event.target.value.slice(0, 17));
+          }}
+          placeholder="00:11:22:33:44:55"
+        />
+      )}
       <div className="tool-action report-logo-action">
         <span>Report logo</span>
         {reportPreferences.logoDataUrl && (

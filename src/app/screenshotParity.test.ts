@@ -180,18 +180,32 @@ void test('the updated tool controls encode differential drive and the bridge ch
   assert.throws(() => wifiBridgeCommand(true, 'Test', 'password123', 12), /channel/);
 });
 
-void test('setup exposes the DHCP gate, stop button, pin order and live NVP calculation', () => {
-  const vendor = (firmwareVersion: number) =>
+void test('vendor class pills reflect the firmware gate, presets and saved custom input', () => {
+  const vendor = (firmwareVersion: number, value = '', custom = false) =>
     renderToStaticMarkup(
       createElement(DhcpVendorClass, {
         firmwareVersion,
-        value: '',
+        value,
+        custom,
         onChange: () => {},
       }),
     );
+  assert.match(vendor(17), /<fieldset[^>]*disabled=""/);
   assert.match(vendor(17), /Requires firmware V18\+/);
-  assert.match(vendor(18), /Cisco AP c9120/);
+  assert.match(vendor(18), /aria-pressed="true">None<\/button>/);
+  assert.match(vendor(18, 'Cisco AP c9120'), /aria-pressed="true" title="Cisco AP c9120">Cisco AP/);
   assert.doesNotMatch(vendor(18), /Requires firmware/);
+  assert.doesNotMatch(vendor(18), /Custom vendor class/);
+  assert.match(vendor(18, 'Custom test class'), /Custom vendor class/);
+  const saved = normalizeMeasurementSettings({
+    ipv4Settings: { vendorClass: 'Cisco AP c9120', vendorClassCustom: true },
+  }).ipv4Settings;
+  const restored = vendor(18, saved.vendorClass, saved.vendorClassCustom);
+  assert.match(restored, /aria-pressed="true">Custom<\/button>/);
+  assert.match(restored, /Custom vendor class/);
+});
+
+void test('setup exposes the stop button, pin order and live NVP calculation', () => {
   const dock = renderToStaticMarkup(
     createElement(ActionDock, {
       running: true,

@@ -1,7 +1,7 @@
 import type { ReactElement, ReactNode } from 'react';
 import type { ReportResults, TestId, UnavailableTests } from '@/app/types';
 import type { useAppSettings } from '@/app/useAppSettings';
-import { SelectField } from '@/shared/ui/UiPrimitives';
+import { Checkbox, SelectField } from '@/shared/ui/UiPrimitives';
 import { PageLayout } from '@/shared/layout/PageLayout';
 import { PingDefaultsPanel } from '@/features/tools/PingDefaultsPanel';
 import { ToolControl, ToolPanel } from '@/features/tools/ToolControls';
@@ -115,8 +115,8 @@ export function ConfigurePage({
                       const requirement = unavailableTests[id];
                       return (
                         <label key={id}>
-                          <input
-                            type="checkbox"
+                          <Checkbox
+                            size="large"
                             checked={!unavailableTests[id] && app.selected.has(id)}
                             disabled={Boolean(unavailableTests[id])}
                             onChange={() => onToggle(id)}

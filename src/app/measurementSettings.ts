@@ -61,6 +61,7 @@ export function normalizeMeasurementSettings(saved: Record<string, unknown>): Me
       gateway: text(ipv4.gateway),
       dns: text(ipv4.dns),
       vendorClass: text(ipv4.vendorClass),
+      vendorClassCustom: ipv4.vendorClassCustom === true,
     },
     ipv6Mode: saved.ipv6Mode === 'both' || saved.ipv6Mode === 'dhcpv6' ? saved.ipv6Mode : 'slaac',
     discoveryTimeout:

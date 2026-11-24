@@ -2,7 +2,7 @@ import { useState, type ReactElement, type ReactNode } from 'react';
 import type { ReportPreferences, ReportResults, SavedReport } from '@/app/types';
 import type { ReportProject } from '@/app/savedConfigurations';
 import { reportProjectNames } from '@/app/reportWorkflow';
-import { Button, EmptyState, SelectField } from '@/shared/ui/UiPrimitives';
+import { Button, Checkbox, EmptyState, SelectField } from '@/shared/ui/UiPrimitives';
 import { PageLayout } from '@/shared/layout/PageLayout';
 import { createLlmExport } from './llmExport';
 import { createReportCsv, createReportJson } from './reportDataExport';
@@ -286,8 +286,8 @@ export function ReportsPage({
         >
           <div className="report-selection">
             <label>
-              <input
-                type="checkbox"
+              <Checkbox
+                size="large"
                 checked={allSelected}
                 ref={(input) => {
                   if (input) input.indeterminate = selectedReports.length > 0 && !allSelected;
@@ -366,8 +366,8 @@ export function ReportsPage({
           <div className="report-list">
             {visibleReports.map((report) => (
               <article className="report-row" key={report.id}>
-                <input
-                  type="checkbox"
+                <Checkbox
+                  size="large"
                   checked={selected.has(report.id)}
                   aria-label={`Select ${reportTitle(report)}`}
                   onChange={() =>

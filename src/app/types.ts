@@ -217,6 +217,7 @@ export interface Ipv4UiSettings {
   gateway: string;
   dns: string;
   vendorClass?: string;
+  vendorClassCustom?: boolean;
 }
 
 export interface TdrGraphResult {

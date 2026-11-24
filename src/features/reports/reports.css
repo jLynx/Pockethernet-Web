@@ -76,11 +76,6 @@
   color: var(--text, #18283e);
   font-weight: 700;
 }
-.report-selection input {
-  width: 18px;
-  height: 18px;
-  margin: 0;
-}
 .report-export-button {
   min-height: 40px;
   font-size: 0.85rem;
@@ -219,10 +214,6 @@
 }
 .report-row:last-child {
   border-bottom: 0;
-}
-.report-row > input {
-  width: 18px;
-  height: 18px;
 }
 .report-row-copy {
   min-width: 0;

@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react';
-import type { Ipv4UiSettings, MeasurementSettings, StateSetter, TestId } from '@/app/types';
-import { SelectField, TextField } from '@/shared/ui/UiPrimitives';
+import type { MeasurementSettings, StateSetter, TestId } from '@/app/types';
+import { Checkbox, SelectField, TextField } from '@/shared/ui/UiPrimitives';
 import { ToolControl } from '@/features/tools/ToolControls';
 import { DiscoverySettings } from './DiscoverySettings';
 import { DhcpVendorClass } from './DhcpVendorClass';
@@ -30,12 +30,12 @@ export function NetworkSettings({
   const show = (name: typeof section): boolean => section === 'all' || section === name;
   const showDiscovery = show('network-discovery') && !discoveryUnavailable;
   const ipv4 = settings.ipv4Settings;
-  const staticFields: readonly [Exclude<keyof Ipv4UiSettings, 'mode'>, string][] = [
+  const staticFields = [
     ['ip', 'Static IP'],
     ['netmask', 'Subnet mask'],
     ['gateway', 'Gateway'],
     ['dns', 'DNS'],
-  ];
+  ] as const;
   return (
     <div className="settings-fields">
       {show('ipv4') && (
@@ -58,10 +58,11 @@ export function NetworkSettings({
             <DhcpVendorClass
               firmwareVersion={firmwareVersion}
               value={ipv4.vendorClass ?? ''}
-              onChange={(value) =>
+              custom={ipv4.vendorClassCustom}
+              onChange={(vendorClass, vendorClassCustom) =>
                 onChange((current) => ({
                   ...current,
-                  ipv4Settings: { ...current.ipv4Settings, vendorClass: value },
+                  ipv4Settings: { ...current.ipv4Settings, vendorClass, vendorClassCustom },
                 }))
               }
             />
@@ -111,8 +112,7 @@ export function NetworkSettings({
       {(show('cdp') || show('lldp')) && (
         <>
           <label className="neighbor-listen-option">
-            <input
-              type="checkbox"
+            <Checkbox
               checked={settings.cdpLldpFull === true}
               onChange={(event) => {
                 const cdpLldpFull = event.target.checked;
