@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { ReportDraft, SavedReport } from '@/app/types';
 import { workflowDraft, workflowReport } from '@/app/workflowFixtures';
 import { useReportWorkflow } from '@/app/useReportWorkflow';
-import { Button } from '@/shared/ui/UiPrimitives';
+import { Button, Checkbox } from '@/shared/ui/UiPrimitives';
 import { ReportComposer } from './ReportComposer';
 
 function BatchWorkflowExample(): ReactElement {
@@ -44,11 +44,7 @@ function BatchWorkflowExample(): ReactElement {
           Load sample measurement
         </Button>
         <label>
-          <input
-            type="checkbox"
-            checked={failSave}
-            onChange={(event) => setFailSave(event.target.checked)}
-          />{' '}
+          <Checkbox checked={failSave} onChange={(event) => setFailSave(event.target.checked)} />{' '}
           Simulate storage failure
         </label>
       </div>

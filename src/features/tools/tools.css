@@ -45,6 +45,21 @@
   box-shadow: none;
   cursor: not-allowed;
 }
+.measure-stop-button {
+  min-height: 52px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 13px;
+  color: #fff;
+  background: #a82434;
+  font-weight: 800;
+  cursor: pointer;
+}
+.tool-button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
 .spinner {
   width: 17px;
   height: 17px;
@@ -192,6 +207,20 @@
   font-size: 0.8rem;
   font-weight: 800;
 }
+.tool-segmented {
+  display: flex;
+  flex-wrap: wrap;
+}
+.tool-segmented button {
+  flex: 1 0 auto;
+  min-width: 58px;
+}
+.tool-password-actions {
+  justify-content: flex-end;
+}
+.tool-password-actions .ui-button {
+  font-size: 0.8rem;
+}
 .tool-field {
   display: grid;
   grid-template-columns: minmax(100px, 0.7fr) minmax(0, 1.3fr);
@@ -201,10 +230,8 @@
   font-size: 0.8rem;
   font-weight: 800;
 }
-.tool-field input {
+.tool-field :is(input, select, textarea) {
   min-width: 0;
-  height: 36px;
-  padding: 0 9px;
   border: 1px solid var(--border-control, #cfd9e4);
   border-radius: 6px;
   color: var(--text, #192a40);
@@ -212,9 +239,26 @@
   font: inherit;
   font-weight: 500;
 }
-.tool-field input:disabled {
+.tool-field :is(input, select) {
+  height: 36px;
+  padding: 0 9px;
+}
+.tool-field :is(input, select, textarea):disabled {
   color: #9aa6b2;
   background: var(--surface-muted, #f3f6f8);
+}
+.tool-melody-field {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+}
+.tool-melody-field textarea {
+  max-width: 100%;
+  padding: 8px 9px;
+}
+.tool-melody-requirement {
+  margin: 0;
+  color: var(--text-muted, #718096);
+  font-size: 0.8rem;
 }
 .tool-info-row,
 .tool-action {
@@ -442,6 +486,10 @@
   }
   .test-panel-header {
     grid-template-columns: minmax(140px, 1fr) minmax(105px, 0.8fr);
+  }
+  .test-summary {
+    padding-inline: 7px;
+    gap: 6px;
   }
   .test-summary span {
     max-width: 95px;

@@ -25,7 +25,7 @@ const projectPlugin = { rules: { 'max-css-lines': maxCssLinesRule } };
 
 export default tseslint.config(
   {
-    ignores: ['dist', 'storybook-static', 'node_modules', '.wrangler'],
+    ignores: ['dist', 'storybook-static', 'node_modules', '.wrangler', 'android-reference/**'],
   },
   {
     files: ['src/**/*.{ts,tsx}'],

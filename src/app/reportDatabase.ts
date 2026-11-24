@@ -1,19 +1,24 @@
 import type { SavedReport } from './types';
 import { isSavedReport, loadReports } from './storage';
+import { formatJobReportNumber } from './savedConfigurations';
+import { sameProjectSite } from './reportWorkflow';
 
 const DATABASE = 'pockethernet-reports';
 const STORE = 'reports';
 const BACKUPS = 'migrationBackups';
+const JOB_COUNTERS = 'jobCounters';
 
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     let blocked = false;
-    const request = indexedDB.open(DATABASE, 2);
+    const request = indexedDB.open(DATABASE, 3);
     request.onupgradeneeded = () => {
       if (!request.result.objectStoreNames.contains(STORE))
         request.result.createObjectStore(STORE, { keyPath: 'id' });
       if (!request.result.objectStoreNames.contains(BACKUPS))
         request.result.createObjectStore(BACKUPS, { autoIncrement: true });
+      if (!request.result.objectStoreNames.contains(JOB_COUNTERS))
+        request.result.createObjectStore(JOB_COUNTERS);
     };
     request.onsuccess = () => {
       if (blocked) {
@@ -32,17 +37,17 @@ function openDatabase(): Promise<IDBDatabase> {
 }
 
 async function transaction(
-  action: (store: IDBObjectStore, backups: IDBObjectStore) => void,
+  action: (store: IDBObjectStore, backups: IDBObjectStore, counters: IDBObjectStore) => void,
 ): Promise<void> {
   const database = await openDatabase();
   try {
     await new Promise<void>((resolve, reject) => {
-      const tx = database.transaction([STORE, BACKUPS], 'readwrite');
+      const tx = database.transaction([STORE, BACKUPS, JOB_COUNTERS], 'readwrite');
       tx.oncomplete = () => resolve();
       tx.onabort = () => reject(tx.error ?? new Error('Report storage transaction was cancelled.'));
       tx.onerror = () => reject(tx.error ?? new Error('Could not write report storage.'));
       try {
-        action(tx.objectStore(STORE), tx.objectStore(BACKUPS));
+        action(tx.objectStore(STORE), tx.objectStore(BACKUPS), tx.objectStore(JOB_COUNTERS));
       } catch (error) {
         tx.abort();
         reject(error instanceof Error ? error : new Error(String(error)));
@@ -131,10 +136,51 @@ export async function readReportDatabase(): Promise<SavedReport[]> {
   }
 }
 
-export function writeReportDatabase(report: SavedReport): Promise<void> {
-  return transaction((store) => {
-    store.add(report);
+export async function writeReportDatabase(
+  report: SavedReport,
+  numberPattern?: string,
+): Promise<SavedReport> {
+  let saved = report;
+  const job = report.job;
+  if (numberPattern && !numberPattern.includes('#'))
+    throw new Error('Cable ID pattern is missing #.');
+  await transaction((store, _backups, counters) => {
+    if (!job || !numberPattern) {
+      store.add(report);
+      return;
+    }
+    const request = counters.get(job.id);
+    request.onsuccess = () => {
+      const stored = store.getAll();
+      stored.onsuccess = () => {
+        const existing: unknown[] = stored.result;
+        const used = new Set(
+          existing
+            .filter(isSavedReport)
+            .filter(
+              (item) =>
+                item.job?.id === job.id ||
+                (!item.job && sameProjectSite(item.details, report.details)),
+            )
+            .map((item) => item.details.tag.trim().toLowerCase()),
+        );
+        let number = typeof request.result === 'number' ? request.result : 1;
+        let tag = formatJobReportNumber(numberPattern, number);
+        while (used.has(tag.toLowerCase())) {
+          number++;
+          tag = formatJobReportNumber(numberPattern, number);
+        }
+        saved = {
+          ...report,
+          details: { ...report.details, tag },
+          job: { ...job, number },
+        };
+        store.add(saved);
+        counters.put(number + 1, job.id);
+      };
+    };
   });
+  return saved;
 }
 
 export function deleteReportDatabase(id: string): Promise<void> {
@@ -144,8 +190,9 @@ export function deleteReportDatabase(id: string): Promise<void> {
 }
 
 export function clearReportDatabase(): Promise<void> {
-  return transaction((store, backups) => {
+  return transaction((store, backups, counters) => {
     store.clear();
     backups.clear();
+    counters.clear();
   });
 }

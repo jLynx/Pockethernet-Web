@@ -58,7 +58,6 @@ assert.doesNotMatch(offer, /Check for upgrade|ESP|Install the official|Update fi
 assert.doesNotMatch(
   render({
     check: {
-      ...state.check,
       latestVersion: 16,
       downloadUrl: '',
       updateAvailable: false,
@@ -113,6 +112,32 @@ assert.match(custom, /Upload and start update/);
 assert.match(custom, /30 minutes/);
 assert.match(custom, /version number alone cannot distinguish/);
 assert.doesNotMatch(custom, /This installs official ESP/);
+
+const usb = { method: 'usb', latestVersion: 32, updateAvailable: true, message: '' } as const;
+assert.match(render({ check: usb }, false), /Update available: v32 via USB/);
+const usbConfirm = render(
+  { phase: 'confirm', selection: usb, message: 'No tester selected.' },
+  false,
+);
+assert.match(usbConfirm, /Switch off the Pockethernet/);
+assert.match(usbConfirm, /Select USB device and update/);
+assert.match(usbConfirm, /official USB updater/);
+assert.match(usbConfirm, /No tester selected/);
+assert.doesNotMatch(usbConfirm, /Ethernet switch/);
+
+const usbProgress = render(
+  { phase: 'usb', usbProgress: 42, message: 'Installing firmware…' },
+  false,
+);
+assert.match(usbProgress, /<progress[^>]+max="100"[^>]+value="42"/);
+assert.doesNotMatch(usbProgress, /Ethernet|Start update/);
+const usbRecovery = render({
+  phase: 'unknown',
+  pending: { device: deviceInfo, target: usb, startedAt: 1, completed: false },
+});
+assert.match(usbRecovery, /Retry over USB in backup mode/);
+assert.match(usbRecovery, /reconnect over Bluetooth to verify/);
+assert.doesNotMatch(usbRecovery, /five minutes|Ethernet/);
 console.log(
   'Firmware update availability, confirmation, progress and recovery display tests passed.',
 );

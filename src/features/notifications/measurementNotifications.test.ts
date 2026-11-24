@@ -53,6 +53,7 @@ const context: MeasurementContext = {
   setBer: noop,
   setPoe: noop,
   setLink: noop,
+  setNetworkDiscovery: noop,
   setCdplldp: noop,
   setVlan: noop,
   setTraffic: noop,

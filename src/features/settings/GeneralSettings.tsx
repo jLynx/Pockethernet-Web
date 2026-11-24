@@ -1,11 +1,13 @@
 import type { ChangeEvent, ReactElement } from 'react';
-import type { ToolSettings, ReportPreferences, StateSetter } from '@/app/types';
+import type { ToolSettings, ReportPreferences, StateSetter, ReportResults } from '@/app/types';
 import { ToolControl, ToolField, ToolPanel } from '@/features/tools/ToolControls';
 import { resizeReportImage } from '@/features/reports/images';
+import { NvpCalibration } from './NvpCalibration';
 
 interface GeneralSettingsProps {
   disabled: boolean;
   settings: ToolSettings;
+  lastTdr?: ReportResults['tdr'];
   onSettingsChange: StateSetter<ToolSettings>;
   reportPreferences: ReportPreferences;
   onReportPreferencesChange: StateSetter<ReportPreferences>;
@@ -15,6 +17,7 @@ interface GeneralSettingsProps {
 export function GeneralSettings({
   disabled,
   settings,
+  lastTdr,
   onSettingsChange,
   reportPreferences,
   onReportPreferencesChange,
@@ -38,13 +41,7 @@ export function GeneralSettings({
     event.target.value = '';
   };
   return (
-    <ToolPanel
-      className="tool-panel-settings"
-      disabled={disabled}
-      title="Cable & report settings"
-      active={false}
-      summary="Cable and report defaults"
-    >
+    <ToolPanel className="tool-panel-settings" disabled={disabled} title="Cable & report settings">
       <ToolControl
         label="TIA"
         name="tia"
@@ -56,22 +53,19 @@ export function GeneralSettings({
         onChange={updateSettings}
       />
       <ToolControl
-        label="Units"
-        name="units"
-        value={settings.units}
+        label="Pin order in wiremap"
+        name="wiremapPinOrder"
+        value={settings.wiremapPinOrder ?? 'pairwise'}
         options={[
-          ['meters', 'Meters'],
-          ['feet', 'Feet'],
+          ['pairwise', 'Pairwise'],
+          ['sequential', 'Sequential'],
         ]}
         onChange={updateSettings}
       />
-      <ToolField
-        label="NVP value"
-        value={settings.nvp}
-        onChange={(event) => {
-          updateSettings('nvp', event.target.value.replace(/\D/g, '').slice(0, 3));
-        }}
-        inputMode="numeric"
+      <NvpCalibration
+        settings={settings}
+        lastTdr={lastTdr}
+        onChange={(value) => updateSettings('nvp', value)}
       />
       <ToolControl
         label="Custom MAC"
@@ -83,15 +77,16 @@ export function GeneralSettings({
         ]}
         onChange={updateSettings}
       />
-      <ToolField
-        label="MAC"
-        value={settings.mac}
-        onChange={(event) => {
-          updateSettings('mac', event.target.value.slice(0, 17));
-        }}
-        placeholder="00:11:22:33:44:55"
-        disabled={settings.customMac !== 'on'}
-      />
+      {settings.customMac === 'on' && (
+        <ToolField
+          label="MAC"
+          value={settings.mac}
+          onChange={(event) => {
+            updateSettings('mac', event.target.value.slice(0, 17));
+          }}
+          placeholder="00:11:22:33:44:55"
+        />
+      )}
       <div className="tool-action report-logo-action">
         <span>Report logo</span>
         {reportPreferences.logoDataUrl && (

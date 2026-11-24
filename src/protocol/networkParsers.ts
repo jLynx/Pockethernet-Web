@@ -1,5 +1,5 @@
 import { bytesToIpv4, decodeText, formatIpv6, formatMac } from './bytes';
-import type { FieldMap, FieldsResult, Ipv6Mode } from './types';
+import type { DhcpRoute, FieldMap, FieldsResult, Ipv4Result, Ipv6Mode } from './types';
 
 function formatSeconds(value: number): string {
   if (value < 60) return `${value} s`;
@@ -7,7 +7,30 @@ function formatSeconds(value: number): string {
   return `${Math.floor(value / 60)} min`;
 }
 
-export function parseIpv4Packet(payload: Uint8Array): FieldsResult {
+export function parseClasslessRoutes(bytes: Uint8Array): DhcpRoute[] | null {
+  const routes: DhcpRoute[] = [];
+  for (let offset = 0; offset < bytes.length;) {
+    const prefix = bytes[offset++];
+    const size = Math.ceil(prefix / 8);
+    if (prefix > 32 || offset + size + 4 > bytes.length) return null;
+    const destination = new Uint8Array(4);
+    destination.set(bytes.subarray(offset, offset + size));
+    if (prefix % 8) destination[size - 1] &= (0xff << (8 - (prefix % 8))) & 0xff;
+    offset += size;
+    routes.push({
+      destination: bytesToIpv4(destination),
+      prefix,
+      router: bytesToIpv4(bytes, offset),
+    });
+    offset += 4;
+  }
+  return routes;
+}
+
+export function parseIpv4Packet(
+  payload: Uint8Array,
+  { classlessRoutes = true }: { classlessRoutes?: boolean } = {},
+): Ipv4Result {
   if (payload.length < 14) throw new Error('Invalid IPv4 packet: missing Ethernet header');
   const ethType = (payload[12] << 8) | payload[13];
   const ethLength = ethType === 0x8100 ? 18 : 14;
@@ -45,7 +68,16 @@ export function parseIpv4Packet(payload: Uint8Array): FieldsResult {
     if (offset >= view.byteLength) break;
     const length = view.getUint8(offset++);
     if (offset + length > view.byteLength) break;
-    options.set(option, new Uint8Array(view.buffer, view.byteOffset + offset, length));
+    const data = new Uint8Array(view.buffer, view.byteOffset + offset, length);
+    if (option === 121 && options.has(option)) {
+      const earlier = options.get(option)!;
+      const joined = new Uint8Array(earlier.length + data.length);
+      joined.set(earlier);
+      joined.set(data, earlier.length);
+      options.set(option, joined);
+    } else {
+      options.set(option, data);
+    }
     offset += length;
   }
   const optionIp = (option: number): string => {
@@ -75,10 +107,33 @@ export function parseIpv4Packet(payload: Uint8Array): FieldsResult {
   fields.Broadcast = optionIp(28);
   fields.Filename = decodeText(dhcpBytes, 108, 236);
   fields['Server name'] = decodeText(dhcpBytes, 44, 108);
+  const handled = [1, 3, 6, 28, 51, 54, 58, 60, 114];
+  for (const [code, label] of [
+    [60, 'Vendor class'],
+    [114, 'Captive portal URL'],
+  ] as const) {
+    const data = options.get(code);
+    if (data) fields[label] = decodeText(data, 0, data.length);
+  }
+  const routeBytes = options.get(121);
+  const routes = classlessRoutes && routeBytes ? parseClasslessRoutes(routeBytes) : undefined;
+  if (routes?.length) {
+    handled.push(121);
+    fields['Classless routes'] = routes
+      .map(({ destination, prefix, router }) => `${destination}/${prefix} via ${router}`)
+      .join(', ');
+  } else if (routes === null) {
+    fields['Classless routes'] = 'Malformed DHCP option 121';
+  }
   fields['Other options'] = Array.from(options.keys())
-    .filter((option) => ![1, 3, 6, 28, 51, 54, 58].includes(option))
+    .filter((option) => !handled.includes(option))
     .join(', ');
-  return { status: 'OK', summary: `IP: ${fields['Your IP']}`, fields };
+  return {
+    status: 'OK',
+    summary: `IP: ${fields['Your IP']}`,
+    fields,
+    ...(routes ? { classlessRoutes: routes } : {}),
+  };
 }
 
 function ipv6PacketParts(payload: Uint8Array): {

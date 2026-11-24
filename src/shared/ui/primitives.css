@@ -128,7 +128,8 @@
   border-radius: 50%;
   background: #9aa6b2;
 }
-.status-indicator.connecting {
+.status-indicator.connecting,
+.status-indicator.reconnecting {
   background: #f2a516;
   box-shadow: 0 0 0 4px #f2a51622;
 }
@@ -157,6 +158,21 @@
   border-color: var(--accent, #0878ca);
   color: #fff;
   background: #0878ca;
+}
+.ui-checkbox {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin: 0;
+}
+.ui-checkbox[data-size='large'] {
+  width: 18px;
+  height: 18px;
+}
+@supports (accent-color: #0878ca) {
+  .ui-checkbox {
+    accent-color: var(--accent, #0878ca);
+  }
 }
 .text-field,
 .select-field {

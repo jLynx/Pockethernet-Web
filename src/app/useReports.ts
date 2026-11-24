@@ -8,7 +8,7 @@ export interface ReportLibrary {
   ready: boolean;
   busy: boolean;
   error: string;
-  add: (report: SavedReport) => Promise<boolean>;
+  add: (report: SavedReport, numberPattern?: string) => Promise<boolean>;
   remove: (id: string) => Promise<boolean>;
 }
 
@@ -42,16 +42,16 @@ export function useReports(): ReportLibrary {
     };
   }, []);
   const mutate = useCallback(
-    async (
-      action: () => Promise<void>,
-      update: (reports: SavedReport[]) => SavedReport[],
+    async <T>(
+      action: () => Promise<T>,
+      update: (reports: SavedReport[], result: T) => SavedReport[],
     ): Promise<boolean> => {
       if (locked.current || !ready) return false;
       locked.current = true;
       setBusy(true);
       try {
-        await action();
-        setReports(update);
+        const result = await action();
+        setReports((current) => update(current, result));
         setError('');
         return true;
       } catch (reason) {
@@ -69,10 +69,10 @@ export function useReports(): ReportLibrary {
     ready,
     busy,
     error,
-    add: (report) =>
+    add: (report, numberPattern) =>
       mutate(
-        () => writeReportDatabase(report),
-        (current) => [report, ...current],
+        () => writeReportDatabase(report, numberPattern),
+        (current, saved) => [saved, ...current],
       ),
     remove: (id) =>
       mutate(

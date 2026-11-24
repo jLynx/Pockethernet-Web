@@ -8,16 +8,21 @@ export function MeasurementControls({
   id,
   configuration,
   disabled,
+  firmwareVersion,
 }: {
   id: TestId;
   configuration: ReturnType<typeof useTestConfiguration>;
   disabled: boolean;
+  firmwareVersion?: number;
 }): ReactElement | null {
   if (
     id !== 'ber' &&
     id !== 'ipv4' &&
     id !== 'ipv6' &&
+    id !== 'network-discovery' &&
     id !== 'cdplldp' &&
+    id !== 'cdp' &&
+    id !== 'lldp' &&
     id !== 'vlan' &&
     id !== 'ping'
   )
@@ -37,6 +42,8 @@ export function MeasurementControls({
         <NetworkSettings
           section={id}
           settings={configuration.measurementSettings}
+          selected={configuration.selected}
+          firmwareVersion={firmwareVersion}
           onChange={configuration.setMeasurementSettings}
           pingTargets={configuration.pingTargets}
           onPingTargetsChange={configuration.setPingTargets}

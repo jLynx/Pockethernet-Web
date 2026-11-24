@@ -1,5 +1,5 @@
 import type { ReactElement, ReactNode } from 'react';
-import type { Tab, TestId } from './types';
+import type { Tab, TestId, UnavailableTests } from './types';
 import type { useAppSettings } from './useAppSettings';
 import type { useMeasurementState } from './useMeasurementState';
 import type { useReportWorkflow } from './useReportWorkflow';
@@ -24,6 +24,7 @@ interface AppPagesProps {
   deviceTools: ReturnType<typeof useDeviceTools>;
   firmwareUpdater: FirmwareUpdaterActions;
   deviceLocked: boolean;
+  unavailableTests: UnavailableTests;
   onTabChange: (tab: Tab) => void;
   onToggle: (id: TestId) => void;
   onReset: () => Promise<void>;
@@ -41,6 +42,7 @@ export function AppPages({
   deviceTools,
   firmwareUpdater,
   deviceLocked,
+  unavailableTests,
   onTabChange,
   onToggle,
   onReset,
@@ -48,9 +50,11 @@ export function AppPages({
   workflowSelector,
 }: AppPagesProps): ReactElement {
   const batch = app.workflowMode === 'batch';
-  const displaySettings = batch
-    ? (measurement.draft?.settings ?? app.toolSettings)
-    : app.toolSettings;
+  const connectedFirmwareVersion = ble.status === 'connected' ? ble.info?.espVersion : undefined;
+  const displaySettings =
+    batch && measurement.draft
+      ? { ...measurement.draft.settings, ...app.measurementDisplay }
+      : app.toolSettings;
   const composer = (
     <ReportComposer
       batch={batch}
@@ -65,16 +69,21 @@ export function AppPages({
       busy={workflow.busy}
       running={measurement.running}
       ready={library.ready}
-      autoIncrement={batch && app.autoIncrement}
+      autoIncrement={batch && (app.project?.incrementCableId ?? app.autoIncrement)}
       onSave={workflow.save}
       onNotice={onNotice}
+      projects={app.projects}
+      project={app.project}
+      onProjectChange={app.setProjectId}
     />
   );
   return tab === 'test' ? (
     <TestPage
       batch={batch}
       configuration={app}
+      firmwareVersion={connectedFirmwareVersion}
       disabled={measurement.running || deviceLocked}
+      unavailableTests={unavailableTests}
       {...measurement.results}
       selected={
         batch && measurement.draft ? new Set(measurement.draft.selectedTests) : app.selected
@@ -99,7 +108,8 @@ export function AppPages({
     </TestPage>
   ) : tab === 'tools' ? (
     <ToolsPage
-      firmwareLocked={deviceLocked || measurement.running}
+      firmwareLocked={deviceLocked || measurement.running || deviceTools.busy}
+      firmwareVersion={ble.info?.espVersion}
       blinkerSettings={app.blinkerSettings}
       onBlinkerSettingsChange={app.setBlinkerSettings}
       onBlinkerChange={deviceTools.applyBlinker}
@@ -107,13 +117,18 @@ export function AppPages({
       onTonerSettingsChange={app.setTonerSettings}
       onTonerChange={deviceTools.applyToner}
       wifiSettings={app.wifiSettings}
+      bridgeSpeed={deviceTools.bridgeSpeed}
       onWifiSettingsChange={app.setWifiSettings}
       onWifiChange={deviceTools.applyWifi}
+      onNotice={onNotice}
     />
   ) : tab === 'configure' ? (
     <ConfigurePage
       app={app}
+      lastTdr={measurement.lastTdr}
+      firmwareVersion={connectedFirmwareVersion}
       disabled={measurement.running || deviceLocked}
+      unavailableTests={unavailableTests}
       onToggle={onToggle}
       onNotice={onNotice}
       workflowSelector={workflowSelector}
@@ -122,6 +137,8 @@ export function AppPages({
     <SettingsPage
       deviceInfo={ble.info}
       firmwareUpdater={firmwareUpdater}
+      measurementDisplay={app.measurementDisplay}
+      onMeasurementDisplayChange={app.setMeasurementDisplay}
       resetDisabled={
         !library.ready ||
         measurement.running ||
@@ -137,6 +154,7 @@ export function AppPages({
     <ReportsPage
       preferences={app.reportPreferences}
       reports={library.reports}
+      projects={app.projects}
       onRemove={library.remove}
       ready={library.ready}
       busy={library.busy}

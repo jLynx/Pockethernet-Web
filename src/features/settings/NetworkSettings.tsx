@@ -1,11 +1,17 @@
 import type { ReactElement } from 'react';
-import type { Ipv4UiSettings, MeasurementSettings, StateSetter } from '@/app/types';
-import { SelectField, TextField } from '@/shared/ui/UiPrimitives';
+import type { MeasurementSettings, StateSetter, TestId } from '@/app/types';
+import { Checkbox, SelectField, TextField } from '@/shared/ui/UiPrimitives';
 import { ToolControl } from '@/features/tools/ToolControls';
+import { DiscoverySettings } from './DiscoverySettings';
+import { DhcpVendorClass } from './DhcpVendorClass';
 
 interface NetworkSettingsProps {
-  section?: 'all' | 'ipv4' | 'ipv6' | 'cdplldp' | 'vlan' | 'ping';
+  section?:
+    'all' | 'ipv4' | 'ipv6' | 'cdplldp' | 'cdp' | 'lldp' | 'network-discovery' | 'vlan' | 'ping';
   settings: MeasurementSettings;
+  discoveryUnavailable?: boolean;
+  firmwareVersion?: number;
+  selected?: ReadonlySet<TestId>;
   onChange: StateSetter<MeasurementSettings>;
   pingTargets: string[];
   onPingTargetsChange: StateSetter<string[]>;
@@ -14,18 +20,22 @@ interface NetworkSettingsProps {
 export function NetworkSettings({
   section = 'all',
   settings,
+  discoveryUnavailable,
+  firmwareVersion,
+  selected = new Set<TestId>(),
   onChange,
   pingTargets,
   onPingTargetsChange,
 }: NetworkSettingsProps): ReactElement {
   const show = (name: typeof section): boolean => section === 'all' || section === name;
+  const showDiscovery = show('network-discovery') && !discoveryUnavailable;
   const ipv4 = settings.ipv4Settings;
-  const staticFields: readonly [Exclude<keyof Ipv4UiSettings, 'mode'>, string][] = [
+  const staticFields = [
     ['ip', 'Static IP'],
     ['netmask', 'Subnet mask'],
     ['gateway', 'Gateway'],
     ['dns', 'DNS'],
-  ];
+  ] as const;
   return (
     <div className="settings-fields">
       {show('ipv4') && (
@@ -44,6 +54,19 @@ export function NetworkSettings({
             <option value="dhcp">DHCPv4</option>
             <option value="static">Static</option>
           </SelectField>
+          {ipv4.mode === 'dhcp' && (
+            <DhcpVendorClass
+              firmwareVersion={firmwareVersion}
+              value={ipv4.vendorClass ?? ''}
+              custom={ipv4.vendorClassCustom}
+              onChange={(vendorClass, vendorClassCustom) =>
+                onChange((current) => ({
+                  ...current,
+                  ipv4Settings: { ...current.ipv4Settings, vendorClass, vendorClassCustom },
+                }))
+              }
+            />
+          )}
           {ipv4.mode === 'static' && (
             <div className="settings-static-ip">
               {staticFields.map(([name, label]) => (
@@ -86,30 +109,28 @@ export function NetworkSettings({
           </SelectField>
         </>
       )}
-      {show('cdplldp') && (
+      {(show('cdp') || show('lldp')) && (
         <>
-          <SelectField
-            label="CDP / LLDP observation time"
-            value={settings.discoveryTimeout}
-            onChange={(event) => {
-              const discoveryTimeout =
-                event.target.value === '10000'
-                  ? 10000
-                  : event.target.value === '60000'
-                    ? 60000
-                    : 30000;
-              onChange((current) => ({ ...current, discoveryTimeout }));
-            }}
-          >
-            <option value="10000">10 seconds</option>
-            <option value="30000">30 seconds</option>
-            <option value="60000">1 minute</option>
-          </SelectField>
-          <p className="settings-hint">
-            Shorter observation times can miss switch advertisements. Disable CDP / LLDP in the test
-            selection to skip discovery.
-          </p>
+          <label className="neighbor-listen-option">
+            <Checkbox
+              checked={settings.cdpLldpFull === true}
+              onChange={(event) => {
+                const cdpLldpFull = event.target.checked;
+                onChange((current) => ({ ...current, cdpLldpFull }));
+              }}
+            />
+            Listen the full 70 seconds for CDP and LLDP
+          </label>
+          <p className="settings-hint">Off stops each selected test at its first announcement.</p>
         </>
+      )}
+      {showDiscovery && (
+        <DiscoverySettings
+          settings={settings}
+          onChange={onChange}
+          selected={selected}
+          firmwareVersion={firmwareVersion}
+        />
       )}
       {show('vlan') && (
         <>

@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import type { ReportDraft, ReportPhoto, ReportDetails, StateSetter } from './types';
 import type { ReportLibrary } from './useReports';
+import type { ReportProject } from './savedConfigurations';
 import {
   createSavedReport,
   incrementCableId,
@@ -15,12 +16,15 @@ interface WorkflowOptions {
   details: ReportDetails;
   setDetails: StateSetter<ReportDetails>;
   autoIncrement: boolean;
+  project?: ReportProject;
   onNext: () => void;
   onNotice: (message: string) => void;
 }
 
 function useReportWorkflowInternal(options: WorkflowOptions) {
-  const { library, draft, details, setDetails, autoIncrement, onNext, onNotice } = options;
+  const { library, draft, details, setDetails, project, onNext, onNotice } = options;
+  const numberPattern = project?.numberPattern || undefined;
+  const autoIncrement = options.autoIncrement && !numberPattern;
   const [photos, setPhotos] = useState<ReportPhoto[]>([]);
   const [addingPhotos, setAddingPhotos] = useState(false);
   const [savedRun, setSavedRun] = useState('');
@@ -43,9 +47,10 @@ function useReportWorkflowInternal(options: WorkflowOptions) {
           details,
           photos,
           crypto.randomUUID(),
-          !options.singleTest,
+          !options.singleTest && !numberPattern,
         );
-        const duplicates = matchingCableReports(reports, details);
+        if (project) report.job = { id: project.id, name: project.name };
+        const duplicates = numberPattern ? [] : matchingCableReports(reports, details, project?.id);
         if (
           duplicates.length &&
           !window.confirm(
@@ -53,7 +58,7 @@ function useReportWorkflowInternal(options: WorkflowOptions) {
           )
         )
           return;
-        if (!(await library.add(report))) {
+        if (!(await library.add(report, numberPattern))) {
           onNotice('Could not save the report. Your results and photos are still available.');
           return;
         }
@@ -61,7 +66,9 @@ function useReportWorkflowInternal(options: WorkflowOptions) {
         setSavedRun(draft.createdAt);
       }
       if (advance) {
-        const next = autoIncrement ? nextAvailableCableId(details.tag, reports, details) : null;
+        const next = autoIncrement
+          ? nextAvailableCableId(details.tag, reports, details, project?.id)
+          : null;
         setDetails((current) => ({
           ...current,
           tag: next ?? current.tag,

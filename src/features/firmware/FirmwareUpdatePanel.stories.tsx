@@ -203,6 +203,8 @@ function InteractivePreview(): ReactElement {
       getBlockedReason: () => '',
       onLockChange: noop,
       uploadFile: unsupported,
+      loadUsbManifest: unsupported,
+      runUsb: unsupported,
       fetchLatest: () => Promise.resolve(new Response(`17#${check.downloadUrl}`)),
       storage: {
         getItem: (key) => memory.get(key) ?? null,

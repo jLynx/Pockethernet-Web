@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import { beforeEach, test } from 'node:test';
 import { configurationKey, loadWorkflowMode } from './workflowMode';
-import { loadToolSettings, loadReportDetails } from './storage';
+import {
+  loadToolSettings,
+  loadReportDetails,
+  loadMeasurementDisplay,
+  MEASUREMENT_DISPLAY_KEY,
+} from './storage';
 import { loadMeasurementSettings } from './measurementSettings';
 import { loadSelection } from './testSelection';
 import { createSavedReport } from './reportWorkflow';
@@ -55,4 +60,18 @@ void test('single reports permit an optional tag while batch reports still requi
   const details = { ...workflowReport().details, tag: '' };
   assert.equal(createSavedReport(workflowDraft(), details, [], 'single', false).details.tag, '');
   assert.throws(() => createSavedReport(workflowDraft(), details, [], 'batch'), /Cable ID/);
+});
+
+void test('measurement display starts from the active workflow and then follows the shared preference', () => {
+  localStorage.setItem('pockethernet.toolSettings', '{"units":"feet","decimalSeparator":","}');
+  assert.deepEqual(loadMeasurementDisplay('single'), { units: 'feet', decimalSeparator: ',' });
+  localStorage.setItem(
+    'pockethernet.single.toolSettings',
+    '{"units":"meters","decimalSeparator":"."}',
+  );
+  assert.deepEqual(loadMeasurementDisplay('batch'), { units: 'feet', decimalSeparator: ',' });
+  assert.deepEqual(loadMeasurementDisplay('single'), { units: 'meters', decimalSeparator: '.' });
+  localStorage.setItem(MEASUREMENT_DISPLAY_KEY, '{"units":"feet","decimalSeparator":"."}');
+  assert.deepEqual(loadMeasurementDisplay('single'), { units: 'feet', decimalSeparator: '.' });
+  assert.deepEqual(loadMeasurementDisplay('batch'), { units: 'feet', decimalSeparator: '.' });
 });

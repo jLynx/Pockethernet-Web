@@ -9,13 +9,19 @@ import type {
   VlanTag,
 } from './types';
 
-export function parseBatteryPercent(payload: Uint8Array): number | null {
+export function parseBatteryStatus(
+  payload: Uint8Array,
+): { percent: number | null; charging: boolean } | null {
   if (payload.length !== 4) throw new Error('Invalid battery status response');
   const view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
   // F110: voltage (LE u16), AXP2101 percentage (register A4), status (register 01).
   // The ESP32 cache is initially all zero until its first STM32 status poll.
-  if ((view.getUint16(0, true) & 0x1fff) === 0 || payload[2] > 100) return null;
-  return payload[2];
+  if ((view.getUint16(0, true) & 0x1fff) === 0) return null;
+  return { percent: payload[2] <= 100 ? payload[2] : null, charging: (payload[3] & 7) < 4 };
+}
+
+export function parseBatteryPercent(payload: Uint8Array): number | null {
+  return parseBatteryStatus(payload)?.percent ?? null;
 }
 
 export function parseTrafficPacket(payload: Uint8Array): TrafficPacketResult {
@@ -57,12 +63,28 @@ function stringField(record: Record<string, unknown>, key: string): string {
   return typeof value === 'string' ? value : '';
 }
 
-export function parseExternalIpPacket(payload: Uint8Array): FieldsResult {
+export function parseExternalIpPacket(payload: Uint8Array, checkPortal = false): FieldsResult {
+  const text = new TextDecoder().decode(payload).replace(/\0+$/, '');
+  const http = checkPortal ? /^HTTP\/\d\.\d (\d{3})[^\r\n]*\r?\n/.exec(text) : null;
+  const remainder = http ? text.slice(http[0].length) : text;
+  const headerEnd = /\r?\n\r?\n/.exec(remainder);
+  const hasEmptyHeaders = http && /^\r?\n/.test(remainder);
+  const body = !http
+    ? text
+    : hasEmptyHeaders
+      ? remainder.replace(/^\r?\n/, '')
+      : headerEnd
+        ? remainder.slice(headerEnd.index + headerEnd[0].length)
+        : '';
+  const status = http ? Number(http[1]) : null;
+  const headers =
+    http && !hasEmptyHeaders ? remainder.slice(0, headerEnd?.index ?? remainder.length) : '';
+  const redirect = /^location:\s*([^\r\n]+)/im.exec(headers)?.[1].trim();
   let response: unknown;
   try {
-    response = JSON.parse(new TextDecoder().decode(payload));
+    response = JSON.parse(body);
   } catch {
-    return { status: 'not_OK', summary: 'External IP lookup failed', fields: {} };
+    response = undefined;
   }
   if (
     !isRecord(response) ||
@@ -70,11 +92,29 @@ export function parseExternalIpPacket(payload: Uint8Array): FieldsResult {
     typeof response.query !== 'string' ||
     !response.query
   ) {
-    const summary =
-      isRecord(response) && typeof response.message === 'string'
-        ? response.message
-        : 'External IP lookup failed';
-    return { status: 'not_OK', summary, fields: {} };
+    const providerFailure =
+      isRecord(response) && typeof response.message === 'string' ? response.message : undefined;
+    if (
+      !providerFailure &&
+      status !== null &&
+      ((status >= 300 && status < 400 && redirect) || (status === 200 && body.trim()))
+    ) {
+      return {
+        status: 'not_OK',
+        summary: 'Possible captive portal',
+        fields: {
+          'HTTP status': String(status),
+          ...(redirect
+            ? { 'Redirect location': redirect }
+            : { Response: 'Unexpected page returned' }),
+        },
+      };
+    }
+    return {
+      status: 'not_OK',
+      summary: providerFailure || 'External IP lookup failed',
+      fields: status === null ? {} : { 'HTTP status': String(status) },
+    };
   }
   const location = ['city', 'region', 'country']
     .map((key) => stringField(response, key))

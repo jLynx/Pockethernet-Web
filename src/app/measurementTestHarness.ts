@@ -156,6 +156,7 @@ export function measurementHarness(selected: TestId[]): {
       setBer: noop,
       setPoe: noop,
       setLink: noop,
+      setNetworkDiscovery: noop,
       setCdplldp: noop,
       setVlan: noop,
       setTraffic: noop,
@@ -186,14 +187,17 @@ export function measurementHarness(selected: TestId[]): {
 }
 
 /** Advance the real production timers without waiting minutes or touching hardware. */
-export async function finishWithClock(action: () => Promise<void>): Promise<void> {
+export async function finishWithClock(
+  action: () => Promise<void>,
+  maxSeconds = 180,
+): Promise<void> {
   mock.timers.enable({ apis: ['setTimeout'] });
   let finished = false;
   const result = action().finally(() => {
     finished = true;
   });
   try {
-    for (let second = 0; second < 180 && !finished; second += 1) {
+    for (let second = 0; second < maxSeconds && !finished; second += 1) {
       await setImmediate();
       mock.timers.tick(1000);
     }

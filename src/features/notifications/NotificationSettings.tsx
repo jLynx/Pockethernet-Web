@@ -84,7 +84,6 @@ export function NotificationSettings(): ReactElement {
     <ToolPanel
       className="notification-settings"
       title="Result notifications"
-      active={enabled}
       summary={enabled ? 'Notify after each measurement run' : 'Notifications are off'}
     >
       <p className="notification-description">

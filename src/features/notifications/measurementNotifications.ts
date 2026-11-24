@@ -38,7 +38,12 @@ export function captureRun(context: MeasurementContext, snapshot: RunSnapshot): 
     setTdrGraph: capture('tdrGraph', context.setTdrGraph),
     setPoe: capture('poe', context.setPoe),
     setLink: capture('link', context.setLink),
+    setNetworkDiscovery: capture('networkDiscovery', context.setNetworkDiscovery),
     setCdplldp: capture('cdplldp', context.setCdplldp),
+    setNeighbor: (id, result) => {
+      snapshot.results[id] = result;
+      context.setNeighbor?.(id, result);
+    },
     setVlan: capture('vlan', context.setVlan),
     setTraffic: capture('traffic', context.setTraffic),
     setIpv4: capture('ipv4', context.setIpv4),
@@ -70,11 +75,14 @@ export function notificationSummary(snapshot: RunSnapshot, settings: ToolSetting
     if (results.wiremap.id > 0) lines.push(`Adapter ID: ${results.wiremap.id}`);
   }
   add('Link', results.link);
+  add('Network Discovery', results.networkDiscovery);
   add('PoE', results.poe);
   if (results.tdr)
     lines.push(`TDR: ${tdrSummary(results.tdr, settings.units, settings.decimalSeparator)}`);
   if (results.tdrGraph) lines.push('TDR graph: traces ready');
   add('CDP/LLDP', results.cdplldp);
+  add('CDP', results.cdp);
+  add('LLDP', results.lldp);
   add('VLAN', results.vlan);
   add('Traffic', results.traffic);
   add('IPv4', results.ipv4);
@@ -114,6 +122,7 @@ export async function runMeasurementsWithNotifications(
           snapshot.results.wiremap,
           context.toolSettings.tia,
           context.toolSettings.shieldTest !== false,
+          context.toolSettings.wiremapPinOrder,
         );
       } catch {
         // Always deliver the text summary if optional image generation fails.

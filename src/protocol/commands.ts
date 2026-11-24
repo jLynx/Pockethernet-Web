@@ -1,4 +1,5 @@
 import { PACKET } from './constants';
+import { parseRtttl } from './rtttl';
 import type {
   BerFrameSize,
   BerPayloadMode,
@@ -81,16 +82,23 @@ export function measurementEthernetCommand(settings: {
   customMac?: string;
   outgoingVlanId?: number;
   discovery: boolean;
+  listenForSegment?: boolean;
   collectVlans: boolean;
   ipv4: boolean;
   ipv4Settings: Ipv4Settings;
+  dhcpVendorClass?: string;
   ipv6: Ipv6Mode | null;
 }): Packet {
   const vlan = settings.outgoingVlanId ?? 0;
   if (!Number.isInteger(vlan) || vlan < 0 || vlan > 4094)
     throw new Error('Outgoing VLAN ID must be between 1 and 4094');
   // Interface up + keep link; optional CDP/LLDP filters and native VLAN collection.
-  const flags = 1 | 8 | (settings.discovery ? 32 | 64 : 0) | (settings.collectVlans ? 256 : 0);
+  const flags =
+    1 |
+    8 |
+    (settings.discovery ? 32 | 64 : 0) |
+    (settings.collectVlans ? 256 : 0) |
+    (settings.listenForSegment ? 512 : 0);
   const command = ethernetCommand(flags, 1773, settings.customMac);
   const view = new DataView(command.payload.buffer);
   let ipFlags = 1; // IP stack up, even for discovery-only runs, as in the APK.
@@ -111,7 +119,19 @@ export function measurementEthernetCommand(settings: {
     ] as const)
       view.setUint32(offset, ipv4ToUint32(address), true);
   }
-  return command;
+  const vendor =
+    settings.ipv4 && settings.ipv4Settings.mode !== 'static'
+      ? settings.dhcpVendorClass?.trim()
+      : '';
+  if (!vendor) return command;
+  const bytes = new TextEncoder().encode(vendor);
+  if (bytes.length > 64) throw new Error('DHCP vendor class must fit within 64 UTF-8 bytes');
+  const payload = new Uint8Array(command.payload.length + 2 + bytes.length);
+  payload.set(command.payload);
+  payload[52] = bytes.length + 2;
+  payload.set([60, bytes.length], 53);
+  payload.set(bytes, 55);
+  return { ...command, payload };
 }
 
 export function linkCommand(customMac = ''): Packet {
@@ -163,15 +183,28 @@ export function blinkerCommand(
   return { type: PACKET.ETH_CONFIG, payload };
 }
 
+export const TONER_PAIR_MASKS = { '2': 1, '3': 2, '1': 4, '4': 8, all: 15 } as const;
+const TONER_VOLUME_VALUES = { low: 0, high: 1, diff: 2 } as const;
+
+function tonerOutputMask(
+  pair: TonerPair | number,
+  shield: TonerShield,
+  volume: TonerVolume,
+): number {
+  let mask = typeof pair === 'number' ? pair : TONER_PAIR_MASKS[pair];
+  if (!Number.isInteger(mask) || mask < 0 || mask > 15)
+    throw new Error('Invalid toner pair selection');
+  if (volume === 'diff') mask = (mask & 3 ? 3 : 0) | (mask & 12 ? 12 : 0);
+  return mask | (shield === 'on' ? 16 : 0);
+}
+
 export function tonerCommand(
-  pair: TonerPair = 'all',
+  pair: TonerPair | number = 'all',
   shield: TonerShield = 'off',
   tone: TonerTone = '1',
   volume: TonerVolume = 'high',
 ): Packet {
-  const pairMask = { '2': 1, '3': 2, '1': 4, '4': 8, all: 15 }[pair];
-  const shieldFlag = shield === 'on' ? 16 : 0;
-  const volumeValue = { low: 1, high: 2 }[volume];
+  const volumeValue = TONER_VOLUME_VALUES[volume];
   const toneValues = {
     '1': [600, 1200, 67],
     '2': [400, 700, 150],
@@ -180,14 +213,36 @@ export function tonerCommand(
   }[tone];
   const payload = new Uint8Array(20);
   const view = new DataView(payload.buffer);
-  view.setInt32(0, pairMask + shieldFlag, true);
+  view.setInt32(0, tonerOutputMask(pair, shield, volume), true);
   view.setInt32(4, volumeValue, true);
   toneValues.forEach((value, index) => view.setInt32(8 + index * 4, value, true));
   return { type: PACKET.ANA_TONER, payload };
 }
 
-export function tonerStopCommand(): Packet {
-  return { type: PACKET.ANA_TONER, payload: new Uint8Array(4) };
+export function tonerStopCommand(mode: 'tone' | 'melody' = 'tone'): Packet {
+  return { type: PACKET.ANA_TONER, payload: new Uint8Array(mode === 'melody' ? 20 : 4) };
+}
+
+export function tonerMelodyCommand(
+  text: string,
+  pair: TonerPair | number,
+  shield: TonerShield,
+  volume: TonerVolume,
+): Packet {
+  const { bpm, notes } = parseRtttl(text);
+  const tickUs = Math.round(3_750_000 / bpm);
+  const restTicks = Math.max(1, Math.min(255, Math.round(1_500_000 / tickUs)));
+  const sequence = [...notes, { midi: 0, length: restTicks }];
+  // F221 uses five little-endian header words followed by MIDI/duration pairs.
+  const payload = new Uint8Array(20 + sequence.length * 2);
+  const view = new DataView(payload.buffer);
+  view.setUint32(0, tonerOutputMask(pair, shield, volume), true);
+  view.setUint32(4, TONER_VOLUME_VALUES[volume], true);
+  view.setUint32(8, 15, true);
+  view.setUint32(12, tickUs, true);
+  view.setUint32(16, sequence.length, true);
+  sequence.forEach(({ midi, length }, index) => payload.set([midi, length], 20 + 2 * index));
+  return { type: PACKET.TONER_MELODY, payload };
 }
 
 export function wifiBridgeEthernetCommand(): Packet {
@@ -198,7 +253,10 @@ export function wifiBridgeCommand(
   enabled: boolean,
   ssid = 'Pockethernet',
   password = 'Pockethernet',
+  channel = 1,
 ): Packet {
+  if (!Number.isInteger(channel) || channel < 1 || channel > 11)
+    throw new Error('WiFi channel must be between 1 and 11');
   const payload = new Uint8Array(144);
   const ssidBytes = new TextEncoder().encode(enabled ? ssid : '');
   const passwordBytes = new TextEncoder().encode(enabled ? password : '');
@@ -213,7 +271,7 @@ export function wifiBridgeCommand(
   // APK ui_item_wifi uses ESP WIFI_AUTH_WPA_WPA2_PSK (4), not WPA2-only (3).
   payload[39] = passwordBytes.length || !enabled ? 4 : 0;
   payload.set(passwordBytes, 40);
-  payload[103] = 1;
+  payload[103] = channel;
   return { type: PACKET.WIFI_CONFIG, payload };
 }
 
@@ -264,13 +322,14 @@ export function pingCommand(target: string): Packet {
   return { type: PACKET.PING, payload };
 }
 
-export function externalIpCommand(): Packet {
+export function externalIpCommand(responseWithHeaders = false): Packet {
   const url =
     'http://pro.ip-api.com/json?key=2NT4TLwAVDyCwHk&fields=country,region,city,isp,as,status,message,query';
   const payload = new Uint8Array(url.length + 37);
   payload.set(new TextEncoder().encode('PE'), 3);
   payload.set(new TextEncoder().encode(url), 36);
   new DataView(payload.buffer).setUint16(0, 10000, true);
+  if (responseWithHeaders) payload[2] = 1;
   return { type: PACKET.HTTP_RESPONSE, payload };
 }
 

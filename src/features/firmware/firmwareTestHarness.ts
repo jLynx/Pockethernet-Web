@@ -8,9 +8,23 @@ import { PACKET, parseDeviceInfo, type Packet } from '@/pockethernetProtocol';
 import { createFirmwareUpdater } from './firmwareUpdateController';
 import { readPendingUpdate } from './updateRecovery';
 import type { uploadOtaFile } from './uploadOtaFile';
+import type { FirmwareManifest } from './usb/firmware';
 
 export const url = 'https://ota.pockethernet.com/pen_e_crypt_17.bin';
 export const latest = `17#${url}`;
+export function usbManifest(version: number): FirmwareManifest {
+  const descriptor = (id: number, size: number) => ({
+    file: `images/${id}.bin`,
+    size,
+    sha256: '0'.repeat(64),
+  });
+  return {
+    source: new URL('https://example.test/api/usb-firmware/manifest.json'),
+    version,
+    page: `webflash-v${version}`,
+    files: [descriptor(1, 1024), descriptor(2, 8192), descriptor(3, 136)],
+  };
+}
 export function infoPayload(esp = 16, stm = 17, serial = 104716): Packet['payload'] {
   const payload = new Uint8Array(35);
   const view = new DataView(payload.buffer);
@@ -43,7 +57,13 @@ export interface FirmwareHarness {
   setInfo: (esp: number, stm?: number, serial?: number) => void;
   block: () => void;
 }
-export function harness(status = 10, uploadFile?: typeof uploadOtaFile): FirmwareHarness {
+export function harness(
+  status = 10,
+  uploadFile?: typeof uploadOtaFile,
+  sources?: Partial<
+    Pick<Parameters<typeof createFirmwareUpdater>[0], 'fetchLatest' | 'loadUsbManifest' | 'runUsb'>
+  >,
+): FirmwareHarness {
   const inbox = createPacketInbox();
   const commands: { packet: Packet; at: number }[] = [];
   const memory = new Map<string, string>();
@@ -105,7 +125,9 @@ export function harness(status = 10, uploadFile?: typeof uploadOtaFile): Firmwar
     storage,
     onLockChange: (value) => locks.push(value),
     fetchLatest: () => Promise.resolve(new Response(latest)),
+    loadUsbManifest: () => Promise.resolve(usbManifest(16)),
     uploadFile,
+    ...sources,
   });
   return {
     client,

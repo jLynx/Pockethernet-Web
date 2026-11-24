@@ -1,10 +1,16 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { fileURLToPath, URL } from 'node:url';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import {
+  USB_FIRMWARE_ORIGIN,
+  USB_FIRMWARE_ROUTE,
+  usbFirmwareUpstream,
+} from './src/server/usbFirmware.ts';
 
 function getBuildRevision(): { hash: string; modified: boolean } {
   const cwd = fileURLToPath(new URL('.', import.meta.url));
@@ -26,6 +32,8 @@ function getBuildRevision(): { hash: string; modified: boolean } {
 }
 
 const buildRevision = getBuildRevision();
+const vendorModule = 'virtual:discovery-oui';
+const require = createRequire(import.meta.url);
 
 export default defineConfig({
   define: {
@@ -34,6 +42,20 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    {
+      name: 'discovery-vendor-data',
+      resolveId(id) {
+        if (id === vendorModule) return '\0' + vendorModule;
+      },
+      load(id) {
+        if (id !== '\0' + vendorModule) return;
+        const data: Record<string, string> = JSON.parse(
+          readFileSync(require.resolve('oui-data'), 'utf8'),
+        );
+        for (const id of Object.keys(data)) data[id] = data[id].split('\n', 1)[0].trim();
+        return `export default JSON.parse(${JSON.stringify(JSON.stringify(data))});`;
+      },
+    },
     VitePWA({
       registerType: 'prompt',
       injectRegister: null,
@@ -114,6 +136,20 @@ export default defineConfig({
         target: 'https://ota.pockethernet.com',
         changeOrigin: true,
         rewrite: () => '/latest_version',
+      },
+      [USB_FIRMWARE_ROUTE.source.replace(/\$$/, '(\\?.*)?$')]: {
+        target: USB_FIRMWARE_ORIGIN,
+        changeOrigin: true,
+        rewrite: (path) => usbFirmwareUpstream(path.split('?', 1)[0]),
+        configure: (proxy) => {
+          proxy.on('proxyReq', (request) => {
+            request.removeHeader('cookie');
+            request.removeHeader('authorization');
+          });
+          proxy.on('proxyRes', (response) => {
+            response.headers['cache-control'] = 'no-store';
+          });
+        },
       },
     },
   },

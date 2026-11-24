@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react';
 import type { ReportDetails, ReportDraft, ReportPhoto, StateSetter } from '@/app/types';
-import { Button, TextField } from '@/shared/ui/UiPrimitives';
+import { Button, SelectField, TextField } from '@/shared/ui/UiPrimitives';
+import type { ReportProject } from '@/app/savedConfigurations';
 import { ReportPhotos } from './ReportPhotos';
 
 interface ReportComposerProps {
@@ -19,10 +20,13 @@ interface ReportComposerProps {
   autoIncrement: boolean;
   onSave: (advance: boolean) => Promise<void>;
   onNotice: (message: string) => void;
+  projects?: readonly ReportProject[];
+  project?: ReportProject;
+  onProjectChange?: (id: string) => void;
 }
 
 const FIELDS: readonly [keyof ReportDetails, string, string][] = [
-  ['project', 'Project', 'Project or job name'],
+  ['project', 'Project name', 'Project name'],
   ['address', 'Address / site', 'Site or street address'],
   ['user', 'Technician', 'Technician or customer'],
   ['location', 'Location', 'Room or rack'],
@@ -41,8 +45,10 @@ export function ReportComposer(props: ReportComposerProps): ReactElement {
     ready,
     addingPhotos,
     autoIncrement,
+    project,
   } = props;
   const disabled = busy || running || addingPhotos;
+  const assignCableId = Boolean(project?.numberPattern);
   return (
     <section className="report-composer batch-composer" aria-labelledby="cable-report-title">
       <header>
@@ -58,7 +64,9 @@ export function ReportComposer(props: ReportComposerProps): ReactElement {
                     ? 'Results ready to save'
                     : 'Latest measurement run ready to save'
                   : batch
-                    ? 'Enter the cable ID, then run your tests'
+                    ? assignCableId
+                      ? 'Run tests to create a cable report'
+                      : 'Enter the cable ID, then run your tests'
                     : 'Run tests from the Test tab to create a report'}
           </p>
         </div>
@@ -81,16 +89,35 @@ export function ReportComposer(props: ReportComposerProps): ReactElement {
         </div>
       </header>
       <fieldset className="batch-fields" disabled={disabled || saved}>
-        <TextField
-          label={batch ? 'Cable ID / Tag' : 'Tag (optional)'}
-          value={details.tag}
-          placeholder={batch ? 'CAB-001' : 'Cable or job tag'}
-          maxLength={160}
-          onChange={(event) =>
-            onDetailsChange((current) => ({ ...current, tag: event.target.value }))
-          }
-        />
-        {batch && autoIncrement && (
+        {!!props.projects?.length && (
+          <SelectField
+            label="File under project"
+            value={project?.id ?? ''}
+            onChange={(event) => props.onProjectChange?.(event.target.value)}
+          >
+            <option value="">Unsaved project</option>
+            {props.projects.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))}
+          </SelectField>
+        )}
+        {project?.site && <p className="batch-hint">{project.site}</p>}
+        {assignCableId ? (
+          <p className="batch-hint">Cable ID is assigned when you save.</p>
+        ) : (
+          <TextField
+            label={batch ? 'Cable ID / Tag' : 'Tag (optional)'}
+            value={details.tag}
+            placeholder={batch ? 'CAB-001' : 'Cable or report tag'}
+            maxLength={160}
+            onChange={(event) =>
+              onDetailsChange((current) => ({ ...current, tag: event.target.value }))
+            }
+          />
+        )}
+        {batch && autoIncrement && !assignCableId && (
           <p className="batch-hint">
             Save & next increases the trailing number and skips IDs already saved in this project
             and site.
@@ -99,18 +126,20 @@ export function ReportComposer(props: ReportComposerProps): ReactElement {
         <details className="batch-project-details" open={batch ? undefined : true}>
           <summary>Project details, notes & photos</summary>
           <div className="report-fields">
-            {FIELDS.map(([key, label, placeholder]) => (
-              <TextField
-                key={key}
-                label={label}
-                value={details[key] ?? ''}
-                placeholder={placeholder}
-                maxLength={160}
-                onChange={(event) =>
-                  onDetailsChange((current) => ({ ...current, [key]: event.target.value }))
-                }
-              />
-            ))}
+            {FIELDS.filter(([key]) => !project || (key !== 'project' && key !== 'address')).map(
+              ([key, label, placeholder]) => (
+                <TextField
+                  key={key}
+                  label={label}
+                  value={details[key] ?? ''}
+                  placeholder={placeholder}
+                  maxLength={160}
+                  onChange={(event) =>
+                    onDetailsChange((current) => ({ ...current, [key]: event.target.value }))
+                  }
+                />
+              ),
+            )}
             <label className="text-field report-comment">
               <span>Comment</span>
               <textarea

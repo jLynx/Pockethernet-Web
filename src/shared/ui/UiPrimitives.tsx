@@ -1,6 +1,7 @@
 import type {
   ButtonHTMLAttributes,
   ChangeEvent,
+  ComponentPropsWithRef,
   InputHTMLAttributes,
   ReactElement,
   ReactNode,
@@ -142,7 +143,7 @@ export function StatusIndicator({
   status,
   className = '',
 }: {
-  status: 'disconnected' | 'connecting' | 'connected';
+  status: 'disconnected' | 'connecting' | 'reconnecting' | 'connected';
   className?: string;
 }): ReactElement {
   return (
@@ -182,6 +183,25 @@ export function SegmentedControl<Value extends string>({
         </Button>
       ))}
     </div>
+  );
+}
+
+interface CheckboxProps extends Omit<ComponentPropsWithRef<'input'>, 'type' | 'size'> {
+  size?: 'compact' | 'large';
+}
+
+export function Checkbox({
+  size = 'compact',
+  className = '',
+  ...inputProps
+}: CheckboxProps): ReactElement {
+  return (
+    <input
+      type="checkbox"
+      data-size={size}
+      className={`ui-checkbox ${className}`.trim()}
+      {...inputProps}
+    />
   );
 }
 

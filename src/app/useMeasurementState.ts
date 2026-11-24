@@ -10,7 +10,10 @@ export function emptyResults(): ReportResults {
     ber: null,
     poe: null,
     link: null,
+    networkDiscovery: null,
     cdplldp: null,
+    cdp: null,
+    lldp: null,
     vlan: null,
     traffic: null,
     ipv4: null,
@@ -22,6 +25,7 @@ export function emptyResults(): ReportResults {
 
 function useMeasurementStateInternal() {
   const [results, setResults] = useState<ReportResults>(emptyResults);
+  const [lastTdr, setLastTdr] = useState<ReportResults['tdr']>(null);
   const [draft, setDraft] = useState<ReportDraft | null>(null);
   const [expanded, setExpanded] = useState<Set<TestId>>(new Set());
   const [running, setRunning] = useState(false);
@@ -43,7 +47,9 @@ function useMeasurementStateInternal() {
     | 'setBer'
     | 'setPoe'
     | 'setLink'
+    | 'setNetworkDiscovery'
     | 'setCdplldp'
+    | 'setNeighbor'
     | 'setVlan'
     | 'setTraffic'
     | 'setIpv4'
@@ -57,12 +63,17 @@ function useMeasurementStateInternal() {
     | 'setPendingTests'
   > = {
     setWiremap: setter('wiremap'),
-    setTdr: setter('tdr'),
+    setTdr: (result) => {
+      if (result && typeof result !== 'function') setLastTdr(result);
+      setter('tdr')(result);
+    },
     setTdrGraph: setter('tdrGraph'),
     setBer: setter('ber'),
     setPoe: setter('poe'),
     setLink: setter('link'),
+    setNetworkDiscovery: setter('networkDiscovery'),
     setCdplldp: setter('cdplldp'),
+    setNeighbor: (id, result) => setter(id)(result),
     setVlan: setter('vlan'),
     setTraffic: setter('traffic'),
     setIpv4: setter('ipv4'),
@@ -77,6 +88,7 @@ function useMeasurementStateInternal() {
   };
   return {
     results,
+    lastTdr,
     setResults,
     draft,
     setDraft,

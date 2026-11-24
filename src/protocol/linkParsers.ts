@@ -4,6 +4,17 @@ function partnerCapability(value: number): string {
   return ['Not advertised', 'Half Duplex', 'Full Duplex', 'Half & Full Duplex'][value] ?? 'Unknown';
 }
 
+export function readNegotiatedLinkSpeed(payload: Uint8Array): 0 | 10 | 100 | 1000 {
+  if (payload.length < 12) throw new Error('Incomplete Ethernet link response');
+  const status = new DataView(payload.buffer, payload.byteOffset, payload.byteLength).getUint16(
+    10,
+    true,
+  );
+  if (!(status & 64)) return 0;
+  const code = (status >>> 7) & 7;
+  return code < 2 ? 10 : code < 4 ? 100 : code < 6 ? 1000 : 0;
+}
+
 export function parseLinkPacket(payload: Uint8Array): LinkResult {
   if (payload.length < 14)
     throw new Error(
@@ -11,11 +22,18 @@ export function parseLinkPacket(payload: Uint8Array): LinkResult {
     );
   const view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
   const statusFlags = view.getUint16(10, true);
-  if ((statusFlags & 64) === 0) return { status: 'not_OK', summary: 'No link', linkUp: false };
-  const speed = statusFlags & 512 ? 1000 : statusFlags & 64 ? 100 : 10;
+  const speed = readNegotiatedLinkSpeed(payload);
+  if (!speed) return { status: 'not_OK', summary: 'No link', linkUp: false };
   const duplex = statusFlags & 128 ? 'Full duplex' : 'Half duplex';
   const polarityFlags = view.getUint16(12, true);
   const multigbase = payload.length >= 26 ? view.getUint16(24, true) : 0;
+  const eee = payload.length >= 16 ? view.getUint16(14, true) : null;
+  const eeePartnerMbps: (100 | 1000)[] = [];
+  if (eee !== null) {
+    if (eee & 2) eeePartnerMbps.push(100);
+    if (eee & 4) eeePartnerMbps.push(1000);
+  }
+  const msePairs = speed === 1000 ? 4 : speed === 100 ? 1 : 0;
   const multig: string[] = [];
   if (multigbase & 4096) multig.push('2.5G');
   if (multigbase & 16384) multig.push('NBase-T 2.5G');
@@ -44,7 +62,23 @@ export function parseLinkPacket(payload: Uint8Array): LinkResult {
         ? [0, 1, 2, 3].map((index) => ((view.getUint16(26, true) >>> (index * 3)) & 7) * 8)
         : [],
     lengthEstimate: payload.length >= 30 ? view.getInt16(28, true) : null,
+    ...(eee !== null ? { eeePartnerMbps } : {}),
+    ...(payload.length >= 24 && msePairs > 0
+      ? {
+          mse: Array.from({ length: msePairs }, (_, index) => view.getUint16(16 + index * 2, true)),
+        }
+      : {}),
   };
+}
+
+export function linkEeeText(speeds: (100 | 1000)[] | undefined): string | undefined {
+  if (!speeds) return undefined;
+  return speeds.length ? `${speeds.join(' / ')} Mbit/s` : 'Not advertised';
+}
+
+export function linkSnrText(mse: number | undefined): string | undefined {
+  if (mse === undefined) return undefined;
+  return mse === 0 ? '> 30 dB' : `${Math.round(-10 * Math.log10(mse / 1024))} dB`;
 }
 
 function poeClass(value: number): string {

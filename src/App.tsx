@@ -4,13 +4,13 @@ import logo from '@/assets/logo.png';
 import { errorMessage } from '@/app/format';
 import { NumberFormatProvider } from '@/app/NumberFormatContext';
 import { runReportMeasurement } from '@/app/runReportMeasurement';
-import { SUPPORTED_TESTS, type Tab, type TestId, type WorkflowMode } from '@/app/types';
+import type { Tab, TestId, WorkflowMode } from '@/app/types';
 import { useAppSettings } from '@/app/useAppSettings';
 import { emptyResults } from '@/app/useMeasurementState';
 import { useReports } from '@/app/useReports';
 import { useTestingWorkflows } from '@/app/useTestingWorkflows';
 import { WorkflowSelector } from '@/shared/layout/WorkflowSelector';
-import { toggleSelection } from '@/app/testSelection';
+import { testSelectionForDevice, toggleSelection } from '@/app/testSelection';
 import { clearReportDatabase } from '@/app/reportDatabase';
 import {
   ActionDock,
@@ -38,11 +38,21 @@ export default function App(): ReactElement {
   const [firmwareLocked, setFirmwareLocked] = useState(
     () => !!readPendingUpdate(window.localStorage),
   );
-  const ble = usePockethernet({ pollBattery: !measurement.running && !firmwareLocked });
+  const ble = usePockethernet({
+    pollBattery: !measurement.running && !firmwareLocked,
+    autoReconnect: !firmwareLocked,
+  });
+  const { runnableTests, unavailableTests } = testSelectionForDevice(
+    app.selected,
+    ble.status === 'connected',
+    ble.info?.espVersion,
+  );
   const deviceTools = useDeviceTools({
     client: ble,
     running: measurement.running,
     firmwareLocked,
+    wifiEnabled: app.wifiSettings.enabled === 'on',
+    otherToolActive: app.tonerSettings.power === 'on' || app.blinkerSettings.link !== 'off',
     onNotice: setNotice,
   });
   const firmwareUpdater = useFirmwareUpdater({
@@ -61,7 +71,7 @@ export default function App(): ReactElement {
               : '',
   });
   const deviceLocked = updateLocked(firmwareUpdater.state);
-  const measuring = useRef(false);
+  const measuring = useRef<AbortController | null>(null);
   const changeWorkflow = (mode: WorkflowMode): void => {
     if (measuring.current || testing.busy || deviceLocked || deviceTools.busy || library.busy)
       return;
@@ -94,12 +104,13 @@ export default function App(): ReactElement {
   }, [clearError]);
   const toggle = (id: TestId): void => {
     if (measurement.running || deviceLocked) return;
+    if (unavailableTests[id]) return;
     app.setSelected((current) => toggleSelection(current, id));
   };
   const connect = async (): Promise<void> => {
     if (updateWorking(firmwareUpdater.state)) return;
     try {
-      if (ble.status === 'connected') ble.disconnect();
+      if (ble.status === 'connected' || ble.status === 'reconnecting') ble.disconnect();
       else await ble.connect();
     } catch (error) {
       const message = errorMessage(error);
@@ -116,16 +127,22 @@ export default function App(): ReactElement {
       setNotice('Connect Pockethernet first.');
       return;
     }
-    if (!SUPPORTED_TESTS.some((id) => app.selected.has(id))) {
+    if (app.wifiSettings.enabled === 'on') {
+      setNotice('Turn off the WiFi bridge before measuring.');
+      return;
+    }
+    if (!runnableTests.size) {
       setNotice(
-        app.workflowMode === 'single'
-          ? 'Choose at least one test.'
-          : 'Choose at least one test in Configure.',
+        [...app.selected].map((id) => unavailableTests[id]).find(Boolean) ??
+          (app.workflowMode === 'single'
+            ? 'Choose at least one test.'
+            : 'Choose at least one test in Configure.'),
       );
       return;
     }
     if (!workflow.beforeMeasure()) return;
-    measuring.current = true;
+    const run = new AbortController();
+    measuring.current = run;
     if (app.workflowMode === 'batch') measurement.setResults(emptyResults());
     measurement.setDraft(null);
     setNotice('');
@@ -134,7 +151,8 @@ export default function App(): ReactElement {
         {
           ...measurement.setters,
           ble,
-          selected: app.selected,
+          signal: run.signal,
+          selected: runnableTests,
           toolSettings: app.toolSettings,
           ...app.measurementSettings,
           pingTargets: app.pingTargets,
@@ -143,7 +161,7 @@ export default function App(): ReactElement {
         measurement.setDraft,
       );
     } finally {
-      measuring.current = false;
+      measuring.current = null;
     }
   };
   const reset = async (): Promise<void> => {
@@ -155,12 +173,6 @@ export default function App(): ReactElement {
       library.busy ||
       workflow.busy ||
       workflow.addingPhotos
-    )
-      return;
-    if (
-      !window.confirm(
-        'Delete ALL saved reports and reset Pocketweb settings on this browser? This cannot be undone. Export any reports you need first.',
-      )
     )
       return;
     try {
@@ -175,12 +187,11 @@ export default function App(): ReactElement {
       setNotice(`Reset could not finish: ${errorMessage(error)}`);
     }
   };
-  const displaySettings =
-    app.workflowMode === 'batch'
-      ? (measurement.draft?.settings ?? app.toolSettings)
-      : app.toolSettings;
+  const feedback = ble.idleShutdown
+    ? 'Pockethernet may have switched off after being idle. Turn it on and reconnect.'
+    : (ble.status === 'disconnected' && ble.error) || notice || ble.error;
   return (
-    <NumberFormatProvider separator={displaySettings.decimalSeparator ?? '.'}>
+    <NumberFormatProvider separator={app.measurementDisplay.decimalSeparator}>
       <div className="original-app">
         <header className="original-header">
           <img className="wordmark" src={logo} alt="Pocketweb for Pockethernet" />
@@ -189,6 +200,7 @@ export default function App(): ReactElement {
             <ConnectionButton
               status={ble.status}
               batteryPercent={ble.batteryPercent}
+              batteryCharging={ble.batteryCharging}
               disabled={updateWorking(firmwareUpdater.state)}
               onClick={() => void connect()}
             />
@@ -224,6 +236,7 @@ export default function App(): ReactElement {
           deviceTools={deviceTools}
           firmwareUpdater={firmwareUpdater}
           deviceLocked={deviceLocked}
+          unavailableTests={unavailableTests}
           onTabChange={setTab}
           onToggle={toggle}
           onReset={reset}
@@ -239,19 +252,17 @@ export default function App(): ReactElement {
         {tab === 'test' && (
           <ActionDock
             status={ble.status}
-            selectedCount={app.selected.size}
+            selectedCount={runnableTests.size}
             running={measurement.running}
             canMeasure={
-              !deviceLocked &&
-              !workflow.busy &&
-              !workflow.addingPhotos &&
-              SUPPORTED_TESTS.some((id) => app.selected.has(id))
+              !deviceLocked && !workflow.busy && !workflow.addingPhotos && runnableTests.size > 0
             }
             onMeasure={() => void measure()}
+            onStop={() => measuring.current?.abort()}
           />
         )}
         <AppFooter />
-        {(notice || ble.error) && <Toast message={notice || ble.error} onDismiss={dismissNotice} />}
+        {feedback && <Toast message={feedback} onDismiss={dismissNotice} />}
       </div>
     </NumberFormatProvider>
   );

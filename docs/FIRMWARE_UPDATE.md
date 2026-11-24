@@ -1,10 +1,20 @@
 # Browser firmware updates
 
-In **Settings → About & firmware**, connect Pockethernet and select **Check for upgrade → Update → Start update**. An available update appears as one banner with its version and Update action. Use an Internet-connected Ethernet switch with DHCP, keep the device powered on, and keep Pocketweb open. Turn off the toner, blinker and WiFi bridge first.
+Connect Pockethernet over Bluetooth and go to **Settings → About & firmware → Check for upgrade**. Pocketweb checks the official USB manifest and Ethernet release endpoint. The offer shows the newest applicable version and its update method. When only one source responds, Pocketweb shows whether a newer release may be available.
 
-Pocketweb sends the official ESP update URL over Bluetooth. The device downloads and validates the firmware over Ethernet. It reports a final result, rather than download percentages. After success, unplug USB, turn the device off, wait five seconds and turn it on again. Select **I have restarted · verify firmware** and connect the same Pockethernet. Pocketweb checks the ESP version and confirms the STM version is unchanged.
+Android app v21 uses `latest_firmware` for the manual check. It compares the returned version with the connected tester and opens the instructions URL if an update is available. The app also has a bundled V32 reminder and warns when the second firmware component lags on V32 or newer. On 24 November 2026, the manual check returned V32 with the firmware manual URL. The USB manifest offered V32 and the legacy Ethernet endpoint offered V17. [Android check implementation](../android-reference/v21/hermes/index.android.pseudocode.js#L462091) · [App reminder](../android-reference/v21/hermes/index.android.pseudocode.js#L472805) · [Manual check endpoint](https://ota.pockethernet.com/latest_firmware) · [USB manifest](https://pockethernet.com/update/manifest.json) · [Ethernet endpoint](https://ota.pockethernet.com/latest_version)
 
-The regular flow installs official ESP firmware. On our custom ESP v16, updating to official v17 replaces the custom application.
+## USB updates
+
+Select **Update**, switch the same tester off, and connect it to the computer or phone with a USB data cable. Select **Select USB device and update** and choose **Pockethernet 2** in the browser picker. Use Chrome or Edge over HTTPS or localhost. Keep the page open and the cable connected while the transfer runs.
+
+Pocketweb checks the three images against the official manifest before writing. After the transfer, unplug USB, power-cycle the tester, and use **I have restarted · verify firmware** to reconnect over Bluetooth. Pocketweb verifies the tester identity and both firmware versions. An interrupted write leaves a recovery action to retry over USB in backup mode.
+
+## Ethernet updates
+
+Connect Pockethernet to an Internet-connected Ethernet switch with DHCP. Turn off the toner, blinker and WiFi bridge, then select **Update → Start update** and keep Pockethernet powered on and Pocketweb open.
+
+Pocketweb sends the official ESP update URL over Bluetooth. The device downloads and validates the firmware over Ethernet and reports a final result. After success, unplug USB, turn the device off, wait five seconds and turn it on again. Select **I have restarted · verify firmware** and connect the same Pockethernet. Pocketweb checks the ESP version and confirms the STM version is unchanged. Installing an official release over a custom ESP build replaces the custom application.
 
 ## Advanced updates
 
@@ -17,12 +27,12 @@ The regular flow installs official ESP firmware. On our custom ESP v16, updating
 
 The Cloudflare deployment needs the `OTA_FILES` SQLite Durable Object binding and migration supplied in `wrangler.toml`; the next deployment creates it. A Vite-only server cannot host device downloads by itself. For local development, run `npx wrangler dev --local --ip 0.0.0.0 --port 8787` alongside Vite. Vite proxies the upload/download routes to that Worker. Set **Download host** to its reachable LAN origin, for example `http://192.168.1.161:8787`. Browser `localhost` refers to the PC; device `localhost` refers to Pockethernet, so it cannot be used as the download host.
 
-## Compatibility contracts and refactoring gotchas
+## Ethernet compatibility contracts
 
 - Reference: `android-reference/com.pockethernet.android.pe2/java_src/com/pockethernet/android/pe2/pe_ota_pen.java` and `protocol_pen.java`; same-device recovery evidence is in `firmware-local/esp32-service/results/`.
 - The command is **F401 (ESP update)**. Never send F400, which updates STM. Firmware bytes are not written over Bluetooth.
 - F401 payload: little-endian uint16 timeout of 300 seconds, uint8 URL length including its terminating NUL, then ASCII URL and NUL. Keep the stock-compatible maximum of 60 URL bytes, even though our remake has a larger buffer.
-- The latest-version endpoint returns `version#url`. Version comparison uses the ESP version, not the combined ESP.STM display. The regular check accepts only official HTTPS `ota.pockethernet.com/pen_e_crypt_VERSION.bin` URLs and offers newer versions. Only the explicit advanced flow permits other URLs, reinstalls and downgrades. Both paths forbid URL credentials and fragments, and retain the same device identity/network/F401 checks.
+- The latest-version endpoint returns `version#url`. The Ethernet comparison uses the ESP version. Official Ethernet updates require an HTTPS `ota.pockethernet.com/pen_e_crypt_VERSION.bin` URL and a newer version. The advanced flow supports other URLs, reinstalls and downgrades. The Ethernet paths forbid URL credentials and fragments and share the device identity, network and F401 checks.
 - Uploaded containers must identify image type **2 (ESP)** and contain an exact 128-byte-header-plus-body length. Header inspection is structural, not cryptographic authentication. Do not claim that a browser SHA-256 or PEUI magic check authenticates a firmware package. Stock/custom receiver checks remain authoritative.
 - Cloudflare Workers drops a manually supplied Content-Length on an unknown-length ReadableStream. Serve a bounded ArrayBuffer (maximum 4 MiB) so the actual HTTP runtime preserves the length. Content-Encoding must remain identity and bytes must not be compressed or transformed. Durable Object chunks stay below its 128 KiB value limit; downloads reassemble the original bytes in order.
 - Random `/f/` links use 16 random bytes encoded into 22 base64url characters, leaving the production URL within the stock 60-byte limit. Uploads are same-origin only. Do not shorten links by reducing token entropy, overwrite a stored link, delete it during an uncertain OTA, or proxy arbitrary custom URLs through the backend. Expiry is enforced on reads as well as by an alarm.
@@ -41,6 +51,8 @@ The Cloudflare deployment needs the `OTA_FILES` SQLite Durable Object binding an
 - There is no request sequence number in the original protocol. Late packets from earlier operations cannot always be distinguished. Controlled command ordering, exclusive operation ownership and canceling waiters reduce that risk; they do not add a protocol correlation ID.
 
 ## Validation
+
+USB tests exercise release selection, incomplete release checks, a lagging second firmware component, device picker cancellation, interrupted transfer recovery, rechecking the release before writing, size and SHA-256 validation, and verification of both firmware versions. The runtime USB proxy accepts only manifest and image GET requests to the vendor's updater directory.
 
 `npm test` includes the real packet-inbox regression suite for exact F401 bytes, official/custom URL validation, reverse/early notifications, configuration flags, DHCP settling, duplicate clicks, all documented result codes, transport failures, malformed replies, timeout, cleanup, blocked tools/measurements, storage failure, reload recovery, wrong-device/version checks and unchanged STM verification. Advanced tests cover reinstalls/downgrades, same-version ambiguity, file inspection without upload, upload integrity, failure before F401 and recovered file metadata. Hosting tests cover immutable links, expiry, request methods and exact bytes. A real Miniflare Workers HTTP/SQLite test serves 1,276,736 synthetic bytes and checks Content-Length; this catches behavior a Node Response fixture cannot reproduce. Display tests and Storybook states cover availability, advanced forms, confirmation, indeterminate progress, errors, restart and uncertain outcomes.
 

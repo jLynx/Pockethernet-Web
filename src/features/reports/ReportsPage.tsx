@@ -1,8 +1,11 @@
 import { useState, type ReactElement, type ReactNode } from 'react';
 import type { ReportPreferences, ReportResults, SavedReport } from '@/app/types';
-import { Button, EmptyState, SelectField } from '@/shared/ui/UiPrimitives';
+import type { ReportProject } from '@/app/savedConfigurations';
+import { reportProjectNames } from '@/app/reportWorkflow';
+import { Button, Checkbox, EmptyState, SelectField } from '@/shared/ui/UiPrimitives';
 import { PageLayout } from '@/shared/layout/PageLayout';
 import { createLlmExport } from './llmExport';
+import { createReportCsv, createReportJson } from './reportDataExport';
 import {
   downloadCombinedReportsPdf,
   downloadReportsPdf,
@@ -44,6 +47,18 @@ const EXPORT_OPTIONS = [
     action: 'Save to folder',
     description: 'A separate PDF for each selected report, saved to your chosen folder.',
   },
+  {
+    mode: 'csv',
+    label: 'CSV',
+    action: 'Download CSV',
+    description: 'A spreadsheet-friendly table of report details and measurement fields.',
+  },
+  {
+    mode: 'json',
+    label: 'JSON',
+    action: 'Download JSON',
+    description: 'Complete saved report records, including measurements and attachments.',
+  },
 ] as const;
 type ExportMode = (typeof EXPORT_OPTIONS)[number]['mode'];
 
@@ -51,6 +66,7 @@ interface ReportsPageProps {
   children?: ReactNode;
   preferences: ReportPreferences;
   reports: SavedReport[];
+  projects: readonly ReportProject[];
   onRemove: (id: string) => Promise<boolean>;
   busy: boolean;
   ready: boolean;
@@ -91,6 +107,7 @@ export function ReportsPage({
   children,
   preferences,
   reports,
+  projects,
   onRemove,
   busy,
   ready,
@@ -104,17 +121,23 @@ export function ReportsPage({
   const [exportStatus, setExportStatus] = useState('');
   const [exportMode, setExportMode] = useState<ExportMode>('individual');
   const folderSupported = supportsReportFolder();
+  const projectNames = reportProjectNames(reports, projects);
+  const projectOptions = new Map<string, string>();
+  for (const name of projectNames.values()) {
+    if (name && !projectOptions.has(name.toLowerCase()))
+      projectOptions.set(name.toLowerCase(), name);
+  }
+  const currentProject = projectOptions.has(project) ? project : '';
   const visibleReports = sortReports(
-    reports.filter((report) => !project || report.details.project === project),
+    reports.filter(
+      (report) => !currentProject || projectNames.get(report.id)?.toLowerCase() === currentProject,
+    ),
     sort,
   );
   const selectedReports = visibleReports.filter((report) => selected.has(report.id));
   const allSelected = visibleReports.length > 0 && selectedReports.length === visibleReports.length;
   const exportOption =
     EXPORT_OPTIONS.find((option) => option.mode === exportMode) ?? EXPORT_OPTIONS[0];
-  const projects = [...new Set(reports.map((report) => report.details.project ?? ''))]
-    .filter(Boolean)
-    .sort();
   const exportSelected = async (mode: ExportMode): Promise<void> => {
     if (exporting || selectedReports.length === 0) return;
     setExporting(true);
@@ -127,7 +150,18 @@ export function ReportsPage({
       );
     };
     try {
-      if (mode === 'combined' || mode === 'individual') {
+      if (mode === 'csv' || mode === 'json') {
+        const csv = mode === 'csv';
+        const content = csv
+          ? '\uFEFF' + createReportCsv(selectedReports)
+          : createReportJson(selectedReports);
+        const type = csv ? 'text/csv;charset=utf-8' : 'application/json';
+        downloadReportBlob(
+          new Blob([content], { type }),
+          `Pocketweb reports ${new Date().toISOString().slice(0, 10)}.${mode}`,
+        );
+        setExportStatus(`${mode.toUpperCase()} download requested.`);
+      } else if (mode === 'combined' || mode === 'individual') {
         const download = mode === 'combined' ? downloadCombinedReportsPdf : downloadReportsPdf;
         download(selectedReports, preferences.logoDataUrl, preferences.showFooterLogo);
         setExportStatus(
@@ -214,18 +248,20 @@ export function ReportsPage({
             <SelectField
               className="reports-filter"
               label="Project"
-              value={project}
+              value={currentProject}
               onChange={(event) => {
                 setProject(event.target.value);
                 setSelected(new Set());
               }}
             >
               <option value="">All projects</option>
-              {projects.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
+              {[...projectOptions]
+                .sort(([, a], [, b]) => a.localeCompare(b))
+                .map(([key, name]) => (
+                  <option key={key} value={key}>
+                    {name}
+                  </option>
+                ))}
             </SelectField>
             <SelectField
               className="reports-filter"
@@ -250,8 +286,8 @@ export function ReportsPage({
         >
           <div className="report-selection">
             <label>
-              <input
-                type="checkbox"
+              <Checkbox
+                size="large"
                 checked={allSelected}
                 ref={(input) => {
                   if (input) input.indeterminate = selectedReports.length > 0 && !allSelected;
@@ -330,8 +366,8 @@ export function ReportsPage({
           <div className="report-list">
             {visibleReports.map((report) => (
               <article className="report-row" key={report.id}>
-                <input
-                  type="checkbox"
+                <Checkbox
+                  size="large"
                   checked={selected.has(report.id)}
                   aria-label={`Select ${reportTitle(report)}`}
                   onChange={() =>
@@ -351,6 +387,7 @@ export function ReportsPage({
                     {report.photos.length > 0 &&
                       ` · ${report.photos.length} image${report.photos.length === 1 ? '' : 's'}`}
                   </span>
+                  {projectNames.get(report.id) && <small>{projectNames.get(report.id)}</small>}
                   {(report.details.location || report.details.portId) && (
                     <small>
                       {[report.details.location, report.details.portId].filter(Boolean).join(' · ')}

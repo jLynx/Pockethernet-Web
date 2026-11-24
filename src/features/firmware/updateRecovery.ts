@@ -43,24 +43,22 @@ export function readPendingUpdate(storage: UpdateStorage): PendingUpdate | null 
       !('espVersion' in device) ||
       typeof device.espVersion !== 'number' ||
       !('latestVersion' in target) ||
-      typeof target.latestVersion !== 'number' ||
-      !('downloadUrl' in target) ||
-      typeof target.downloadUrl !== 'string'
+      typeof target.latestVersion !== 'number'
     )
       return null;
-    return {
-      device: {
-        serial: device.serial,
-        mac: device.mac,
-        hardwareVersion: device.hardwareVersion,
-        stmVersion: device.stmVersion,
-        espVersion: device.espVersion,
-      },
-      target: {
-        latestVersion: target.latestVersion,
+    const release = {
+      latestVersion: target.latestVersion,
+      updateAvailable: true,
+      message: `Update available: v${target.latestVersion}`,
+    };
+    let recoveredTarget: FirmwareUpdateTarget;
+    if ('method' in target && target.method === 'usb') {
+      if (!Number.isSafeInteger(target.latestVersion) || target.latestVersion < 1) return null;
+      recoveredTarget = { ...release, method: 'usb' };
+    } else if ('downloadUrl' in target && typeof target.downloadUrl === 'string') {
+      recoveredTarget = {
+        ...release,
         downloadUrl: target.downloadUrl,
-        updateAvailable: true,
-        message: `Update available: v${target.latestVersion}`,
         ...('source' in target &&
         (target.source === 'official' || target.source === 'url' || target.source === 'file')
           ? { source: target.source }
@@ -70,7 +68,17 @@ export function readPendingUpdate(storage: UpdateStorage): PendingUpdate | null 
           ? { sha256: target.sha256 }
           : {}),
         ...('bytes' in target && typeof target.bytes === 'number' ? { bytes: target.bytes } : {}),
+      };
+    } else return null;
+    return {
+      device: {
+        serial: device.serial,
+        mac: device.mac,
+        hardwareVersion: device.hardwareVersion,
+        stmVersion: device.stmVersion,
+        espVersion: device.espVersion,
       },
+      target: recoveredTarget,
       startedAt: value.startedAt,
       completed: value.completed,
     };

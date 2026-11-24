@@ -10,7 +10,7 @@ export type BlinkerLink = 'off' | 'on' | 'blink';
 export type TonerPair = '1' | '2' | '3' | '4' | 'all';
 export type TonerShield = 'on' | 'off';
 export type TonerTone = '1' | '2' | '3' | '4';
-export type TonerVolume = 'low' | 'high';
+export type TonerVolume = 'low' | 'high' | 'diff';
 export type BerSpeed = 10 | 100 | 1000;
 export type BerFrameSize = 64 | 1500;
 export type BerPayloadMode = 'random' | '55';
@@ -38,6 +38,16 @@ export interface BasicResult {
 
 export interface FieldsResult extends BasicResult {
   fields: FieldMap;
+}
+
+export interface DhcpRoute {
+  destination: string;
+  prefix: number;
+  router: string;
+}
+
+export interface Ipv4Result extends FieldsResult {
+  classlessRoutes?: DhcpRoute[];
 }
 
 export interface TrafficPacketResult {
@@ -70,6 +80,9 @@ export interface LinkResultOk extends BasicResult {
   polarity: string[];
   skewDelay: number[];
   lengthEstimate: number | null;
+  /** Missing on replies and saved reports without extended PHY diagnostics. */
+  eeePartnerMbps?: (100 | 1000)[];
+  mse?: number[];
 }
 
 export interface LinkResultDown extends BasicResult {

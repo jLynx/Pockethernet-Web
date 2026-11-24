@@ -1,4 +1,4 @@
-import { pairColorsForTia } from '@/app/format';
+import { pairColorsForTia, wiremapPairIndex, wiremapPins } from '@/app/format';
 import type { TiaStandard } from '@/app/types';
 import type { WiremapResult } from '@/pockethernetProtocol';
 
@@ -7,6 +7,7 @@ export function wiremapNotificationImage(
   result: WiremapResult,
   tia: TiaStandard,
   showShield = true,
+  pinOrder?: 'pairwise' | 'sequential',
 ): string | undefined {
   const canvas = document.createElement('canvas');
   canvas.width = 640;
@@ -20,7 +21,7 @@ export function wiremapNotificationImage(
   ctx.fillText(`Wiremap · ${tia}${result.id > 0 ? ` · ID ${result.id}` : ''}`, 20, 30);
   ctx.font = '18px Arial';
   ctx.fillText(result.summary, 20, 58, 600);
-  const pins = showShield ? [1, 2, 3, 6, 4, 5, 7, 8, 9] : [1, 2, 3, 6, 4, 5, 7, 8];
+  const pins = wiremapPins(showShield, pinOrder);
   const colors = pairColorsForTia(tia);
   const yFor = (pin: number): number => 90 + pins.indexOf(pin) * 33;
   const line = (x1: number, y1: number, x2: number, y2: number, color: string): void => {
@@ -30,10 +31,10 @@ export function wiremapNotificationImage(
     ctx.lineTo(x2, y2);
     ctx.stroke();
   };
-  pins.forEach((pin, index) => {
+  pins.forEach((pin) => {
     const y = yFor(pin);
     const destination = result.connections[pin];
-    const color = pin === 9 ? '#475569' : colors[Math.floor(index / 2)];
+    const color = pin === 9 ? '#475569' : colors[wiremapPairIndex(pin)];
     ctx.fillStyle = '#182333';
     ctx.font = 'bold 20px Arial';
     ctx.fillText(pin === 9 ? 'S' : String(pin), 20, y + 7);

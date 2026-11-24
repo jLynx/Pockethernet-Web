@@ -1,5 +1,6 @@
 import type {
   BlinkerSettings,
+  MeasurementDisplay,
   PingDefaults,
   ReportDetails,
   ReportPreferences,
@@ -7,12 +8,18 @@ import type {
   TonerSettings,
   ToolSettings,
   WifiSettings,
+  WorkflowMode,
 } from './types';
+import { EXAMPLE_RTTTL } from '@/protocol/rtttl';
+import { configurationKey } from './workflowMode';
+
+export const MEASUREMENT_DISPLAY_KEY = 'pockethernet.measurementDisplay';
 
 export const DEFAULT_TOOL_SETTINGS: ToolSettings = {
   tia: '568B',
   units: 'meters',
   nvp: '71',
+  wiremapPinOrder: 'pairwise',
   customMac: 'off',
   mac: '',
   shieldTest: false,
@@ -30,12 +37,14 @@ export const DEFAULT_TONER_SETTINGS: TonerSettings = {
   pair: 'all',
   shield: 'off',
   tone: '1',
+  melody: EXAMPLE_RTTTL,
   volume: 'high',
   power: 'off',
 };
 export const DEFAULT_WIFI_SETTINGS: WifiSettings = {
   name: 'Pockethernet',
-  password: 'Pockethernet',
+  password: '',
+  channel: 1,
   enabled: 'off',
 };
 export const DEFAULT_REPORT_DETAILS: ReportDetails = {
@@ -72,6 +81,7 @@ export function loadToolSettings(key = 'pockethernet.toolSettings'): ToolSetting
     tia: saved.tia === '568A' ? '568A' : DEFAULT_TOOL_SETTINGS.tia,
     units: saved.units === 'feet' ? 'feet' : DEFAULT_TOOL_SETTINGS.units,
     nvp: typeof saved.nvp === 'string' ? saved.nvp : DEFAULT_TOOL_SETTINGS.nvp,
+    wiremapPinOrder: saved.wiremapPinOrder === 'sequential' ? 'sequential' : 'pairwise',
     customMac: saved.customMac === 'on' ? 'on' : DEFAULT_TOOL_SETTINGS.customMac,
     mac: typeof saved.mac === 'string' ? saved.mac : DEFAULT_TOOL_SETTINGS.mac,
     shieldTest: saved.shieldTest === true,
@@ -79,6 +89,19 @@ export function loadToolSettings(key = 'pockethernet.toolSettings'): ToolSetting
     requiredPairs:
       saved.requiredPairs === '2' || saved.requiredPairs === '4' ? saved.requiredPairs : 'any',
     decimalSeparator: saved.decimalSeparator === ',' ? ',' : '.',
+  };
+}
+
+export function loadMeasurementDisplay(mode: WorkflowMode): MeasurementDisplay {
+  const saved = storedRecord(MEASUREMENT_DISPLAY_KEY);
+  const prefix = mode === 'single' ? 'pockethernet.single.' : 'pockethernet.';
+  const legacy = loadToolSettings(configurationKey(prefix, 'toolSettings'));
+  return {
+    units: saved.units === 'feet' || saved.units === 'meters' ? saved.units : legacy.units,
+    decimalSeparator:
+      saved.decimalSeparator === '.' || saved.decimalSeparator === ','
+        ? saved.decimalSeparator
+        : (legacy.decimalSeparator ?? '.'),
   };
 }
 
@@ -108,10 +131,21 @@ export function loadTonerSettings(): TonerSettings {
         : DEFAULT_TONER_SETTINGS.pair,
     shield: saved.shield === 'on' ? 'on' : DEFAULT_TONER_SETTINGS.shield,
     tone:
-      saved.tone === '2' || saved.tone === '3' || saved.tone === '4'
+      saved.tone === '2' || saved.tone === '3' || saved.tone === '4' || saved.tone === 'melody'
         ? saved.tone
         : DEFAULT_TONER_SETTINGS.tone,
-    volume: saved.volume === 'low' ? 'low' : DEFAULT_TONER_SETTINGS.volume,
+    melody: typeof saved.melody === 'string' ? saved.melody : DEFAULT_TONER_SETTINGS.melody,
+    pairMask:
+      typeof saved.pairMask === 'number' &&
+      Number.isInteger(saved.pairMask) &&
+      saved.pairMask >= 0 &&
+      saved.pairMask <= 15
+        ? saved.pairMask
+        : undefined,
+    volume:
+      saved.volume === 'low' || saved.volume === 'diff'
+        ? saved.volume
+        : DEFAULT_TONER_SETTINGS.volume,
     power: saved.power === 'on' ? 'on' : DEFAULT_TONER_SETTINGS.power,
   };
 }
@@ -121,6 +155,13 @@ export function loadWifiSettings(): WifiSettings {
   return {
     name: typeof saved.name === 'string' ? saved.name : DEFAULT_WIFI_SETTINGS.name,
     password: typeof saved.password === 'string' ? saved.password : DEFAULT_WIFI_SETTINGS.password,
+    channel:
+      typeof saved.channel === 'number' &&
+      Number.isInteger(saved.channel) &&
+      saved.channel >= 1 &&
+      saved.channel <= 11
+        ? saved.channel
+        : 1,
     enabled: saved.enabled === 'on' ? 'on' : DEFAULT_WIFI_SETTINGS.enabled,
   };
 }

@@ -16,6 +16,7 @@ function useTestingWorkflowsInternal(
     details: app.singleConfiguration.reportDetails,
     setDetails: app.singleConfiguration.setReportDetails,
     autoIncrement: false,
+    project: app.singleConfiguration.project,
     singleTest: true,
     onNext: () => undefined,
     onNotice,
@@ -25,7 +26,8 @@ function useTestingWorkflowsInternal(
     draft: batchMeasurement.draft,
     details: app.batchConfiguration.reportDetails,
     setDetails: app.batchConfiguration.setReportDetails,
-    autoIncrement: app.autoIncrement,
+    autoIncrement: app.batchConfiguration.project?.incrementCableId ?? app.autoIncrement,
+    project: app.batchConfiguration.project,
     onNext: () => {
       batchMeasurement.setDraft(null);
       batchMeasurement.setResults(emptyResults());

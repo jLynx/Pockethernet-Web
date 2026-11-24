@@ -66,7 +66,7 @@ void test('unrecognized legacy records are retained for recovery instead of sile
   assert.equal((await readReportDatabase()).length, 1);
   assert.equal(localStorage.getItem('pockethernet.reports'), original);
   const backups: unknown = await new Promise((resolve, reject) => {
-    const opening = indexedDB.open('pockethernet-reports', 2);
+    const opening = indexedDB.open('pockethernet-reports');
     opening.onerror = () => reject(opening.error ?? new Error('Failed to read recovery backup'));
     opening.onsuccess = () => {
       const database = opening.result;
@@ -140,4 +140,58 @@ void test('batch writes, failed saves, deletion and reset keep report storage co
   assert.equal((await readReportDatabase()).length, 99);
   await clearReportDatabase();
   assert.deepEqual(await readReportDatabase(), []);
+});
+
+void test('upgrades a version-two report database without losing saved reports', async () => {
+  const report = workflowReport();
+  await new Promise<void>((resolve, reject) => {
+    const opening = indexedDB.open('pockethernet-reports', 2);
+    opening.onupgradeneeded = () => {
+      opening.result.createObjectStore('reports', { keyPath: 'id' }).add(report);
+      opening.result.createObjectStore('migrationBackups', { autoIncrement: true });
+    };
+    opening.onerror = () => reject(opening.error ?? new Error('v2 fixture failed'));
+    opening.onsuccess = () => {
+      opening.result.close();
+      resolve();
+    };
+  });
+  assert.deepEqual(await readReportDatabase(), [report]);
+  const next = await writeReportDatabase(
+    { ...workflowReport('next'), job: { id: 'a', name: 'Site A' } },
+    'SITE-##',
+  );
+  assert.equal(next.details.tag, 'SITE-01');
+});
+
+void test('numbered jobs skip collisions and assign independent counters atomically', async () => {
+  const report = (id: string, jobId: string, tag = '') => ({
+    ...workflowReport(id, tag),
+    job: { id: jobId, name: jobId },
+  });
+  await writeReportDatabase(report('manual', 'a', 'CAB-001'));
+  const [first, second, other] = await Promise.all([
+    writeReportDatabase(report('a1', 'a'), 'CAB-###'),
+    writeReportDatabase(report('a2', 'a'), 'CAB-###'),
+    writeReportDatabase(report('b1', 'b'), 'CAB-###'),
+  ]);
+  assert.deepEqual([first.details.tag, second.details.tag].sort(), ['CAB-002', 'CAB-003']);
+  assert.equal(other.details.tag, 'CAB-001');
+  await assert.rejects(writeReportDatabase(report('a1', 'a'), 'CAB-###'));
+  const next = await writeReportDatabase(report('a3', 'a'), 'QA-##');
+  assert.equal(next.details.tag, 'QA-04');
+  assert.equal(next.job?.number, 4);
+  assert.equal((await readReportDatabase()).length, 5);
+});
+
+void test('project numbering skips a matching legacy Cable ID', async () => {
+  const legacy = workflowReport('legacy', 'CAB-001');
+  legacy.details.project = ' school ';
+  legacy.details.address = 'SITE A';
+  await writeReportDatabase(legacy);
+  const saved = await writeReportDatabase(
+    { ...workflowReport('saved', ''), job: { id: 'school', name: 'School' } },
+    'CAB-###',
+  );
+  assert.equal(saved.details.tag, 'CAB-002');
 });

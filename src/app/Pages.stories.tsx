@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { TestId } from '@/app/types';
+import { DEFAULT_TONER_SETTINGS } from '@/app/storage';
 import { TestPage } from '@/features/measurements/TestPage';
 import { ToolsPage } from '@/features/tools/ToolsPage';
 
@@ -65,7 +66,7 @@ export const Tools: Story = {
       blinkerSettings={{ speed: 'auto', duplex: 'auto', mdi: 'auto', link: 'off' }}
       onBlinkerSettingsChange={noop}
       onBlinkerChange={() => Promise.resolve(true)}
-      tonerSettings={{ pair: 'all', shield: 'off', tone: '1', volume: 'low', power: 'off' }}
+      tonerSettings={{ ...DEFAULT_TONER_SETTINGS, volume: 'low' }}
       onTonerSettingsChange={noop}
       onTonerChange={() => Promise.resolve(true)}
       wifiSettings={{ name: 'Pockethernet', password: '', enabled: 'off' }}

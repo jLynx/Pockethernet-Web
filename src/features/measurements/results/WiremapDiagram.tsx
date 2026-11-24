@@ -1,18 +1,21 @@
 import type { ReactElement } from 'react';
 import type { WiremapResult } from '@/pockethernetProtocol';
 import type { TiaStandard } from '@/app/types';
+import { wiremapPins } from '@/app/format';
 
 export function WiremapDiagram({
   result,
   tia = '568B',
   showShield = true,
+  pinOrder,
 }: {
   result: WiremapResult | null;
   tia?: TiaStandard;
   showShield?: boolean;
+  pinOrder?: 'pairwise' | 'sequential';
 }): ReactElement {
   if (!result) return <div className="wiremap-awaiting">Run a measurement to see the wiremap</div>;
-  const pins = showShield ? [1, 2, 3, 6, 4, 5, 7, 8, 9] : [1, 2, 3, 6, 4, 5, 7, 8];
+  const pins = wiremapPins(showShield, pinOrder);
   const colors: Record<number, string> =
     tia === '568A'
       ? {

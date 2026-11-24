@@ -30,10 +30,17 @@ export const TEST_HELP: Record<TestId, { description: string; note?: string }> =
       'Connect to the switch, router, or device under test. Pockethernet finds the highest advertised link speed and reports link capabilities and pair details.',
     note: 'The length shown here is only a rough estimate; use TDR for cable length and fault location.',
   },
+  'network-discovery': {
+    description:
+      'Listen for VLANs, subnets, protocols and network devices. Active mode also probes the attached IPv4 subnet for hosts and services.',
+    note: 'Requires firmware V18 or newer. Firmware V32 adds industrial, building, camera and Art-Net probes and PTP multicast reception.',
+  },
   cdplldp: {
     description:
       'Pockethernet listens for CDP or LLDP announcements for the timeout chosen in Configure and reports details such as switch name, physical port ID, and management address.',
   },
+  cdp: { description: 'Listen for Cisco Discovery Protocol announcements on the port.' },
+  lldp: { description: 'Listen for Link Layer Discovery Protocol announcements on the port.' },
   vlan: {
     description:
       'Listen for up to 30 seconds to discover VLAN tags seen on the port. Enable outgoing tagging to place Pockethernet DHCP, Ping, and External IP traffic on a specific VLAN.',
