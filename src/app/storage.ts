@@ -1,5 +1,6 @@
 import type {
   BlinkerSettings,
+  MeasurementDisplay,
   PingDefaults,
   ReportDetails,
   ReportPreferences,
@@ -7,8 +8,12 @@ import type {
   TonerSettings,
   ToolSettings,
   WifiSettings,
+  WorkflowMode,
 } from './types';
 import { EXAMPLE_RTTTL } from '@/protocol/rtttl';
+import { configurationKey } from './workflowMode';
+
+export const MEASUREMENT_DISPLAY_KEY = 'pockethernet.measurementDisplay';
 
 export const DEFAULT_TOOL_SETTINGS: ToolSettings = {
   tia: '568B',
@@ -84,6 +89,19 @@ export function loadToolSettings(key = 'pockethernet.toolSettings'): ToolSetting
     requiredPairs:
       saved.requiredPairs === '2' || saved.requiredPairs === '4' ? saved.requiredPairs : 'any',
     decimalSeparator: saved.decimalSeparator === ',' ? ',' : '.',
+  };
+}
+
+export function loadMeasurementDisplay(mode: WorkflowMode): MeasurementDisplay {
+  const saved = storedRecord(MEASUREMENT_DISPLAY_KEY);
+  const prefix = mode === 'single' ? 'pockethernet.single.' : 'pockethernet.';
+  const legacy = loadToolSettings(configurationKey(prefix, 'toolSettings'));
+  return {
+    units: saved.units === 'feet' || saved.units === 'meters' ? saved.units : legacy.units,
+    decimalSeparator:
+      saved.decimalSeparator === '.' || saved.decimalSeparator === ','
+        ? saved.decimalSeparator
+        : (legacy.decimalSeparator ?? '.'),
   };
 }
 

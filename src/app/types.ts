@@ -73,6 +73,8 @@ export interface ToolSettings {
   decimalSeparator?: '.' | ',';
 }
 
+export type MeasurementDisplay = Required<Pick<ToolSettings, 'units' | 'decimalSeparator'>>;
+
 export interface PingDefaults {
   enabled: boolean;
   targets: [string, string, string];

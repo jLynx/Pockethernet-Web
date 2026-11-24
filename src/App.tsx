@@ -175,12 +175,6 @@ export default function App(): ReactElement {
       workflow.addingPhotos
     )
       return;
-    if (
-      !window.confirm(
-        'Delete ALL saved reports and reset Pocketweb settings on this browser? This cannot be undone. Export any reports you need first.',
-      )
-    )
-      return;
     try {
       await clearReportDatabase();
       const keys = Array.from({ length: localStorage.length }, (_, index) =>
@@ -193,15 +187,11 @@ export default function App(): ReactElement {
       setNotice(`Reset could not finish: ${errorMessage(error)}`);
     }
   };
-  const displaySettings =
-    app.workflowMode === 'batch'
-      ? (measurement.draft?.settings ?? app.toolSettings)
-      : app.toolSettings;
   const feedback = ble.idleShutdown
     ? 'Pockethernet may have switched off after being idle. Turn it on and reconnect.'
     : (ble.status === 'disconnected' && ble.error) || notice || ble.error;
   return (
-    <NumberFormatProvider separator={displaySettings.decimalSeparator ?? '.'}>
+    <NumberFormatProvider separator={app.measurementDisplay.decimalSeparator}>
       <div className="original-app">
         <header className="original-header">
           <img className="wordmark" src={logo} alt="Pocketweb for Pockethernet" />

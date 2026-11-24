@@ -1,8 +1,10 @@
 import {
   loadBlinkerSettings,
+  loadMeasurementDisplay,
   loadReportPreferences,
   loadTonerSettings,
   loadWifiSettings,
+  MEASUREMENT_DISPLAY_KEY,
 } from './storage';
 import { useStoredState } from './useStoredState';
 import { useTestConfiguration } from './useTestConfiguration';
@@ -19,6 +21,9 @@ function useAppSettingsInternal() {
   );
   const single = useTestConfiguration('pockethernet.single.');
   const batch = useTestConfiguration('pockethernet.');
+  const [measurementDisplay, setMeasurementDisplay] = useStoredState(MEASUREMENT_DISPLAY_KEY, () =>
+    loadMeasurementDisplay(workflowMode),
+  );
   const [presets, setPresets] = useStoredState(PRESETS, () =>
     loadNamedItems<MeasurementPreset>(
       PRESETS,
@@ -67,7 +72,8 @@ function useAppSettingsInternal() {
     const reportDetails = project
       ? { ...configuration.reportDetails, project: project.name, address: project.site }
       : configuration.reportDetails;
-    return { ...configuration, project, reportDetails };
+    const toolSettings = { ...configuration.toolSettings, ...measurementDisplay };
+    return { ...configuration, project, reportDetails, toolSettings };
   };
   const singleConfiguration = withProject(single);
   const batchConfiguration = withProject(batch);
@@ -83,6 +89,8 @@ function useAppSettingsInternal() {
     setWorkflowMode,
     singleConfiguration,
     batchConfiguration,
+    measurementDisplay,
+    setMeasurementDisplay,
     presets,
     setPresets,
     projects,

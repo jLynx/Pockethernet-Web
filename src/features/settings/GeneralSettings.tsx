@@ -2,9 +2,7 @@ import type { ChangeEvent, ReactElement } from 'react';
 import type { ToolSettings, ReportPreferences, StateSetter, ReportResults } from '@/app/types';
 import { ToolControl, ToolField, ToolPanel } from '@/features/tools/ToolControls';
 import { resizeReportImage } from '@/features/reports/images';
-import { distanceForUnits, distanceUnitLabel, lastTdrLength } from '@/app/format';
-import { formatDecimal } from '@/app/numberFormat';
-import { SelectField } from '@/shared/ui/UiPrimitives';
+import { NvpCalibration } from './NvpCalibration';
 
 interface GeneralSettingsProps {
   disabled: boolean;
@@ -31,8 +29,6 @@ export function GeneralSettings({
   ): void => {
     onSettingsChange((current) => ({ ...current, [name]: value }));
   };
-  const nvp = Number(settings.nvp) || 71;
-  const tdrLength = lastTdrLength(lastTdr, nvp);
   const chooseReportLogo = async (event: ChangeEvent<HTMLInputElement>): Promise<void> => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -45,13 +41,7 @@ export function GeneralSettings({
     event.target.value = '';
   };
   return (
-    <ToolPanel
-      className="tool-panel-settings"
-      disabled={disabled}
-      title="Cable & report settings"
-      active={false}
-      summary="Cable and report defaults"
-    >
+    <ToolPanel className="tool-panel-settings" disabled={disabled} title="Cable & report settings">
       <ToolControl
         label="TIA"
         name="tia"
@@ -72,60 +62,11 @@ export function GeneralSettings({
         ]}
         onChange={updateSettings}
       />
-      <ToolControl
-        label="Units"
-        name="units"
-        value={settings.units}
-        options={[
-          ['meters', 'Meters'],
-          ['feet', 'Feet'],
-        ]}
-        onChange={updateSettings}
+      <NvpCalibration
+        settings={settings}
+        lastTdr={lastTdr}
+        onChange={(value) => updateSettings('nvp', value)}
       />
-      <div className="settings-fields">
-        <SelectField
-          label="Decimal separator"
-          value={settings.decimalSeparator ?? '.'}
-          onChange={(event) =>
-            updateSettings('decimalSeparator', event.target.value === ',' ? ',' : '.')
-          }
-        >
-          <option value=".">0.00</option>
-          <option value=",">0,00</option>
-        </SelectField>
-      </div>
-      <ToolField
-        label="NVP value"
-        value={settings.nvp}
-        onChange={(event) => {
-          const value = event.target.value.replace(',', '.');
-          if (/^\d{0,3}(?:\.\d?)?$/.test(value)) updateSettings('nvp', value);
-        }}
-        inputMode="decimal"
-      />
-      <div className="nvp-calibration">
-        <label>
-          NVP calibration · {formatDecimal(nvp, 1, settings.decimalSeparator)}%
-          <input
-            type="range"
-            min={60}
-            max={80}
-            step={0.1}
-            value={Math.max(60, Math.min(80, nvp))}
-            onChange={(event) => updateSettings('nvp', event.target.value)}
-          />
-        </label>
-        <output>
-          Last TDR at this NVP ·{' '}
-          {tdrLength === undefined
-            ? '—'
-            : `${formatDecimal(distanceForUnits(tdrLength, settings.units), 1, settings.decimalSeparator)} ${distanceUnitLabel(settings.units)}`}
-        </output>
-        <p className="settings-hint">
-          Measure a known-length cable with its far end open, then adjust NVP until the preview
-          matches.
-        </p>
-      </div>
       <ToolControl
         label="Custom MAC"
         name="customMac"

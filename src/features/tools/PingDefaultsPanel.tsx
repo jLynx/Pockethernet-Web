@@ -16,7 +16,6 @@ export function PingDefaultsPanel({
     <ToolPanel
       disabled={disabled}
       title="Ping defaults"
-      active={defaults.enabled}
       summary="Saved servers for your Ping tests"
     >
       <ToolControl

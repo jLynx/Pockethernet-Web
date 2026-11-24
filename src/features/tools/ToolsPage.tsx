@@ -38,6 +38,7 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
   const customMelody = tonerSettings.tone === 'melody';
   const canPlayMelody = firmwareSupports(props.firmwareVersion, 'tonerMelody');
   const pairMask = tonerSettings.pairMask ?? TONER_PAIR_MASKS[tonerSettings.pair];
+  const allPairs = pairMask === TONER_PAIR_MASKS.all;
   const pairs = ['1', '2', '3', '4'] as const;
   const enabledPairs = pairs.filter((pair) => pairMask & TONER_PAIR_MASKS[pair]);
   const channel = wifiSettings.channel ?? 1;
@@ -101,17 +102,31 @@ export function ToolsPage(props: ToolsPageProps): ReactElement {
             <fieldset className="tool-control">
               <legend>Pairs</legend>
               <div className="tool-button-row">
-                {pairs.map((pair) => (
-                  <Button
-                    key={pair}
-                    aria-pressed={Boolean(pairMask & TONER_PAIR_MASKS[pair])}
-                    variant={pairMask & TONER_PAIR_MASKS[pair] ? 'primary' : undefined}
-                    onClick={() => void updateToner('pairMask', pairMask ^ TONER_PAIR_MASKS[pair])}
-                  >
-                    P{pair}
-                  </Button>
-                ))}
-                <Button onClick={() => void updateToner('pairMask', 15)}>All</Button>
+                {pairs.map((pair) => {
+                  const mask = TONER_PAIR_MASKS[pair];
+                  const selected = !allPairs && Boolean(pairMask & mask);
+                  return (
+                    <Button
+                      key={pair}
+                      aria-pressed={selected}
+                      variant={selected ? 'primary' : undefined}
+                      onClick={() =>
+                        void updateToner('pairMask', allPairs ? mask : pairMask ^ mask)
+                      }
+                    >
+                      P{pair}
+                    </Button>
+                  );
+                })}
+                <Button
+                  aria-pressed={allPairs}
+                  variant={allPairs ? 'primary' : undefined}
+                  onClick={() => {
+                    if (!allPairs) void updateToner('pairMask', TONER_PAIR_MASKS.all);
+                  }}
+                >
+                  All
+                </Button>
               </div>
             </fieldset>
             <ToolControl

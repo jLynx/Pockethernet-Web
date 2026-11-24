@@ -50,9 +50,11 @@ export function AppPages({
   workflowSelector,
 }: AppPagesProps): ReactElement {
   const batch = app.workflowMode === 'batch';
-  const displaySettings = batch
-    ? (measurement.draft?.settings ?? app.toolSettings)
-    : app.toolSettings;
+  const connectedFirmwareVersion = ble.status === 'connected' ? ble.info?.espVersion : undefined;
+  const displaySettings =
+    batch && measurement.draft
+      ? { ...measurement.draft.settings, ...app.measurementDisplay }
+      : app.toolSettings;
   const composer = (
     <ReportComposer
       batch={batch}
@@ -79,7 +81,7 @@ export function AppPages({
     <TestPage
       batch={batch}
       configuration={app}
-      firmwareVersion={ble.info?.espVersion}
+      firmwareVersion={connectedFirmwareVersion}
       disabled={measurement.running || deviceLocked}
       unavailableTests={unavailableTests}
       {...measurement.results}
@@ -124,7 +126,7 @@ export function AppPages({
     <ConfigurePage
       app={app}
       lastTdr={measurement.lastTdr}
-      firmwareVersion={ble.info?.espVersion}
+      firmwareVersion={connectedFirmwareVersion}
       disabled={measurement.running || deviceLocked}
       unavailableTests={unavailableTests}
       onToggle={onToggle}
@@ -135,6 +137,8 @@ export function AppPages({
     <SettingsPage
       deviceInfo={ble.info}
       firmwareUpdater={firmwareUpdater}
+      measurementDisplay={app.measurementDisplay}
+      onMeasurementDisplayChange={app.setMeasurementDisplay}
       resetDisabled={
         !library.ready ||
         measurement.running ||

@@ -67,16 +67,71 @@
 .discovery-probes .settings-hint {
   flex-basis: 100%;
 }
-.nvp-calibration,
-.nvp-calibration label {
+.nvp-calibration {
+  min-width: 0;
+  margin: 0 0 3px;
+  padding: 12px;
+  border: 1px solid var(--border, #dfe6ed);
+  border-radius: 8px;
   display: grid;
+  gap: 12px;
+}
+.nvp-calibration legend {
+  padding: 0 5px;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+.nvp-stepper {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 100px) 44px;
   gap: 8px;
+  justify-content: center;
 }
-.nvp-calibration input {
+.nvp-stepper .ui-button {
+  min-height: 44px;
+}
+.nvp-stepper svg {
+  width: 18px;
+  height: 18px;
+}
+.nvp-value {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 10px;
+  border: 1px solid var(--border-control, #cfd9e4);
+  border-radius: 6px;
+  color: var(--text-secondary, #5f6e80);
+  background: var(--surface, #fff);
+}
+.nvp-value:focus-within {
+  border-color: var(--accent, #0878ca);
+}
+.nvp-value input {
   width: 100%;
+  min-width: 0;
   margin: 0;
+  padding: 6px 0;
+  border: 0;
+  color: var(--text, #192a40);
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  text-align: end;
 }
-.nvp-calibration output {
+.nvp-preview {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border, #dfe6ed);
+  color: var(--text-secondary, #5f6e80);
+  font-size: 0.83rem;
+}
+.nvp-preview output {
+  color: var(--text, #192a40);
   font-weight: 700;
 }
 .tester-help details {
@@ -145,6 +200,49 @@
   font-size: 0.82rem;
   line-height: 1.5;
 }
+.reset-dialog {
+  width: min(420px, calc(100% - 32px));
+  padding: 20px;
+  border: 1px solid var(--border-control, #cfd9e4);
+  border-radius: 12px;
+  color: var(--text, #172133);
+  background: var(--surface, #fff);
+}
+.reset-dialog::backdrop {
+  background: #0d1521a8;
+}
+.reset-dialog h2 {
+  margin: 0;
+  font-size: 1.08rem;
+}
+.reset-dialog p {
+  margin: 10px 0 18px;
+  color: var(--text-secondary, #5f6e80);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.reset-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.reset-dialog-actions .ui-button {
+  min-height: 44px;
+}
+.reset-dialog-actions .reset-confirm,
+.reset-dialog-actions .reset-confirm:hover:not(:disabled) {
+  color: var(--text-danger, #b32932);
+  background: var(--surface-danger, #fff0f1);
+}
+.reset-dialog-actions .reset-confirm:hover:not(:disabled) {
+  border-color: currentColor;
+}
+@media (max-width: 360px) {
+  .reset-dialog-actions {
+    flex-direction: column;
+  }
+}
 .settings-test-groups {
   display: grid;
   gap: 28px;
@@ -170,6 +268,7 @@
 .settings-test-selection input {
   width: 18px;
   height: 18px;
+  flex: 0 0 auto;
 }
 .batch-composer,
 .batch-empty,

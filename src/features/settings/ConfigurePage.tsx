@@ -1,7 +1,6 @@
 import type { ReactElement, ReactNode } from 'react';
 import type { ReportResults, TestId, UnavailableTests } from '@/app/types';
 import type { useAppSettings } from '@/app/useAppSettings';
-import { MIN_ESP_FIRMWARE } from '@/protocol/firmwareFeatures';
 import { SelectField } from '@/shared/ui/UiPrimitives';
 import { PageLayout } from '@/shared/layout/PageLayout';
 import { PingDefaultsPanel } from '@/features/tools/PingDefaultsPanel';
@@ -68,6 +67,17 @@ export function ConfigurePage({
     key: Key,
     value: (typeof settings)[Key],
   ): void => app.setToolSettings((current) => ({ ...current, [key]: value }));
+  const cableSettings = (
+    <GeneralSettings
+      lastTdr={lastTdr}
+      disabled={disabled}
+      settings={settings}
+      onSettingsChange={app.setToolSettings}
+      reportPreferences={app.reportPreferences}
+      onReportPreferencesChange={app.setReportPreferences}
+      onNotice={onNotice}
+    />
+  );
   return (
     <PageLayout
       className="settings-page configure-page"
@@ -102,11 +112,7 @@ export function ConfigurePage({
                               app.measurementSettings.discoveryMode ?? 'active',
                             )
                           : title;
-                      const requirement =
-                        unavailableTests[id] ??
-                        (id === 'network-discovery'
-                          ? `Firmware V${MIN_ESP_FIRMWARE.discovery}+`
-                          : '');
+                      const requirement = unavailableTests[id];
                       return (
                         <label key={id}>
                           <input
@@ -174,6 +180,7 @@ export function ConfigurePage({
               </p>
             </div>
           </ToolPanel>
+          {batch && cableSettings}
         </div>
         <div className="settings-column">
           <PresetSettings
@@ -182,15 +189,7 @@ export function ConfigurePage({
             disabled={disabled}
             onNotice={onNotice}
           />
-          <GeneralSettings
-            lastTdr={lastTdr}
-            disabled={disabled}
-            settings={settings}
-            onSettingsChange={app.setToolSettings}
-            reportPreferences={app.reportPreferences}
-            onReportPreferencesChange={app.setReportPreferences}
-            onNotice={onNotice}
-          />
+          {!batch && cableSettings}
           {batch && (
             <>
               <ToolPanel title="Network & discovery" disabled={disabled}>

@@ -41,6 +41,8 @@ const meta = {
   args: {
     deviceInfo: null,
     firmwareUpdater,
+    measurementDisplay: { units: 'meters', decimalSeparator: '.' },
+    onMeasurementDisplayChange: noop,
     resetDisabled: false,
     onReset: resolve,
   },

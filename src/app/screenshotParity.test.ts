@@ -11,13 +11,45 @@ import {
   wifiBridgeCommand,
 } from '@/pockethernetProtocol';
 import { DhcpVendorClass } from '@/features/settings/DhcpVendorClass';
+import { ConfigurePage } from '@/features/settings/ConfigurePage';
+import { NvpCalibration } from '@/features/settings/NvpCalibration';
 import { ActionDock } from '@/shared/layout/AppControls';
 import { lastTdrLength, wiremapPins } from './format';
 import { discoveryLabel, normalizeMeasurementSettings } from './measurementSettings';
 import { lldpPayload } from './measurementFixtures';
 import { finishWithClock, measurementHarness } from './measurementTestHarness';
 import { runMeasurements } from './runMeasurements';
-import { restoreSelection } from './testSelection';
+import { restoreSelection, testSelectionForDevice } from './testSelection';
+import { useAppSettings } from './useAppSettings';
+
+void test('Configure only shows the discovery firmware requirement for a connected older tester', () => {
+  function ConfigureFixture({
+    connected,
+    firmwareVersion,
+  }: {
+    connected: boolean;
+    firmwareVersion?: number;
+  }) {
+    const app = useAppSettings();
+    return createElement(ConfigurePage, {
+      app: { ...app, ...app.batchConfiguration, workflowMode: 'batch' },
+      disabled: false,
+      firmwareVersion: connected ? firmwareVersion : undefined,
+      unavailableTests: testSelectionForDevice(
+        app.batchConfiguration.selected,
+        connected,
+        firmwareVersion,
+      ).unavailableTests,
+      onToggle: () => {},
+      onNotice: () => {},
+    });
+  }
+  const render = (connected: boolean, firmwareVersion?: number) =>
+    renderToStaticMarkup(createElement(ConfigureFixture, { connected, firmwareVersion }));
+  assert.match(render(true, 17), /disabled=""\/>Network Monitor · Requires firmware V18\+/);
+  assert.doesNotMatch(render(false, 17), /Firmware V18\+/i);
+  assert.doesNotMatch(render(true, 18), /Firmware V18\+/i);
+});
 
 void test('legacy setup migrates to automatic discovery and splits saved neighbor tests', () => {
   const settings = normalizeMeasurementSettings({
@@ -189,4 +221,14 @@ void test('setup exposes the DHCP gate, stop button, pin order and live NVP calc
   };
   assert.equal(lastTdrLength(result, 71), 25);
   assert.equal(lastTdrLength(result, 79), 27);
+  const calibration = renderToStaticMarkup(
+    createElement(NvpCalibration, {
+      settings: { nvp: '79', units: 'feet', decimalSeparator: ',' },
+      lastTdr: result,
+      onChange: () => {},
+    }),
+  );
+  assert.match(calibration, /aria-label="Decrease NVP"/);
+  assert.match(calibration, /aria-label="Increase NVP"/);
+  assert.match(calibration, /<output>88,6 ft<\/output>/);
 });
